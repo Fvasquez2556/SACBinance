@@ -1,0 +1,112 @@
+export type TFTrend = "ALCISTA" | "NEUTRAL" | "BAJISTA";
+export type DisplayState =
+  | "CAYENDO"
+  | "TOCÓ_FONDO"
+  | "CONSOLIDANDO"
+  | "SUBIENDO"
+  | "BREAKOUT_INCIPIENTE"
+  | "NEUTRAL";
+export type Tier =
+  | "NINGUNO"
+  | "VIGILANCIA"
+  | "MODERADA"
+  | "FUERTE"
+  | "EXTRA-FUERTE";
+
+export interface MacroTrends {
+  "15m": TFTrend;
+  "1h": TFTrend;
+  "4h": TFTrend;
+  "1d": TFTrend;
+}
+
+export interface TradeLevels {
+  valid: boolean;
+  entry: number | null;
+  take_profit: number | null;
+  stop_loss: number | null;
+  risk_reward: number | null;
+  risk_pct: number | null;
+  reward_pct: number | null;
+  atr_pct: number | null;
+  nearest_resistance: number | null;
+  tp_blocked_by_resistance: boolean;
+  sl_basis: string;
+  reason: string;
+}
+
+export interface SRLevel {
+  precio: number;
+  toques: number;
+}
+
+export interface SRLevels {
+  soportes: SRLevel[];
+  resistencias: SRLevel[];
+}
+
+export interface ConsolidationInfo {
+  consolidating: boolean;
+  atr_pct: number | null;
+  atr_percentile: number | null;
+  ma_convergent: boolean;
+  vol_declining: boolean;
+  candles_in_state: number;
+}
+
+export interface PairState {
+  symbol: string;
+  display_state: DisplayState;
+  fsm_state: string;
+  score: number;
+  score_trend: number;
+  tier: Tier;
+  pos_en_rango: number;
+  fading: boolean;
+  macro_global: TFTrend;
+  macro_gate_mult: number;
+  macro_trends: MacroTrends;
+  price: number;
+  ret_1m_pct: number;
+  z_drop: number;
+  z_rise: number;
+  velocity: number;
+  vol_ratio: number;
+  drawdown_pct: number;
+  sigma_pct: number;
+  buy_ratio_30s: number;
+  flow_trades_30s: number;
+  flow_confirm: boolean;
+  rsi5: number | null;
+  macd_rising: boolean | null;
+  trend_up: boolean | null;
+  n_candles_1m: number;
+  fsm_since_ms: number;
+  score_since_ms: number;
+  slopes: Record<string, Record<string, number>>;
+  trade_levels: TradeLevels;
+  consolidation: ConsolidationInfo;
+  sr_levels: SRLevels;
+  btc_regime: TFTrend;
+  is_fakeout: boolean;
+}
+
+export interface StateEvent {
+  ts: number;
+  state: string;
+  score: number;
+  tier: string;
+  macro: string;
+  fsm: string;
+}
+
+export interface WSMessage {
+  type: "snapshot" | "update" | "alert" | "transition" | "early" | "watch" | "ping";
+  ts: number;
+  pairs?: PairState[];
+  // For single-pair events:
+  symbol?: string;
+  tier?: string;
+  score?: number;
+  display_state?: string;
+}

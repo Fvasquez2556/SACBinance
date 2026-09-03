@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Entorno / secretos
+.env
+backend/.env
+
+# Base de datos local (datos de runtime)
+data/
+backend/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Artefactos de despliegue
+sac.tar.gz
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,16 @@
+[Unit]
+Description=SACBinance v3 - Analisis de mercado Binance 24/7
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=flox
+WorkingDirectory=/home/flox/sacbinance/backend
+ExecStart=/home/flox/sacbinance/backend/venv/bin/python main.py
+Restart=always
+RestartSec=10
+# Reinicio automatico ante cualquier fallo; espera 10s entre intentos.
+
+[Install]
+WantedBy=multi-user.target

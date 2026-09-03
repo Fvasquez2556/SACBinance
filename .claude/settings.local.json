@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,'.'\\); import main; print\\('Backend OK - frontend dist detectado:', \\(__import__\\('pathlib'\\).Path\\('../frontend/dist'\\).is_dir\\(\\)\\)\\)\")"
+    ]
+  }
+}
