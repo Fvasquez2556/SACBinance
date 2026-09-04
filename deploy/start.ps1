@@ -43,10 +43,13 @@ while ($true) {
     # envuelva en ErrorRecord y se pinte como fallo del script.
     $sw = [System.IO.StreamWriter]::new($log, $false, [System.Text.UTF8Encoding]::new($false))
     try {
+        # NO se escribe a consola. Con la ventana minimizada u oculta nadie
+        # vacia el bufer de salida; el sistema emite cientos de lineas por
+        # minuto, el bufer se llena, Write-Host se bloquea y Windows cierra el
+        # proceso por "no responde" (Application Hang 1002). Paso el 4-sep a
+        # las 14:15, doce minutos despues de arrancar. El log es el fichero.
         & $Python main.py 2>&1 | ForEach-Object {
-            $linea = $_.ToString()
-            Write-Host $linea
-            $sw.WriteLine($linea)
+            $sw.WriteLine($_.ToString())
             $sw.Flush()
         }
     } finally {
