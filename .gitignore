@@ -31,3 +31,6 @@ Thumbs.db
 
 # Logs del despliegue local (Windows)
 logs/
+
+# Informes generados localmente
+informes/
