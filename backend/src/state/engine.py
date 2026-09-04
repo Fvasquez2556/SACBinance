@@ -580,6 +580,25 @@ class StateEngine:
                 f"macro={st.macro_global} btc={btc_reg}",
             )
 
+        # --- Modo sombra: medir lo que el gate macro suprime ---
+        # El gate multiplica el score (x0.10 con macro BAJISTA), asi que un 86
+        # queda en 8.6 y jamas alcanza el umbral: SUBIENDO + BAJISTA dio 0 de
+        # 82 el 4-sep. No se alerta — la decision de no operar contra la macro
+        # se respeta — pero SI se mide, o nunca se sabra si el muro protege.
+        if (self._outcomes is not None
+                and display in _INTERESTING_DISPLAY
+                and tier == "NINGUNO"
+                and 0 < mult < 1
+                and st.trade_levels.get("valid")):
+            val_sin_gate = int(min(100, val / mult))
+            if val_sin_gate >= s.score_min_dashboard:
+                try:
+                    self._outcomes.abrir_sombra(
+                        symbol, now_ms, st.snapshot(), st.trade_levels, val_sin_gate
+                    )
+                except Exception as e:
+                    logger.debug(f"[{symbol}] abrir_sombra error: {e}")
+
         # --- Alerta viva: refrescar contra sus niveles CONGELADOS ---
         # Se hace antes de decidir una emision nueva: si el par ya tiene una
         # alerta viva, no puede volver a emitir mas arriba.
@@ -599,7 +618,9 @@ class StateEngine:
         if alertable and (state_changed or tier_changed):
             emitir = True
             if s.alerta_congelada_enabled:
-                emitir, motivo = self._alertas.puede_emitir(symbol, impulso, now_ms)
+                emitir, motivo = self._alertas.puede_emitir(
+                    symbol, impulso, now_ms, display_state=display
+                )
                 if not emitir:
                     logger.debug(f"[{symbol}] alerta no emitida: {motivo}")
                     self._log_db(symbol, "VETO_ALERTA", f"{display} score={val} — {motivo}")

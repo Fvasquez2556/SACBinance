@@ -98,6 +98,7 @@ class ImpulseResult:
     cuerpo_ratio: Optional[float] = None
     vol_ratio: Optional[float] = None
     consumido_pct: Optional[float] = None  # % ya recorrido desde el minimo
+    caida_acelerando: bool = False          # cuchillo cayendo (para fondos)
     por_tf: dict = field(default_factory=dict)
     reason: str = ""
 
@@ -112,6 +113,7 @@ class ImpulseResult:
             "cuerpo_ratio": round(self.cuerpo_ratio, 2) if self.cuerpo_ratio is not None else None,
             "vol_ratio": round(self.vol_ratio, 2) if self.vol_ratio is not None else None,
             "consumido_pct": self.consumido_pct,
+            "caida_acelerando": self.caida_acelerando,
             "por_tf": {k: v.to_dict() for k, v in self.por_tf.items()},
             "reason": self.reason,
         }
@@ -260,6 +262,17 @@ def medir_impulso(candles_1m: list, ind=None) -> ImpulseResult:
     precio = candles_1m[-1].c
     if minimo > 0:
         res.consumido_pct = round((precio - minimo) / minimo * 100.0, 2)
+
+    # --- Caida acelerando (cuchillo) ---
+    # Es el espejo de la aceleracion alcista, y el unico criterio de impulso
+    # que tiene sentido en un fondo: no "¿se apaga la subida?" sino "¿la
+    # caida todavia va a mas?". Se mide sobre los TFs lentos, que es donde
+    # una caida sostenida se distingue de una mecha de un minuto.
+    bajistas = [m for m in validos.values() if m.tf in ("3m", "5m")]
+    if bajistas:
+        res.caida_acelerando = all(
+            m.roc_reciente < 0 and m.roc_reciente < m.roc_previo for m in bajistas
+        )
 
     # --- Fase ---
     res.fase, motivos = _clasificar_fase(res, validos, ind, s)

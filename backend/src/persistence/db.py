@@ -91,7 +91,10 @@ CREATE TABLE IF NOT EXISTS outcomes (
     dip_antes_obj REAL,
     forma         TEXT,
     n_velas       INTEGER DEFAULT 0,
-    cerrado       INTEGER DEFAULT 0
+    cerrado       INTEGER DEFAULT 0,
+    -- 1 = señal que el gate macro suprimio. Se mide pero NO se alerta:
+    -- sin esto no hay forma de saber si el gate protege o cuesta dinero.
+    sombra        INTEGER DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_out_cerrado ON outcomes (cerrado, ts_open DESC);
 CREATE INDEX IF NOT EXISTS idx_out_symbol  ON outcomes (symbol, ts_open DESC);
@@ -110,7 +113,8 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 #           (kline[7]), para cuadrar con lo que entrega el WebSocket (k["q"]).
 #   2 -> 3: se marcan STALE las señales calificadas contra un precio muy
 #           posterior a su apertura (el sistema estuvo apagado en medio).
-SCHEMA_VERSION = 3
+#   3 -> 4: outcomes.sombra — mide las señales que el gate macro suprime.
+SCHEMA_VERSION = 4
 
 _CREATE_SIGNALS = """
 CREATE TABLE IF NOT EXISTS signals (
@@ -236,6 +240,14 @@ class Database:
                     f"Migracion v{version}->3: {cur.rowcount} señales marcadas STALE "
                     "(se cerraron con precios de mucho despues; falseaban el win rate)"
                 )
+
+        if version < 4:
+            cols = [r[1] for r in self._conn.execute("PRAGMA table_info(outcomes)")]
+            if "sombra" not in cols:
+                self._conn.execute(
+                    "ALTER TABLE outcomes ADD COLUMN sombra INTEGER DEFAULT 0"
+                )
+                logger.info("Migracion v3->4: columna outcomes.sombra añadida")
 
         self._conn.execute(
             "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('version', ?)",

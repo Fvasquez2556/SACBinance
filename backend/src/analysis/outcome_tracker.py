@@ -58,6 +58,8 @@ class OutcomeTracker:
         self._db = db
         self._abiertos: Dict[int, dict] = {}
         self._por_symbol: Dict[str, List[int]] = {}
+        self._sombra_id: int = 0        # ids negativos, no chocan con signals
+        self._sombra_activa: set = set()
 
     # --- Ciclo de vida --------------------------------------------------
 
@@ -77,8 +79,12 @@ class OutcomeTracker:
         return n
 
     def _registrar_memoria(self, row: dict) -> None:
-        self._abiertos[row["signal_id"]] = row
-        self._por_symbol.setdefault(row["symbol"], []).append(row["signal_id"])
+        sid = row["signal_id"]
+        self._abiertos[sid] = row
+        self._por_symbol.setdefault(row["symbol"], []).append(sid)
+        if sid < 0:
+            self._sombra_id = min(self._sombra_id, sid)
+            self._sombra_activa.add(row["symbol"])
 
     def backfill(self, engine) -> int:
         """
@@ -143,8 +149,31 @@ class OutcomeTracker:
             logger.info(f"Outcomes reconstruidos desde el buffer: {n} señales")
         return n
 
+    def abrir_sombra(self, symbol: str, ts_open: int, snapshot: dict,
+                     trade_levels: dict, score_estimado: int) -> None:
+        """
+        Sigue una señal que el gate macro SUPRIMIO, sin alertarla.
+
+        Sin esto el sistema tiene un punto ciego: lo que el gate suprime nunca
+        llega a ser señal, asi que no hay outcome que diga si suprimirlo fue
+        acertado. El 4-sep, SUBIENDO con macro BAJISTA dio 0 de 82 por encima
+        del umbral, y ese mismo dia TUTUSDT (+12%) y MITOUSDT (+8.4%) cayeron
+        en esa categoria — sin datos para saber si el muro protegia o costaba.
+
+        Los ids de sombra son negativos para no chocar con los de signals.
+        """
+        if self._db is None or symbol in self._sombra_activa:
+            return
+        self._sombra_id -= 1
+        snap = dict(snapshot)
+        snap["score"] = score_estimado          # el score SIN el gate
+        snap["tier"] = "SOMBRA"
+        self.abrir(self._sombra_id, symbol, ts_open, snap, trade_levels, sombra=True)
+        if self._sombra_id in self._abiertos:
+            self._sombra_activa.add(symbol)
+
     def abrir(self, signal_id: int, symbol: str, ts_open: int,
-              snapshot: dict, trade_levels: dict) -> None:
+              snapshot: dict, trade_levels: dict, sombra: bool = False) -> None:
         """Empieza a seguir una señal recien emitida."""
         if self._db is None or signal_id in self._abiertos:
             return
@@ -175,6 +204,7 @@ class OutcomeTracker:
             "mae_pct": 0.0,
             "n_velas": 0,
             "cerrado": 0,
+            "sombra": 1 if sombra else 0,
         }
         try:
             self._db.abrir_outcome(row)
@@ -262,6 +292,8 @@ class OutcomeTracker:
                 cerrados.append(dict(row))
                 self._abiertos.pop(sid, None)
                 ids.remove(sid)
+                if sid < 0:
+                    self._sombra_activa.discard(symbol)
 
             try:
                 self._db.guardar_outcome(sid, cambios)

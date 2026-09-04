@@ -48,6 +48,10 @@ ESTADO_VIVA = "VIVA"
 ESTADO_DECLIVE = "PERDIENDO_FUERZA"
 ESTADO_CERRADA = "CERRADA"
 
+# Setups cuya tesis es el GIRO, no la continuacion del impulso. En estos el
+# precio bajo la EMA7 es la condicion normal, no una señal de agotamiento.
+_SETUPS_DE_GIRO = {"TOCÓ_FONDO", "CONSOLIDANDO"}
+
 MOTIVO_TP = "TP_ALCANZADO"
 MOTIVO_SL = "SL_ALCANZADO"
 MOTIVO_IMPULSO = "IMPULSO_AGOTADO"
@@ -81,6 +85,7 @@ class AlertaActiva:
     fase_actual: str = ""
     fuerza_actual: int = 0
     velas_degradadas: int = 0
+    es_giro: bool = False   # setup de fondo/consolidacion, no de continuacion
     ts_declive: Optional[int] = None
     ts_cierre: Optional[int] = None
     motivo_cierre: str = ""
@@ -112,6 +117,7 @@ class AlertaActiva:
             "delta_pct": round(self.delta_pct, 2),
             "mfe_pct": round(self.mfe_pct, 2),
             "mae_pct": round(self.mae_pct, 2),
+            "es_giro": self.es_giro,
             "fase_actual": self.fase_actual,
             "fuerza_actual": self.fuerza_actual,
             "fuerza_tendencia": self._tendencia(),
@@ -150,10 +156,23 @@ class AlertManager:
 
     # --- Emision ----------------------------------------------------------
 
-    def puede_emitir(self, symbol: str, impulso, now_ms: int) -> tuple:
+    def puede_emitir(self, symbol: str, impulso, now_ms: int,
+                     display_state: str = "") -> tuple:
         """
-        Devuelve (bool, motivo). Las dos puertas de entrada: impulso sano y
-        movimiento no consumido.
+        Devuelve (bool, motivo).
+
+        El criterio depende del TIPO de setup, y esto es lo que fallaba antes:
+        se aplicaba el test de "subida que se apaga" a TODOS los estados. Un
+        TOCÓ_FONDO o un CONSOLIDANDO tienen el precio bajo la EMA7 por
+        definicion — acaban de caer o estan laterales — asi que el test los
+        marcaba AGOTADA siempre. Bloqueo 84 setups de fondo y consolidacion en
+        las primeras horas: un error de categoria, no un filtro.
+
+          SUBIENDO / BREAKOUT   la tesis es la continuacion del impulso, asi
+                                que se exige impulso vivo y poco recorrido.
+          TOCÓ_FONDO / CONSOLID. la tesis es el giro, no la continuacion. Lo
+                                que hay que evitar es el cuchillo cayendo, no
+                                la falta de impulso alcista (que es normal).
         """
         s = get_settings()
         if symbol in self._activas:
@@ -166,6 +185,16 @@ class AlertManager:
 
         if not impulso.valid:
             return False, "impulso no evaluable"
+
+        if display_state in _SETUPS_DE_GIRO:
+            # La FSM ya exige que la caida se desacelere para llegar a
+            # BOTTOMING/VALLEY. Aqui solo se veta lo que esa comprobacion no
+            # ve: que la caida siga yendo a mas en los TFs lentos.
+            if impulso.caida_acelerando:
+                return False, "la caida sigue acelerando (cuchillo cayendo)"
+            return True, ""
+
+        # Setups de continuacion: el impulso es la tesis
         if impulso.fase not in FASES_OK:
             return False, f"impulso {impulso.fase} — {impulso.reason}"
         if (impulso.consumido_pct is not None
@@ -197,6 +226,7 @@ class AlertManager:
             precio_actual=float(entry),
             fase_actual=impulso.fase,
             fuerza_actual=impulso.fuerza,
+            es_giro=snapshot.get("display_state", "") in _SETUPS_DE_GIRO,
         )
         a.historia_fuerza.append(impulso.fuerza)
         self._activas[symbol] = a
@@ -244,7 +274,11 @@ class AlertManager:
             return self._cerrar(a, now_ms, MOTIVO_CADUCA)
 
         # --- Degradacion del impulso ---
-        if impulso is not None and impulso.valid:
+        # En un setup de giro no se aplica: su fase es AGOTADA por
+        # construccion (precio bajo la EMA7 tras la caida), asi que la alerta
+        # entraria en declive en la vela siguiente a emitirse. Ahi el
+        # desenlace lo marcan TP/SL y la caducidad.
+        if impulso is not None and impulso.valid and not a.es_giro:
             degradada = impulso.fase in (FASE_DESACELERANDO, FASE_AGOTADA)
             if degradada:
                 a.velas_degradadas += 1
