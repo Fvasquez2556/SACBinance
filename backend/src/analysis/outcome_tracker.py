@@ -145,8 +145,32 @@ class OutcomeTracker:
                 self.on_candle(sig["symbol"], c.t, c.h, c.l, c.c)
             n += 1
 
+        # --- Recuperar el hueco de los outcomes que YA existian ---
+        # Si el sistema estuvo parado, sus velas no se procesaron. El buffer
+        # 1m cubre ~5.3h, asi que un parón corto se recupera entero en vez de
+        # dejar un agujero en el MFE/MAE y en los cruces de umbral.
+        recuperados = velas_replay = 0
+        for sid, row in list(self._abiertos.items()):
+            st = engine.get_symbol(row["symbol"])
+            if st is None:
+                continue
+            desde = row.get("ts_last") or row["ts_open"]
+            hasta = row["ts_open"] + ventana_ms
+            velas = [c for c in st.candles if desde < c.t <= hasta]
+            if not velas:
+                continue
+            for c in velas:
+                self.on_candle(row["symbol"], c.t, c.h, c.l, c.c)
+            recuperados += 1
+            velas_replay += len(velas)
+
         if n:
             logger.info(f"Outcomes reconstruidos desde el buffer: {n} señales")
+        if recuperados:
+            logger.info(
+                f"Hueco recuperado en {recuperados} outcomes ya abiertos "
+                f"({velas_replay} velas 1m reprocesadas)"
+            )
         return n
 
     def abrir_sombra(self, symbol: str, ts_open: int, snapshot: dict,
