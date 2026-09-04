@@ -65,6 +65,30 @@ sudo systemctl enable --now sacbinance
 El backend sirve el frontend compilado (`frontend/dist`) en el mismo puerto — una
 sola URL en producción.
 
+## Despliegue (Windows, 24/7)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy\deploy.ps1   # venv + deps + build
+powershell -ExecutionPolicy Bypass -File deploy\start.ps1    # arranca en :8000
+```
+
+`start.ps1` cumple el mismo papel que `Restart=always` de systemd: si el proceso
+muere, reintenta a los 10 s. Los logs van a `logs/` (rota, conserva los 20 últimos).
+
+Para que arranque solo al iniciar sesión (equivalente de `systemctl enable`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy\install-autostart.ps1
+powershell -ExecutionPolicy Bypass -File deploy\install-autostart.ps1 -Remove   # quitar
+```
+
+## Migración de la base de datos
+
+Al arrancar, `db.py` compara `schema_meta.version` con `SCHEMA_VERSION` y migra si
+hace falta. La v2 descarta las velas guardadas antes del cambio de volumen base a
+volumen quote: aparecerá un `WARNING` con el número de velas purgadas y el
+hidratador las vuelve a bajar por REST. Es esperado y ocurre una sola vez.
+
 ## Estructura
 
 ```

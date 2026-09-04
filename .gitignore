@@ -28,3 +28,6 @@ sac.tar.gz
 Thumbs.db
 .idea/
 .vscode/
+
+# Logs del despliegue local (Windows)
+logs/
