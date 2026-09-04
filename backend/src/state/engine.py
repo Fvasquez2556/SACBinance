@@ -6,11 +6,16 @@ state, evalua señales y emite eventos.
 """
 from __future__ import annotations
 
+import asyncio
 import time
 from typing import Awaitable, Callable, Dict, List, Optional
 
 from src.analysis.breakout import detectar_breakout
 from src.analysis.consolidation import detectar_consolidacion
+from src.analysis.daily_anchor import calcular_ancla
+from src.analysis.compression import detectar_compresion
+from src.analysis.momentum_profile import evaluar_grind, evaluar_ignicion
+from src.analysis.taxonomy import clasificar as clasificar_taxonomia
 from src.analysis.levels import detectar_niveles
 from src.analysis.ma_slopes import analizar_tf
 from src.analysis.macro_gate import aplicar_gate, calcular_tendencia_global
@@ -18,6 +23,7 @@ from src.analysis.scoring import score_and_tier
 from src.analysis.signal_tracker import abrir_senal, evaluar_senales
 from src.analysis.trade_levels import calcular_niveles
 from src.config.settings import get_settings
+from src.indicators.calculator import indicators_from_candles
 from src.patterns.blow_off import detect_blow_off
 from src.state.state_machine import (
     FSM_BOTTOMING,
@@ -147,6 +153,14 @@ class StateEngine:
         self._last_tier: Dict[str, str] = {}
         self._last_live: Dict[str, float] = {}
         self._db = None
+        # Caches del analisis pesado (ver throttling en on_closed_candle)
+        self._sr_cache: Dict[str, object] = {}
+        self._cons_cache: Dict[str, object] = {}
+        self._grind_cache: Dict[str, object] = {}
+        self._compresion_cache: Dict[str, object] = {}
+        self._closed_seen: int = 0
+        # Cooldown por (symbol, tipo_alerta) -> ts_ms del ultimo envio
+        self._alert_cooldown: Dict[tuple, int] = {}
 
     def set_emit(self, emit: EmitFn) -> None:
         self._emit = emit
@@ -192,15 +206,54 @@ class StateEngine:
 
     # --- Macro / regimen BTC --------------------------------------------------
 
-    def _update_macro(self, st: SymbolState) -> None:
+    def _update_macro(self, st: SymbolState, only_tf: Optional[str] = None) -> None:
+        """
+        Recalcula pendientes/tendencia. Usa candles_tf_live(), que incluye la
+        vela EN FORMACION: asi la tendencia 15m refleja el minuto actual y no
+        el cierre de hace hasta 15 minutos.
+        """
         s = get_settings()
-        for tf in _MACRO_TFS:
-            candles = list(st.get_candles_tf(tf))
+        tfs = (only_tf,) if only_tf else _MACRO_TFS
+        for tf in tfs:
+            if tf not in st.macro_trends:
+                continue
+            candles = st.candles_tf_live(tf) if s.htf_live_enabled else list(st.get_candles_tf(tf))
             result = analizar_tf(candles, s.slope_lookback)
             if result.get("valid"):
                 st.slopes[tf] = result
                 st.macro_trends[tf] = result["tendencia"]
         st.macro_global = calcular_tendencia_global(st.macro_trends)
+
+    def _update_ind_htf(self, st: SymbolState, tf: str) -> None:
+        """Indicadores tecnicos calculados SOBRE EL TF, no sobre 1m."""
+        s = get_settings()
+        candles = st.candles_tf_live(tf) if s.htf_live_enabled else list(st.get_candles_tf(tf))
+        snap = indicators_from_candles(candles)
+        if snap is not None:
+            st.ind_htf[tf] = snap
+
+    async def on_htf_live(self, symbol: str, tf: str, candle: Candle) -> None:
+        """
+        Vela HTF en formacion. Throttled por par/TF: recalcular la macro de
+        250 pares en cada tick de 15m/1h saturaria el loop sin aportar nada.
+        """
+        s = get_settings()
+        if not s.htf_live_enabled or tf not in s.htf_live_tfs_list:
+            return
+        st = self.states.get(symbol)
+        if st is None:
+            return
+
+        st.set_live_htf(tf, candle)
+
+        now = time.monotonic()
+        if now - st.last_htf_live_calc.get(tf, 0.0) < s.htf_live_min_interval:
+            return
+        st.last_htf_live_calc[tf] = now
+
+        if tf in _MACRO_TFS:
+            self._update_macro(st, only_tf=tf)
+        self._update_ind_htf(st, tf)
 
     def _btc_regime(self) -> str:
         """Tendencia macro global de BTC: gate de mercado por encima del gate por-par."""
@@ -219,6 +272,8 @@ class StateEngine:
                 pass
         if tf in _MACRO_TFS:
             self._update_macro(st)
+        if tf in get_settings().htf_live_tfs_list:
+            self._update_ind_htf(st, tf)
 
     # --- 1m (FSM reactiva) ----------------------------------------------------
 
@@ -228,6 +283,13 @@ class StateEngine:
         st = self._get(symbol)
         candle = Candle(t=t, o=o, h=h, l=l, c=c, v=v)
         ready = st.add_closed_candle(candle)
+
+        # Al segundo 0 de cada minuto cierran las ~250 velas 1m a la vez.
+        # Ceder el loop cada N evita que el lector del WebSocket se quede sin
+        # turno durante toda la rafaga (con la consiguiente cola de mensajes).
+        self._closed_seen += 1
+        if self._closed_seen % max(1, get_settings().engine_yield_every) == 0:
+            await asyncio.sleep(0)
 
         # Checkpoint: persistir la vela 1m cerrada
         if self._db is not None:
@@ -277,22 +339,56 @@ class StateEngine:
         if not st.slopes:
             self._update_macro(st)
 
-        # Soporte / resistencia (sobre velas 1h)
-        sr = detectar_niveles(list(st.candles_1h), st.metrics.price)
-        st.sr_levels = sr.to_dict()
+        # --- Analisis pesado (S/R sobre 1h + consolidacion sobre 15m) ---
+        # Ninguno de los dos puede cambiar de forma relevante en 60 segundos,
+        # pero antes se recalculaban en CADA vela 1m de CADA uno de los ~250
+        # pares. detectar_consolidacion es O(n*period) sobre 260 velas: era la
+        # mayor fuente de carga en rafaga del minuto cerrado.
+        # Los pares que ya son interesantes se siguen recalculando siempre.
+        es_interesante = (
+            st.fsm_state != FSM_NEUTRAL
+            or st.display_state in _INTERESTING_DISPLAY
+            or st.score >= s.score_min_dashboard
+        )
+        recalcular_pesado = (
+            es_interesante
+            or not st.sr_levels
+            or (now_ms - st.last_heavy_ms) >= s.heavy_analysis_interval * 1000
+        )
 
-        # Consolidacion (independiente de la FSM 1m)
-        slopes_15m = st.slopes.get("15m", {})
-        cons = detectar_consolidacion(list(st.candles_15m), "15m", slopes_15m)
+        if recalcular_pesado:
+            st.last_heavy_ms = now_ms
+            sr = detectar_niveles(list(st.candles_1h), st.metrics.price)
+            st.sr_levels = sr.to_dict()
+            self._sr_cache[symbol] = sr
+
+            slopes_15m = st.slopes.get("15m", {})
+            cons = detectar_consolidacion(
+                st.candles_tf_live("15m") if s.htf_live_enabled else list(st.candles_15m),
+                "15m", slopes_15m,
+            )
+            self._cons_cache[symbol] = cons
+            st.consolidation_info = {
+                "consolidating": cons.consolidating,
+                "atr_pct": cons.atr_pct,
+                "atr_percentile": cons.atr_percentile,
+                "ma_convergent": cons.ma_convergent,
+                "vol_declining": cons.vol_declining,
+                "candles_in_state": cons.candles_in_state,
+            }
+        else:
+            sr = self._sr_cache.get(symbol)
+            cons = self._cons_cache.get(symbol)
+            if cons is None:
+                cons = detectar_consolidacion([], "15m", {})
+            if sr is None:
+                # Cache perdido (no deberia pasar: la primera vela siempre
+                # recalcula). Recalcular una vez es preferible a publicar
+                # niveles sin soporte/resistencia.
+                sr = detectar_niveles(list(st.candles_1h), st.metrics.price)
+                st.sr_levels = sr.to_dict()
+                self._sr_cache[symbol] = sr
         consolidating = cons.consolidating
-        st.consolidation_info = {
-            "consolidating": cons.consolidating,
-            "atr_pct": cons.atr_pct,
-            "atr_percentile": cons.atr_percentile,
-            "ma_convergent": cons.ma_convergent,
-            "vol_declining": cons.vol_declining,
-            "candles_in_state": cons.candles_in_state,
-        }
 
         # Score base con gate macro
         val, tier = score_and_tier(
@@ -348,15 +444,78 @@ class StateEngine:
                 tier = "FUERTE"
 
         # Posicion del precio en el rango 15m (contexto para el display)
-        pos_rango = _pos_en_rango(list(st.candles_15m), st.metrics.price)
+        pos_rango = _pos_en_rango(
+            st.candles_tf_live("15m") if s.htf_live_enabled else list(st.candles_15m),
+            st.metrics.price,
+        )
         st.pos_en_rango = pos_rango
         trend_15m = st.macro_trends.get("15m", "NEUTRAL")
+
+        # --- Ancla diaria fija (00:00 UTC) ---
+        if s.daily_anchor_enabled:
+            st.daily = calcular_ancla(st, st.metrics.price, now_ms).to_dict()
+
+        # --- Perfiles de subida: tendencia sostenida vs ignicion ---
+        # `grind` mira 4 horas de velas 15m: no puede cambiar de forma
+        # relevante en 60s, asi que sigue el mismo throttling que el resto del
+        # analisis pesado. `ignition` NO se throttlea: detecta la explosion en
+        # la vela de 1m y llegar tarde es justo lo que intenta evitar.
+        if recalcular_pesado:
+            grind = evaluar_grind(
+                st.candles_tf_live("15m") if s.htf_live_enabled else list(st.candles_15m),
+                st.macro_trends,
+            )
+            self._grind_cache[symbol] = grind
+            st.grind = grind.to_dict()
+        else:
+            grind = self._grind_cache.get(symbol)
+            if grind is None:
+                grind = evaluar_grind([], st.macro_trends)
+
+        ignition = evaluar_ignicion(
+            list(st.candles),
+            st.metrics,
+            flow=st.flow_snap,
+            consolidando_antes=st.prev_consolidando,
+            ind=st.ind,
+            blow_off=(st.fsm_state == FSM_EXHAUSTED),
+            daily=st.daily,
+        )
+        st.ignition = ignition.to_dict()
+        st.prev_consolidando = consolidating
+
+        # --- CAPA 1: compresion + taxonomia exhaustiva ---
+        # detectar_compresion recorre 96 velas 15m buscando pivotes fractales:
+        # ~0.5ms por par, 116ms por rafaga de 250. Es analisis pesado y va con
+        # los demas, o desharia el ahorro que persigue el throttling de arriba.
+        if recalcular_pesado:
+            compresion = detectar_compresion(
+                st.candles_tf_live("15m") if s.htf_live_enabled else list(st.candles_15m),
+                atr_percentil=(cons.atr_percentile if cons is not None else None),
+            )
+            self._compresion_cache[symbol] = compresion
+            st.compresion = compresion.to_dict()
+        else:
+            compresion = self._compresion_cache.get(symbol)
+            if compresion is None:
+                compresion = detectar_compresion([])
+
+        taxo = clasificar_taxonomia(
+            grind=grind, ignition=ignition, compresion=compresion,
+            fsm_state=st.fsm_state, metrics=st.metrics,
+            macro_trends=st.macro_trends, daily=st.daily,
+        )
+        st.taxonomia = taxo.to_dict()
 
         # Display state (FSM 1m VALIDADA con contexto)
         display = _fsm_to_display(st.fsm_state, consolidating, breakout, pos_rango, trend_15m)
 
         # Niveles de trading (con soporte/resistencia)
-        levels = calcular_niveles(st.metrics.price, list(st.candles_15m), display, sr)
+        levels = calcular_niveles(
+            st.metrics.price,
+            st.candles_tf_live("15m") if s.htf_live_enabled else list(st.candles_15m),
+            display, sr,
+        )
         st.trade_levels = levels.to_dict()
 
         prev_display = st.display_state
@@ -425,8 +584,39 @@ class StateEngine:
                     "state_changed": state_changed,
                     **snap,
                 })
-        elif transition and self._emit:
-            await self._emit({"type": "transition", "ts": now_ms, **st.snapshot()})
+        # --- Alertas de perfil (independientes del tier clasico) ---
+        for kind, perfil, etiqueta in (
+            ("alert_tendencia", grind, "TENDENCIA SOSTENIDA"),
+            ("alert_ignicion", ignition, "IGNICION"),
+        ):
+            if not perfil.detected:
+                continue
+            key = (symbol, kind)
+            ultimo = self._alert_cooldown.get(key, 0)
+            if now_ms - ultimo < s.alert_cooldown_minutes * 60_000:
+                continue
+            self._alert_cooldown[key] = now_ms
+
+            pct_dia = st.daily.get("pct_desde_open_diario")
+            pct_txt = f" | dia {pct_dia:+.2f}%" if pct_dia is not None else ""
+            logger.info(
+                f"[{symbol}] ALERTA {etiqueta} | score={perfil.score}"
+                f"{pct_txt} | {perfil.reason}"
+            )
+            self._log_db(symbol, etiqueta.split()[0], f"score={perfil.score} | {perfil.reason}")
+            if self._emit:
+                await self._emit({
+                    "type": kind,
+                    "ts": now_ms,
+                    "perfil": etiqueta,
+                    "perfil_score": perfil.score,
+                    "perfil_reason": perfil.reason,
+                    **st.snapshot(),
+                })
+
+        if not alertable or not (state_changed or tier_changed):
+            if transition and self._emit:
+                await self._emit({"type": "transition", "ts": now_ms, **st.snapshot()})
 
     async def on_live_candle(
         self, symbol: str, t: int, o: float, h: float, l: float, c: float, v: float

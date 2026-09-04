@@ -8,6 +8,8 @@ from typing import List, Optional, Sequence
 
 import numpy as np
 
+from src.utils.fastmath import ema as _fast_ema
+
 EMA_SHORT, EMA_MEDIUM, EMA_LONG = 7, 25, 99
 RSI_SLOW, RSI_FAST = 14, 5
 MACD_FAST, MACD_SLOW, MACD_SIGNAL = 12, 26, 9
@@ -38,12 +40,7 @@ class IndSnap:
 
 
 def _ema(x: np.ndarray, period: int) -> np.ndarray:
-    a = 2.0 / (period + 1.0)
-    out = np.empty_like(x)
-    out[0] = x[0]
-    for i in range(1, len(x)):
-        out[i] = a * x[i] + (1.0 - a) * out[i - 1]
-    return out
+    return _fast_ema(x, period)
 
 
 def _rsi(close: np.ndarray, period: int) -> float:

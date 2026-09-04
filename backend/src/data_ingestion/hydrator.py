@@ -66,9 +66,12 @@ def _raw_to_candles(raw: list) -> List[Candle]:
     out = []
     for k in raw:
         try:
+            # k[7] = quote asset volume. El WS entrega k["q"] (quote); si aca
+            # usaramos k[5] (base volume) el mismo buffer mezclaria dos unidades
+            # distintas y vol_ratio / blow_off / breakout quedarian rotos.
             out.append(Candle(
                 t=int(k[0]), o=float(k[1]), h=float(k[2]),
-                l=float(k[3]), c=float(k[4]), v=float(k[5]),
+                l=float(k[3]), c=float(k[4]), v=float(k[7]),
             ))
         except (IndexError, ValueError):
             continue

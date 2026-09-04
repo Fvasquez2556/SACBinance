@@ -90,4 +90,9 @@ def score_minimo_requerido(macro_global: str) -> int:
     s = get_settings()
     if macro_global == "NEUTRAL":
         return s.gate_neutral_score_floor
+    if macro_global == "BAJISTA":
+        # Antes devolvia score_min_dashboard (60), es decir un piso MAS BAJO
+        # que el de NEUTRAL (75). Ir contra la tendencia macro debe ser lo
+        # mas exigente, no lo mas permisivo.
+        return s.gate_bajista_score_floor
     return s.score_min_dashboard

@@ -110,8 +110,24 @@ class SymbolState:
         self.live_ts: int = 0
         self.last_early: Optional[str] = None
 
-        # Indicadores tecnicos (calculados al cerrar vela 1m)
+        # Vela HTF EN FORMACION por TF (no entra al buffer cerrado)
+        self.live_htf: Dict[str, Optional[Candle]] = {
+            "5m": None, "15m": None, "1h": None, "4h": None, "1d": None,
+        }
+        self.live_htf_ts: Dict[str, int] = {}
+
+        # Indicadores tecnicos 1m (calculados al cerrar vela 1m)
         self.ind: Optional[IndSnap] = None
+
+        # Indicadores por TF superior. Antes solo existian los de 1m y se
+        # publicaban como "rsi5"/"macd_rising", lo que jamas podia coincidir
+        # con el RSI(6) de 15m que el usuario ve en Binance: son metricas
+        # distintas, no un desfase.
+        self.ind_htf: Dict[str, Optional[IndSnap]] = {}
+
+        # Timestamps de ultimo recalculo (throttling)
+        self.last_heavy_ms: int = 0
+        self.last_htf_live_calc: Dict[str, float] = {}
 
         # Flujo agresor (aggTrade) — solo activo para el top-40 shortlist
         self.flow = FlowState()
@@ -149,6 +165,14 @@ class SymbolState:
         # Slopes (ultimos calculados por TF)
         self.slopes: Dict[str, dict] = {}
 
+        # Ancla diaria fija (00:00 UTC) y perfiles de subida
+        self.daily: dict = {}
+        self.grind: dict = {}
+        self.ignition: dict = {}
+        self.compresion: dict = {}
+        self.taxonomia: dict = {}
+        self.prev_consolidando: bool = False
+
         # Niveles de trading, consolidacion y soporte/resistencia
         self.trade_levels: dict = {}
         self.consolidation_info: dict = {}
@@ -181,7 +205,33 @@ class SymbolState:
         }.get(tf, self.candles)
 
     def add_candle_htf(self, tf: str, candle: Candle) -> None:
-        self.get_candles_tf(tf).append(candle)
+        buf = self.get_candles_tf(tf)
+        # Idempotente: si la vela viva ya se habia adelantado, no duplicar
+        if buf and buf[-1].t == candle.t:
+            buf[-1] = candle
+        else:
+            buf.append(candle)
+        # La vela viva de ese TF queda obsoleta al cerrar
+        self.live_htf[tf] = None
+
+    def set_live_htf(self, tf: str, candle: Candle) -> None:
+        """Vela HTF en formacion (k['x'] == False). No toca el buffer cerrado."""
+        if tf in self.live_htf:
+            self.live_htf[tf] = candle
+            self.live_htf_ts[tf] = candle.t
+
+    def candles_tf_live(self, tf: str) -> list:
+        """
+        Buffer del TF + la vela EN FORMACION al final, si existe y es posterior
+        a la ultima cerrada. Esto es lo que dibuja Binance.
+        """
+        base = list(self.get_candles_tf(tf))
+        live = self.live_htf.get(tf)
+        if live is None:
+            return base
+        if base and live.t <= base[-1].t:
+            return base
+        return base + [live]
 
     # --- Computacion de metricas 1m -------------------------------------------
 
@@ -311,12 +361,39 @@ class SymbolState:
             "buy_ratio_30s": round(self.flow_snap.buy_ratio_30s, 3),
             "flow_trades_30s": self.flow_snap.trades_30s,
             "flow_confirm": self.flow_snap.buy_dominant,
+            # Indicadores 1m (los de siempre — nombres conservados por el frontend)
             "rsi5": round(self.ind.rsi5, 1) if self.ind else None,
             "macd_rising": self.ind.macd_rising if self.ind else None,
             "trend_up": self.ind.trend_up if self.ind else None,
+            "rsi14_1m": round(self.ind.rsi14, 1) if self.ind else None,
+            # Indicadores por TF superior — estos SI son comparables con Binance
+            "ind_htf": {
+                tf: {
+                    "rsi14": round(snap.rsi14, 1),
+                    "rsi5": round(snap.rsi5, 1),
+                    "macd_hist": round(snap.macd_hist, 8),
+                    "macd_rising": snap.macd_rising,
+                    "trend_up": snap.trend_up,
+                    "bb_position": round(snap.bb_position, 3),
+                    "atr_pct": round(snap.atr_pct, 3),
+                    "ema7": snap.ema7,
+                    "ema25": snap.ema25,
+                    "ema99": snap.ema99,
+                }
+                for tf, snap in self.ind_htf.items()
+                if snap is not None and snap.valid
+            },
+            "htf_live_age_ms": {
+                tf: max(0, _now - ts) for tf, ts in self.live_htf_ts.items()
+            },
             "n_candles_1m": len(self.candles),
             "fsm_since_ms": self.fsm_since_ms,
             "score_since_ms": self.score_since_ms,
+            "daily": dict(self.daily),
+            "grind": dict(self.grind),
+            "ignition": dict(self.ignition),
+            "compresion": dict(self.compresion),
+            "taxonomia": dict(self.taxonomia),
             "trade_levels": dict(self.trade_levels),
             "consolidation": dict(self.consolidation_info),
             "sr_levels": dict(self.sr_levels),

@@ -101,12 +101,28 @@ export interface StateEvent {
 }
 
 export interface WSMessage {
-  type: "snapshot" | "update" | "alert" | "transition" | "early" | "watch" | "ping";
+  type:
+    | "snapshot"
+    | "update"
+    | "alert"
+    | "transition"
+    | "early"
+    | "watch"
+    | "ping"
+    | "alert_tendencia"
+    | "alert_ignicion";
   ts: number;
   pairs?: PairState[];
+  // En "update" el backend manda solo los pares que cambiaron; `removed` lista
+  // los que dejaron de estar en el listado y hay que quitar del mapa.
+  removed?: string[];
   // For single-pair events:
   symbol?: string;
   tier?: string;
   score?: number;
   display_state?: string;
+  // Alertas de perfil (tendencia sostenida / ignicion)
+  perfil?: string;
+  perfil_score?: number;
+  perfil_reason?: string;
 }

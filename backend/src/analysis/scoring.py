@@ -98,13 +98,16 @@ def score_and_tier(
             val += 14
         elif flow.sell_dominant:
             val -= 22
-    if not confirmed and fsm_state != "BOTTOMING":
-        val = min(val, s.tier_fuerte - 1)
-
     val = max(0, min(100, val))
 
     # Gate macro: multiplica el score segun tendencia global
     val, _mult = aplicar_gate(val, fsm_state, macro_global)
+
+    # Techo por falta de confirmacion de flujo — DESPUES del gate.
+    # Antes se aplicaba antes, y gate_alcista_rising_mult=1.30 lo anulaba:
+    # 79 * 1.30 = 102 -> clip 100 -> EXTRA-FUERTE sin confirmacion alguna.
+    if not confirmed and fsm_state != "BOTTOMING":
+        val = min(val, s.tier_fuerte - 1)
 
     # Clasificar en tier
     score_min = score_minimo_requerido(macro_global)

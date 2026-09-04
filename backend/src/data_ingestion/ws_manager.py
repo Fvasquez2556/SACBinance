@@ -147,8 +147,14 @@ class WSManager:
                     await self.engine.on_live_candle(
                         symbol, candle.t, candle.o, candle.h, candle.l, candle.c, candle.v
                     )
-            elif interval == "5m" and closed:
-                self.engine.on_htf_candle(symbol, "5m", candle)
+            elif interval == "5m":
+                if closed:
+                    self.engine.on_htf_candle(symbol, "5m", candle)
+                elif "5m" in get_settings().htf_live_tfs_list:
+                    # Por defecto htf_live_tfs = "15m,1h", asi que 5m no entra.
+                    # Se filtra aqui y no dentro de on_htf_live para no crear
+                    # ~250 corrutinas por segundo que solo hacen `return`.
+                    await self.engine.on_htf_live(symbol, "5m", candle)
 
         elif "@aggTrade" in stream:
             symbol = data.get("s", "")
@@ -167,11 +173,14 @@ class WSManager:
         if "@kline_" not in stream:
             return
         k = data.get("k", {})
-        if not k or not k.get("x", False):
+        if not k:
             return
 
         symbol = k.get("s", "")
         interval = k.get("i", "")
+        if interval not in ("15m", "1h"):
+            return
+
         candle = Candle(
             t=int(k["t"]),
             o=float(k["o"]),
@@ -180,19 +189,43 @@ class WSManager:
             c=float(k["c"]),
             v=float(k["q"]),
         )
-        if interval in ("15m", "1h"):
+        if k.get("x", False):
             self.engine.on_htf_candle(symbol, interval, candle)
+        else:
+            # Vela en formacion: es lo que Binance dibuja y sobre lo que
+            # recalcula sus indicadores. Descartarla era la causa del desfase.
+            await self.engine.on_htf_live(symbol, interval, candle)
 
-    def update_shortlist(self, symbols: List[str]) -> None:
-        """Actualiza la shortlist de aggTrade (requiere reconectar WS-A)."""
+    async def update_shortlist(self, symbols: List[str]) -> None:
+        """
+        Actualiza la shortlist de aggTrade. Requiere reconectar WS-A, asi que
+        solo se hace si el cambio es significativo (shortlist_min_churn) para
+        no entrar en tormenta de reconexiones.
+        """
+        s = get_settings()
         new_set = set(symbols)
         if new_set == self._shortlist:
             return
+
+        if self._shortlist:
+            churn = len(new_set ^ self._shortlist) / max(len(self._shortlist), 1)
+            if churn < s.shortlist_min_churn:
+                logger.debug(f"Shortlist: churn {churn:.0%} < umbral, no reconecto")
+                return
+
         self._shortlist = new_set
-        logger.info(f"Shortlist aggTrade actualizada: {len(new_set)} pares")
-        # Reconectar WS-A para incluir/excluir streams aggTrade
+        logger.info(f"Shortlist aggTrade actualizada: {len(new_set)} pares — reconectando WS-A")
+
+        # Cierre limpio ANTES de abrir la nueva (antes se cancelaba sin await,
+        # lo que podia dejar dos conexiones WS-A vivas a la vez).
+        if self._ws_a:
+            self._ws_a.stop()
         if self._task_a and not self._task_a.done():
             self._task_a.cancel()
+            try:
+                await self._task_a
+            except (asyncio.CancelledError, Exception):
+                pass
         self._start_ws_a()
 
     def _start_ws_a(self) -> None:

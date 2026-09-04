@@ -60,6 +60,19 @@ CREATE TABLE IF NOT EXISTS klines (
 );
 """
 
+_CREATE_META = """
+CREATE TABLE IF NOT EXISTS schema_meta (
+    key   TEXT PRIMARY KEY,
+    value TEXT
+);
+"""
+
+# Version del esquema/semantica de datos. Se sube cuando un cambio hace que
+# las filas ya guardadas sean incompatibles con las nuevas.
+#   1 -> 2: `klines.v` paso de volumen BASE (kline[5]) a volumen QUOTE
+#           (kline[7]), para cuadrar con lo que entrega el WebSocket (k["q"]).
+SCHEMA_VERSION = 2
+
 _CREATE_SIGNALS = """
 CREATE TABLE IF NOT EXISTS signals (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,15 +104,87 @@ class Database:
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA synchronous=NORMAL")
         self._init_schema()
+        # Escritura diferida: antes cada vela 1m de cada par hacia INSERT +
+        # commit() sincronico en el event loop (~250 commits/minuto, cada uno
+        # una syscall bloqueante). Ahora se acumulan y se vuelcan en lote.
+        self._pending_klines: list = []
+        self._dirty = False
         logger.info(f"SQLite inicializado: {path}")
+
+    # --- Escritura diferida ------------------------------------------------
+
+    def flush(self) -> int:
+        """Vuelca klines pendientes y hace commit. Devuelve filas escritas."""
+        n = 0
+        if self._pending_klines:
+            rows, self._pending_klines = self._pending_klines, []
+            try:
+                self._conn.executemany(
+                    """INSERT OR REPLACE INTO klines
+                       (symbol, tf, open_time, o, h, l, c, v)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    rows,
+                )
+                n = len(rows)
+                self._dirty = True
+            except Exception as e:
+                logger.debug(f"flush klines error: {e}")
+        if self._dirty:
+            try:
+                self._conn.commit()
+                self._dirty = False
+            except Exception as e:
+                logger.debug(f"flush commit error: {e}")
+        return n
 
     def _init_schema(self) -> None:
         for ddl in (
             _CREATE_SYMBOL_STATES, _CREATE_ANALYSIS_LOG, _CREATE_PAIR_META,
-            _CREATE_SIGNALS, _CREATE_KLINES,
+            _CREATE_SIGNALS, _CREATE_KLINES, _CREATE_META,
         ):
             self._conn.executescript(ddl)
         self._conn.commit()
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """
+        Migraciones por version de esquema.
+
+        v1 -> v2: hasta ahora la hidratacion REST guardaba kline[5] (volumen
+        BASE, en moneda) mientras que el WebSocket entrega k["q"] (volumen
+        QUOTE, en USDT). Convivian en el mismo buffer y en la misma tabla. Como
+        quote = base x precio, para un par de precio alto la diferencia son
+        varios ordenes de magnitud: vol_ratio, blow_off y breakout comparan la
+        vela actual contra la SMA del buffer, asi que la mezcla los deja sin
+        sentido hasta que las velas viejas envejecen y salen.
+
+        No se pueden convertir las filas viejas (haria falta el precio medio
+        real de cada vela, que no se guardo), asi que se descartan: el
+        hidratador las vuelve a bajar por REST ya en quote.
+        """
+        row = self._conn.execute(
+            "SELECT value FROM schema_meta WHERE key = 'version'"
+        ).fetchone()
+        version = int(row[0]) if row else 0
+
+        if version == SCHEMA_VERSION:
+            return
+
+        if version < 2:
+            n = self._conn.execute("SELECT COUNT(*) FROM klines").fetchone()[0]
+            if n:
+                self._conn.execute("DELETE FROM klines")
+                logger.warning(
+                    f"Migracion v{version}->2: {n} velas descartadas — estaban en "
+                    "volumen base y ahora se guarda volumen quote. Se rehidrata por REST."
+                )
+
+        self._conn.execute(
+            "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('version', ?)",
+            (str(SCHEMA_VERSION),),
+        )
+        self._conn.commit()
+        logger.info(f"Esquema de la DB en version {SCHEMA_VERSION}")
 
     def save_state(
         self,
@@ -118,7 +203,7 @@ class Database:
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (symbol, ts_ms, state, fsm_state, score, tier, macro, price),
         )
-        self._conn.commit()
+        self._dirty = True  # commit diferido en flush()
 
     def get_history(self, symbol: str, hours: int = 24) -> List[dict]:
         cutoff = int((time.time() - hours * 3600) * 1000)
@@ -166,7 +251,7 @@ class Database:
             "INSERT INTO analysis_log (ts_ms, symbol, level, message) VALUES (?, ?, ?, ?)",
             (ts_ms, symbol, level, message),
         )
-        self._conn.commit()
+        self._dirty = True  # commit diferido en flush()
 
     def get_logs(self, limit: int = 200) -> List[dict]:
         cur = self._conn.execute(
@@ -275,13 +360,12 @@ class Database:
     # --- Klines (checkpoint de velas OHLCV) ----------------------------------
 
     def save_kline(self, symbol: str, tf: str, candle) -> None:
-        """Guarda/actualiza una vela cerrada (idempotente)."""
-        self._conn.execute(
-            """INSERT OR REPLACE INTO klines (symbol, tf, open_time, o, h, l, c, v)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (symbol, tf, candle.t, candle.o, candle.h, candle.l, candle.c, candle.v),
+        """Encola una vela cerrada (idempotente). Se escribe en flush()."""
+        self._pending_klines.append(
+            (symbol, tf, candle.t, candle.o, candle.h, candle.l, candle.c, candle.v)
         )
-        self._conn.commit()
+        if len(self._pending_klines) >= get_settings().db_flush_max_pending:
+            self.flush()
 
     def save_klines(self, symbol: str, tf: str, candles: list) -> None:
         """Guarda un lote de velas (idempotente, una sola transaccion)."""
@@ -333,6 +417,12 @@ class Database:
         return c1.rowcount + c2.rowcount
 
     def close(self) -> None:
+        """Vuelca lo pendiente antes de cerrar: con escritura diferida, cerrar
+        sin flush pierde todo lo acumulado desde el ultimo volcado."""
+        try:
+            self.flush()
+        except Exception as e:
+            logger.debug(f"close/flush error: {e}")
         self._conn.close()
 
 

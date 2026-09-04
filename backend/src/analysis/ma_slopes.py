@@ -11,15 +11,11 @@ from typing import List, Optional, Sequence
 import numpy as np
 
 from src.config.settings import get_settings
+from src.utils.fastmath import ema as _fast_ema
 
 
 def _ema(closes: np.ndarray, period: int) -> np.ndarray:
-    a = 2.0 / (period + 1.0)
-    out = np.empty_like(closes)
-    out[0] = closes[0]
-    for i in range(1, len(closes)):
-        out[i] = a * closes[i] + (1.0 - a) * out[i - 1]
-    return out
+    return _fast_ema(closes, period)
 
 
 def calcular_slope(ma_series: Sequence[float], periodos: int) -> float:

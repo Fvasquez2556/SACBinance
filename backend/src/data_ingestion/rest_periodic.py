@@ -90,7 +90,7 @@ async def _poll_tf(tf: str, symbols: List[str], engine) -> None:
                             h=float(row[2]),
                             l=float(row[3]),
                             c=float(row[4]),
-                            v=float(row[5]),
+                            v=float(row[7]),  # quote volume — coherente con el WS
                         )
                         engine.on_htf_candle(sym, tf, candle)
                         updated += 1

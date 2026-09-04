@@ -73,15 +73,29 @@ export function useWebSocket() {
             for (const p of msg.pairs) map.set(p.symbol, p);
             setPairs(map);
             setLastTs(msg.ts);
-          } else if (msg.type === "update" && msg.pairs) {
-            setPairs((prev) => {
-              const next = new Map(prev);
-              for (const p of msg.pairs!) next.set(p.symbol, p);
-              return next;
-            });
+          } else if (msg.type === "update") {
+            // Broadcast diferencial: `pairs` trae solo los que cambiaron y
+            // `removed` los que salieron del listado. Sin borrar estos ultimos
+            // las filas viejas se quedarian pegadas para siempre.
+            const changed = msg.pairs ?? [];
+            const removed = msg.removed ?? [];
+            if (changed.length || removed.length) {
+              setPairs((prev) => {
+                const next = new Map(prev);
+                for (const p of changed) next.set(p.symbol, p);
+                for (const sym of removed) next.delete(sym);
+                return next;
+              });
+            }
             setLastTs(msg.ts);
           } else if (
-            ["alert", "transition", "early"].includes(msg.type) &&
+            [
+              "alert",
+              "transition",
+              "early",
+              "alert_tendencia",
+              "alert_ignicion",
+            ].includes(msg.type) &&
             msg.symbol
           ) {
             setPairs((prev) => {

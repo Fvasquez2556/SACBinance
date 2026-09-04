@@ -40,8 +40,15 @@ class Settings(BaseSettings):
     candle_buffer_1d: int = Field(default=180)   # 180 dias de velas 1d
 
     # --- Scanner / shortlist (hereda de v2) ---
+    # La shortlist decide que pares reciben stream aggTrade (flujo agresor).
+    # Hasta ahora update_shortlist() no la llamaba NADIE: _shortlist quedaba
+    # vacia para siempre -> cero streams aggTrade -> flow_snap siempre default
+    # -> `confirmed` siempre False -> todo par capado a 79. Ahora hay un loop
+    # en main.py que la recalcula cada shortlist_refresh_seconds.
     shortlist_max: int = Field(default=40)
     shortlist_z_threshold: float = Field(default=2.0)
+    shortlist_refresh_seconds: int = Field(default=180)
+    shortlist_min_churn: float = Field(default=0.25)  # % de cambio para reconectar WS-A
     price_tape_seconds: int = Field(default=360)
 
     # --- Regularizador visual ---
@@ -49,8 +56,28 @@ class Settings(BaseSettings):
     regularizer_deadband_pct: float = Field(default=0.20)
 
     # --- Ruta provisional ---
-    live_min_interval: float = Field(default=2.0)
+    live_min_interval: float = Field(default=1.0)
     tick_interval: float = Field(default=4.0)
+
+    # --- Velas HTF en formacion (nuevo) ---
+    # Binance dibuja la vela 15m/1h EN FORMACION y recalcula sus indicadores
+    # tick a tick. Antes descartabamos k["x"]==False, asi que la tendencia 15m
+    # podia tener 15 min de antiguedad y la de 1h hasta 60 min: esa era la
+    # causa real del "desfase" contra la app, no la carga de CPU.
+    htf_live_enabled: bool = Field(default=True)
+    htf_live_min_interval: float = Field(default=3.0)   # recalculo por par/TF
+    htf_live_tfs: str = Field(default="15m,1h")
+
+    # --- Throttling de analisis pesado ---
+    # S/R sobre 1h y consolidacion sobre 15m no cambian en 60 segundos. Para
+    # pares no interesantes se recalculan cada heavy_interval en vez de en
+    # cada vela 1m de cada uno de los ~250 pares.
+    heavy_analysis_interval: float = Field(default=300.0)
+    engine_yield_every: int = Field(default=25)  # cede el event loop cada N velas
+
+    # --- Persistencia diferida ---
+    db_flush_interval: float = Field(default=5.0)
+    db_flush_max_pending: int = Field(default=500)
 
     # --- Flujo agresor (aggTrade) ---
     flow_min_trades: int = Field(default=8)
@@ -98,6 +125,7 @@ class Settings(BaseSettings):
     gate_alcista_rising_mult: float = Field(default=1.30)   # RISING + macro alcista = amplificado
     gate_alcista_valley_mult: float = Field(default=1.20)   # VALLEY + macro alcista
     gate_neutral_score_floor: int = Field(default=75)       # umbral mas alto cuando macro neutral
+    gate_bajista_score_floor: int = Field(default=85)       # ir contra la macro: lo mas exigente
 
     # --- Consolidacion (ATR adaptativo) ---
     atr_period: int = Field(default=14)
@@ -155,12 +183,65 @@ class Settings(BaseSettings):
     sr_min_touches: int = Field(default=2)          # toques minimos para validar un nivel
     sr_max_levels: int = Field(default=6)           # niveles a conservar por lado
 
+    # --- Ancla diaria fija (00:00 UTC) ---
+    # Reemplaza la ventana rolling 24h de Binance, cuyo denominador se mueve
+    # solo y hace que el % cambie aunque el precio no haga nada.
+    daily_anchor_enabled: bool = Field(default=True)
+
+    # --- ALERTA A: tendencia sostenida (grind) ---
+    grind_window_15m: int = Field(default=16)          # 16 velas 15m = 4 horas
+    grind_r2_min: float = Field(default=0.70)          # que tan "recta" la subida
+    grind_slope_min_pct_h: float = Field(default=0.25) # minimo %/hora
+    grind_slope_max_pct_h: float = Field(default=3.0)  # por encima ya es ignicion
+    grind_max_pullback_pct: float = Field(default=2.5) # retroceso maximo tolerado
+    grind_min_above_ema: float = Field(default=0.70)   # % de cierres sobre EMA25
+    grind_score_min: int = Field(default=65)
+
+    # --- ALERTA B: ignicion (explosion) ---
+    ignition_window_1m: int = Field(default=5)
+    ignition_roc_min_pct: float = Field(default=1.2)
+    ignition_vol_mult: float = Field(default=2.5)
+    ignition_z_min: float = Field(default=2.0)
+    ignition_rsi_max: float = Field(default=82.0)
+    ignition_max_consumido_pct: float = Field(default=6.0)
+    ignition_pct_dia_alto: float = Field(default=12.0)  # % desde open diario ya "caro"
+    ignition_score_min: int = Field(default=70)
+
+    # --- CAPA 1: compresion con contracciones progresivas ---
+    compresion_window: int = Field(default=96)          # 96 velas 15m = 24h
+    compresion_pivot_k: int = Field(default=2)          # fractal: k velas a cada lado
+    compresion_atr_period: int = Field(default=14)
+    compresion_atr_percentil_max: int = Field(default=35)
+    compresion_min_contracciones: int = Field(default=2)
+    compresion_max_contracciones: int = Field(default=5)
+    compresion_min_profundidad_pct: float = Field(default=0.8)
+    compresion_ratio_max: float = Field(default=0.85)   # progresiva: cada una < anterior
+    compresion_half_min: float = Field(default=0.30)    # "regla de la mitad"
+    compresion_half_max: float = Field(default=0.70)
+    compresion_rango_max_pct: float = Field(default=12.0)
+    compresion_vol_dryup_max: float = Field(default=0.75)
+    compresion_cerca_pivot_pct: float = Field(default=1.5)
+    compresion_base_velas: int = Field(default=20)
+    compresion_score_min: int = Field(default=60)
+
+    # --- CAPA 1: taxonomia ---
+    # % desde el ancla diaria por debajo del cual una base se considera
+    # "post-caida" y no acumulacion tranquila
+    taxonomia_caida_dia_pct: float = Field(default=-3.0)
+
+    # Cooldown por par y por tipo de alerta (evita spam de la misma senal)
+    alert_cooldown_minutes: int = Field(default=30)
+
     # --- API ---
     api_host: str = Field(default="0.0.0.0")
     api_port: int = Field(default=8000)
     cors_origins: str = Field(default="http://localhost:5173,http://127.0.0.1:5173")
 
     log_level: str = Field(default="INFO")
+
+    @property
+    def htf_live_tfs_list(self) -> List[str]:
+        return [t.strip() for t in self.htf_live_tfs.split(",") if t.strip()]
 
     @property
     def cors_origins_list(self) -> List[str]:

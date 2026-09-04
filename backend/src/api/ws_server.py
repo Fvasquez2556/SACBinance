@@ -33,6 +33,21 @@ def _dumps(obj) -> str:
 _clients: Set[WebSocket] = set()
 _engine = None
 
+# Hash del ultimo snapshot enviado por par (broadcast diferencial).
+# El docstring del modulo ya prometia "solo pares que cambian", pero
+# broadcast_loop mandaba snapshot_all() COMPLETO cada 2s.
+_last_sent: dict = {}
+
+# Campos derivados del reloj: cambian en cada snapshot aunque el par este
+# completamente quieto. Si entraran al hash, todo par contaria como "cambiado"
+# siempre y el broadcast diferencial no ahorraria un solo byte.
+_VOLATILE_FIELDS = ("htf_live_age_ms",)
+
+
+def _fingerprint(pair: dict) -> int:
+    """Hash del par ignorando los campos que dependen solo del reloj."""
+    return hash(_dumps({k: v for k, v in pair.items() if k not in _VOLATILE_FIELDS}))
+
 
 def set_engine(engine) -> None:
     global _engine
@@ -102,11 +117,30 @@ async def broadcast_loop(engine, interval: float = 2.0) -> None:
             continue
         try:
             pairs = engine.snapshot_all(min_score=s.score_min_dashboard)
-            if pairs:
+            if not pairs:
+                continue
+
+            changed = []
+            vistos = set()
+            for p in pairs:
+                sym = p.get("symbol")
+                vistos.add(sym)
+                h = _fingerprint(p)
+                if _last_sent.get(sym) != h:
+                    _last_sent[sym] = h
+                    changed.append(p)
+
+            # Pares que salieron del listado: avisar una vez y olvidar
+            salidos = [sym for sym in _last_sent if sym not in vistos]
+            for sym in salidos:
+                _last_sent.pop(sym, None)
+
+            if changed or salidos:
                 await broadcast({
                     "type": "update",
                     "ts": int(time.time() * 1000),
-                    "pairs": pairs,
+                    "pairs": changed,
+                    "removed": salidos,
                 })
         except Exception as e:
             logger.debug(f"broadcast_loop error: {e}")

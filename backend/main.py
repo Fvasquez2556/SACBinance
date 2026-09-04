@@ -39,7 +39,7 @@ logger = get_logger("main")
 app = FastAPI(title="SACBinance v3", version="3.0.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=get_settings().cors_origins_list,  # antes estaba hardcodeado a ["*"]
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -123,15 +123,83 @@ async def startup():
     # 7. REST periodico 4h + 1d
     await start_rest_periodic(symbols, engine)
 
-    # 8. Broadcast periodico al frontend
+    # 8. Shortlist aggTrade (flujo agresor) — NUEVO
+    # Sin esto _shortlist quedaba vacia para siempre y toda la capa de flujo
+    # agresor estaba muerta: `confirmed` nunca era True y todos los pares
+    # quedaban capados a score 79.
+    asyncio.create_task(_shortlist_loop(engine, ws_mgr))
+
+    # 9. Volcado periodico de la escritura diferida a SQLite
+    asyncio.create_task(_db_flush_loop(db))
+
+    # 10. Broadcast periodico al frontend
     asyncio.create_task(broadcast_loop(engine, interval=2.0))
 
-    # 9. Purga periodica de la base de datos (rolling)
+    # 11. Purga periodica de la base de datos (rolling)
     asyncio.create_task(_prune_loop(db))
 
     logger.info("=" * 60)
     logger.info(f"SACBinance v3 ACTIVO | {len(symbols)} pares | API: :{s.api_port}")
     logger.info("=" * 60)
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    """
+    Con escritura diferida, cerrar sin volcar pierde todo lo acumulado desde el
+    ultimo flush (hasta db_flush_interval de estados, logs y velas). Un
+    `systemctl restart` pasa por aqui.
+    """
+    # Se lee el singleton directamente: get_db() crearia una conexion nueva si
+    # aun no hubiera ninguna, que es justo lo que no queremos al apagar.
+    from src.persistence import db as db_mod
+    db = db_mod._db
+    if db is not None:
+        try:
+            n = db.flush()
+            db.close()
+            logger.info(f"DB cerrada limpiamente ({n} velas volcadas)")
+        except Exception as e:
+            logger.warning(f"Error cerrando la DB: {e}")
+
+
+async def _shortlist_loop(engine, ws_mgr) -> None:
+    """
+    Recalcula periodicamente el top-N de pares por |z| y se lo pasa al WSManager
+    para que abra streams aggTrade solo sobre ellos.
+    """
+    s = get_settings()
+    while True:
+        await asyncio.sleep(s.shortlist_refresh_seconds)
+        try:
+            ranked = sorted(
+                engine.states.values(),
+                key=lambda st: max(abs(st.metrics.z_rise), abs(st.metrics.z_drop)),
+                reverse=True,
+            )
+            top = [
+                st.symbol for st in ranked[: s.shortlist_max]
+                if max(abs(st.metrics.z_rise), abs(st.metrics.z_drop))
+                >= s.shortlist_z_threshold
+            ]
+            # Siempre incluir BTC: alimenta el gate de regimen global
+            if s.btc_symbol not in top:
+                top.append(s.btc_symbol)
+            if top:
+                await ws_mgr.update_shortlist(top)
+        except Exception as e:
+            logger.debug(f"shortlist_loop error: {e}")
+
+
+async def _db_flush_loop(db) -> None:
+    """Volcado periodico de klines/estados encolados (escritura diferida)."""
+    s = get_settings()
+    while True:
+        await asyncio.sleep(s.db_flush_interval)
+        try:
+            db.flush()
+        except Exception as e:
+            logger.debug(f"db_flush_loop error: {e}")
 
 
 async def _prune_loop(db) -> None:
