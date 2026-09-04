@@ -20,6 +20,7 @@ from src.analysis.levels import detectar_niveles
 from src.analysis.ma_slopes import analizar_tf
 from src.analysis.macro_gate import aplicar_gate, calcular_tendencia_global
 from src.analysis.scoring import score_and_tier
+from src.analysis.outcome_tracker import OutcomeTracker
 from src.analysis.signal_tracker import abrir_senal, evaluar_senales
 from src.analysis.trade_levels import calcular_niveles
 from src.config.settings import get_settings
@@ -153,6 +154,7 @@ class StateEngine:
         self._last_tier: Dict[str, str] = {}
         self._last_live: Dict[str, float] = {}
         self._db = None
+        self._outcomes: Optional[OutcomeTracker] = None
         # Caches del analisis pesado (ver throttling en on_closed_candle)
         self._sr_cache: Dict[str, object] = {}
         self._cons_cache: Dict[str, object] = {}
@@ -167,6 +169,10 @@ class StateEngine:
 
     def set_db(self, db) -> None:
         self._db = db
+        # El tracker de outcomes vive junto a la DB: al reanudar recupera las
+        # señales que seguia antes del reinicio.
+        self._outcomes = OutcomeTracker(db)
+        self._outcomes.cargar()
 
     def _log_db(self, symbol: Optional[str], level: str, message: str) -> None:
         """Persiste un evento clave en analysis_log (no bloquea si falla)."""
@@ -297,6 +303,14 @@ class StateEngine:
                 self._db.save_kline(symbol, "1m", candle)
             except Exception:
                 pass
+
+        # Seguimiento del camino completo (independiente de TP/SL: mide que
+        # paso DESPUES del stop, que es lo que evaluar_senales no puede ver)
+        if self._outcomes is not None:
+            try:
+                self._outcomes.on_candle(symbol, t, h, l, c)
+            except Exception as e:
+                logger.debug(f"[{symbol}] outcome_tracker error: {e}")
 
         # Auto-evaluacion: la vela nueva puede tocar TP/SL de señales abiertas
         cerradas = evaluar_senales(symbol, h, l, c, self._db)
@@ -562,7 +576,12 @@ class StateEngine:
             snap = st.snapshot()
 
             # Auto-evaluacion: registrar la señal para medir su resultado
-            abrir_senal(symbol, snap, self._db)
+            sig_id = abrir_senal(symbol, snap, self._db)
+            if sig_id is not None and self._outcomes is not None:
+                try:
+                    self._outcomes.abrir(sig_id, symbol, now_ms, snap, st.trade_levels)
+                except Exception as e:
+                    logger.debug(f"[{symbol}] abrir outcome error: {e}")
 
             tl = st.trade_levels
             niveles_txt = ""

@@ -116,6 +116,11 @@ async def startup():
         st.macro_global = calcular_tendencia_global(st.macro_trends)
     logger.info(f"Estado inicial calculado en {time.monotonic()-t0:.1f}s")
 
+    # 5b. Outcomes: reconstruir el camino de las señales que siguen abiertas
+    # usando las velas 1m recien hidratadas (cubre el hueco de un reinicio).
+    if engine._outcomes is not None:
+        engine._outcomes.backfill(engine)
+
     # 6. WebSockets Binance
     ws_mgr = WSManager(symbols, engine)
     await ws_mgr.start()

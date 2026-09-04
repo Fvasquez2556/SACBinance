@@ -173,6 +173,14 @@ class Settings(BaseSettings):
     # --- Auto-evaluacion de señales ---
     signal_expiry_hours: int = Field(default=12)    # cierra como EXPIRED tras N horas
 
+    # --- Medicion de outcomes (camino completo de cada señal) ---
+    # A diferencia de signal_expiry_hours, esta ventana NO cierra la señal:
+    # sigue el precio pase lo que pase con TP/SL, para poder responder que
+    # hizo despues de tocar el stop.
+    outcome_window_hours: int = Field(default=24)
+    # Retroceso (%) a partir del cual el camino deja de considerarse "directo"
+    forma_dip_umbral: float = Field(default=1.0)
+
     # --- Deteccion de fakeout ---
     fakeout_lookback_candles: int = Field(default=15)   # velas 1m tras breakout
     fakeout_penalty_minutes: int = Field(default=30)    # duracion de la penalizacion

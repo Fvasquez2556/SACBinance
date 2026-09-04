@@ -90,19 +90,31 @@ def evaluar_senales(symbol: str, high: float, low: float, close: float, db) -> L
         if not entry or entry <= 0:
             continue
 
-        hit_sl = low <= sl
-        hit_tp = high >= tp
-
-        if hit_sl:  # conservador: si toca ambos en la misma vela, gana el SL
-            status, exit_price = "SL", sl
-        elif hit_tp:
-            status, exit_price = "TP", tp
-        elif now_ms - sig["ts_open"] >= expiry_ms:
+        # La caducidad se comprueba PRIMERO. Si se mirara TP/SL antes, una
+        # señal que quedo abierta mientras el sistema estuvo apagado se
+        # calificaria contra el precio de hoy: al reanudar aparecian señales
+        # de hace meses cerradas como TP porque el precio actual superaba un
+        # objetivo puesto en su dia. Eso inflaba el win rate con ruido.
+        edad_ms = now_ms - sig["ts_open"]
+        if edad_ms >= expiry_ms * 2:
+            # Tan vieja que el sistema no pudo estar siguiendola (estuvo
+            # apagado). No sabemos que hizo el precio mientras tanto, asi que
+            # se marca STALE sin resultado en vez de inventar uno: las
+            # estadisticas la ignoran.
+            status, exit_price = "STALE", None
+        elif edad_ms >= expiry_ms:
             status, exit_price = "EXPIRED", close
+        elif low <= sl:  # conservador: si toca ambos en la misma vela, gana el SL
+            status, exit_price = "SL", sl
+        elif high >= tp:
+            status, exit_price = "TP", tp
         else:
             continue
 
-        result_pct = round((exit_price - entry) / entry * 100.0, 3)
+        result_pct = (
+            None if exit_price is None
+            else round((exit_price - entry) / entry * 100.0, 3)
+        )
         try:
             db.close_signal(sig["id"], status, result_pct, now_ms)
         except Exception as e:

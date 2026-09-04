@@ -60,6 +60,43 @@ CREATE TABLE IF NOT EXISTS klines (
 );
 """
 
+_CREATE_OUTCOMES = """
+CREATE TABLE IF NOT EXISTS outcomes (
+    signal_id     INTEGER PRIMARY KEY,
+    symbol        TEXT    NOT NULL,
+    ts_open       INTEGER NOT NULL,
+    ts_last       INTEGER,
+    entry         REAL    NOT NULL,
+    take_profit   REAL,
+    stop_loss     REAL,
+    tp_pct        REAL,
+    sl_pct        REAL,
+    display_state TEXT,
+    tier          TEXT,
+    score         INTEGER,
+    macro         TEXT,
+    taxonomia     TEXT,
+    -- Excursiones maximas dentro de la ventana
+    mfe_pct       REAL    DEFAULT 0,
+    mae_pct       REAL    DEFAULT 0,
+    ms_mfe        INTEGER,
+    ms_mae        INTEGER,
+    -- Primer cruce de cada umbral, en ms desde la apertura. NULL = no llego.
+    ms_up_1       INTEGER, ms_up_2  INTEGER, ms_up_32 INTEGER,
+    ms_up_5       INTEGER, ms_up_10 INTEGER,
+    ms_dn_1       INTEGER, ms_dn_2  INTEGER, ms_dn_32 INTEGER,
+    ms_dn_5       INTEGER, ms_dn_10 INTEGER,
+    ms_tp         INTEGER, ms_sl    INTEGER,
+    -- Camino hasta +3.2%
+    dip_antes_obj REAL,
+    forma         TEXT,
+    n_velas       INTEGER DEFAULT 0,
+    cerrado       INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_out_cerrado ON outcomes (cerrado, ts_open DESC);
+CREATE INDEX IF NOT EXISTS idx_out_symbol  ON outcomes (symbol, ts_open DESC);
+"""
+
 _CREATE_META = """
 CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
@@ -71,7 +108,9 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 # las filas ya guardadas sean incompatibles con las nuevas.
 #   1 -> 2: `klines.v` paso de volumen BASE (kline[5]) a volumen QUOTE
 #           (kline[7]), para cuadrar con lo que entrega el WebSocket (k["q"]).
-SCHEMA_VERSION = 2
+#   2 -> 3: se marcan STALE las señales calificadas contra un precio muy
+#           posterior a su apertura (el sistema estuvo apagado en medio).
+SCHEMA_VERSION = 3
 
 _CREATE_SIGNALS = """
 CREATE TABLE IF NOT EXISTS signals (
@@ -140,7 +179,7 @@ class Database:
     def _init_schema(self) -> None:
         for ddl in (
             _CREATE_SYMBOL_STATES, _CREATE_ANALYSIS_LOG, _CREATE_PAIR_META,
-            _CREATE_SIGNALS, _CREATE_KLINES, _CREATE_META,
+            _CREATE_SIGNALS, _CREATE_KLINES, _CREATE_META, _CREATE_OUTCOMES,
         ):
             self._conn.executescript(ddl)
         self._conn.commit()
@@ -177,6 +216,25 @@ class Database:
                 logger.warning(
                     f"Migracion v{version}->2: {n} velas descartadas — estaban en "
                     "volumen base y ahora se guarda volumen quote. Se rehidrata por REST."
+                )
+
+        if version < 3:
+            # Señales cerradas mucho despues de abrirse: el sistema estuvo
+            # apagado y al reanudar se calificaron contra el precio del dia,
+            # no contra lo que hizo el precio en su momento. Su resultado no
+            # significa nada, asi que se sacan de las estadisticas.
+            limite_ms = get_settings().signal_expiry_hours * 3600_000 * 2
+            cur = self._conn.execute(
+                """UPDATE signals SET status = 'STALE', result_pct = NULL
+                   WHERE status IN ('TP','SL','EXPIRED')
+                     AND ts_close IS NOT NULL
+                     AND ts_close - ts_open > ?""",
+                (limite_ms,),
+            )
+            if cur.rowcount:
+                logger.warning(
+                    f"Migracion v{version}->3: {cur.rowcount} señales marcadas STALE "
+                    "(se cerraron con precios de mucho despues; falseaban el win rate)"
                 )
 
         self._conn.execute(
@@ -320,6 +378,43 @@ class Database:
             (status, result_pct, ts_close, signal_id),
         )
         self._conn.commit()
+
+    # --- Outcomes (seguimiento del camino de cada señal) ---------------------
+
+    def abrir_outcome(self, row: dict) -> None:
+        """Registra el outcome de una señal recien abierta (idempotente)."""
+        cols = ", ".join(row.keys())
+        marks = ", ".join("?" * len(row))
+        self._conn.execute(
+            f"INSERT OR IGNORE INTO outcomes ({cols}) VALUES ({marks})",
+            tuple(row.values()),
+        )
+        self._dirty = True
+
+    def get_outcomes_abiertos(self) -> List[dict]:
+        cur = self._conn.execute("SELECT * FROM outcomes WHERE cerrado = 0")
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, r)) for r in cur.fetchall()]
+
+    def guardar_outcome(self, signal_id: int, campos: dict) -> None:
+        if not campos:
+            return
+        sets = ", ".join(f"{k} = ?" for k in campos)
+        self._conn.execute(
+            f"UPDATE outcomes SET {sets} WHERE signal_id = ?",
+            (*campos.values(), signal_id),
+        )
+        self._dirty = True
+
+    def get_outcomes(self, solo_cerrados: bool = True, limit: int = 5000) -> List[dict]:
+        cur = self._conn.execute(
+            "SELECT * FROM outcomes"
+            + (" WHERE cerrado = 1" if solo_cerrados else "")
+            + " ORDER BY ts_open DESC LIMIT ?",
+            (limit,),
+        )
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, r)) for r in cur.fetchall()]
 
     def get_signal_stats(self) -> dict:
         cur = self._conn.execute(

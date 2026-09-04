@@ -15,6 +15,17 @@ if (-not (Test-Path $Python)) {
 }
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory $LogDir | Out-Null }
 
+# Instancia unica. systemd lo garantiza por si mismo; aqui hay que pedirlo.
+# Sin esto, lanzar el script dos veces deja dos bucles peleando por el puerto:
+# uno arranca, el otro falla, reintenta a los 10s, y el log se llena de
+# arranques a medias que parecen un crash-loop.
+$mutex = New-Object System.Threading.Mutex($false, "Global\SACBinance")
+if (-not $mutex.WaitOne(0)) {
+    Write-Host "Ya hay una instancia de SACBinance corriendo. Nada que hacer." -ForegroundColor Yellow
+    Write-Host "Para pararla:  deploy\stop.ps1"
+    exit 0
+}
+
 Set-Location $Backend
 Write-Host "SACBinance v3 — http://localhost:8000   (Ctrl+C para parar)" -ForegroundColor Green
 
