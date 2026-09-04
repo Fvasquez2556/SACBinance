@@ -54,6 +54,54 @@ export interface ConsolidationInfo {
   candles_in_state: number;
 }
 
+export type FaseImpulso =
+  | "ACELERANDO"
+  | "SOSTENIDA"
+  | "DESACELERANDO"
+  | "AGOTADA"
+  | "SIN_DATOS";
+
+/** Fuerza del impulso: la derivada (¿sigue subiendo?), no la magnitud. */
+export interface Impulso {
+  valid: boolean;
+  fuerza: number;
+  fase: FaseImpulso;
+  aceleracion: number | null;
+  cuerpo_ratio: number | null;
+  vol_ratio: number | null;
+  consumido_pct: number | null;
+  reason: string;
+}
+
+/**
+ * Alerta con entry CONGELADO en la emisión. `entry`, `take_profit` y
+ * `stop_loss` no cambian nunca; `delta_pct` se mide siempre contra ese entry.
+ */
+export interface AlertaActiva {
+  symbol: string;
+  ts_emision: number;
+  edad_min: number;
+  entry: number;
+  take_profit: number | null;
+  stop_loss: number | null;
+  tp_pct: number | null;
+  sl_pct: number | null;
+  score_emision: number;
+  tier_emision: string;
+  fase_emision: FaseImpulso;
+  fuerza_emision: number;
+  consumido_emision: number | null;
+  estado: "VIVA" | "PERDIENDO_FUERZA" | "CERRADA";
+  precio_actual: number;
+  delta_pct: number;
+  mfe_pct: number;
+  mae_pct: number;
+  fase_actual: FaseImpulso;
+  fuerza_actual: number;
+  fuerza_tendencia: number;
+  motivo_cierre: string;
+}
+
 export interface PairState {
   symbol: string;
   display_state: DisplayState;
@@ -85,6 +133,8 @@ export interface PairState {
   score_since_ms: number;
   slopes: Record<string, Record<string, number>>;
   trade_levels: TradeLevels;
+  impulso?: Impulso;
+  alerta?: AlertaActiva;
   consolidation: ConsolidationInfo;
   sr_levels: SRLevels;
   btc_regime: TFTrend;

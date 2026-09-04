@@ -36,7 +36,11 @@ while ($true) {
 
     # ToString() evita que PowerShell envuelva el stderr normal de uvicorn
     # (warnings, banner) en ErrorRecord y lo pinte como fallo del script.
-    & $Python main.py 2>&1 | ForEach-Object { $_.ToString() } | Tee-Object -FilePath $log
+    # -Encoding utf8: Tee-Object escribe UTF-16 por defecto, y eso deja el log
+    # lleno de bytes nulos — ilegible para grep y del doble de tamaño.
+    & $Python main.py 2>&1 |
+        ForEach-Object { $_.ToString() } |
+        Tee-Object -FilePath $log -Encoding utf8
 
     Write-Host "[$(Get-Date -Format 'HH:mm:ss')] el proceso termino. Reintento en 10s..." -ForegroundColor Yellow
     Start-Sleep -Seconds 10

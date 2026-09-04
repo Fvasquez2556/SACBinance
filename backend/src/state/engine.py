@@ -20,6 +20,7 @@ from src.analysis.levels import detectar_niveles
 from src.analysis.ma_slopes import analizar_tf
 from src.analysis.macro_gate import aplicar_gate, calcular_tendencia_global
 from src.analysis.scoring import score_and_tier
+from src.analysis.impulse import medir_impulso
 from src.analysis.outcome_tracker import OutcomeTracker
 from src.analysis.signal_tracker import abrir_senal, evaluar_senales
 from src.analysis.trade_levels import calcular_niveles
@@ -36,6 +37,7 @@ from src.state.state_machine import (
     evaluate,
     provisional_state,
 )
+from src.state.active_alert import AlertManager
 from src.state.symbol_state import (
     DISPLAY_BREAKOUT,
     DISPLAY_CAYENDO,
@@ -155,6 +157,7 @@ class StateEngine:
         self._last_live: Dict[str, float] = {}
         self._db = None
         self._outcomes: Optional[OutcomeTracker] = None
+        self._alertas = AlertManager()
         # Caches del analisis pesado (ver throttling en on_closed_candle)
         self._sr_cache: Dict[str, object] = {}
         self._cons_cache: Dict[str, object] = {}
@@ -521,6 +524,12 @@ class StateEngine:
         )
         st.taxonomia = taxo.to_dict()
 
+        # --- Fuerza del impulso (derivada: ¿sigue subiendo o se apaga?) ---
+        # Va sin throttling: es la señal que decide emitir o retirar una
+        # alerta, y llegar tarde aqui es justo el fallo que corrige.
+        impulso = medir_impulso(list(st.candles), ind=st.ind)
+        st.impulso = impulso.to_dict()
+
         # Display state (FSM 1m VALIDADA con contexto)
         display = _fsm_to_display(st.fsm_state, consolidating, breakout, pos_rango, trend_15m)
 
@@ -571,38 +580,70 @@ class StateEngine:
                 f"macro={st.macro_global} btc={btc_reg}",
             )
 
-        if alertable and (state_changed or tier_changed):
-            self._last_tier[symbol] = tier
-            snap = st.snapshot()
-
-            # Auto-evaluacion: registrar la señal para medir su resultado
-            sig_id = abrir_senal(symbol, snap, self._db)
-            if sig_id is not None and self._outcomes is not None:
-                try:
-                    self._outcomes.abrir(sig_id, symbol, now_ms, snap, st.trade_levels)
-                except Exception as e:
-                    logger.debug(f"[{symbol}] abrir outcome error: {e}")
-
-            tl = st.trade_levels
-            niveles_txt = ""
-            if tl.get("valid"):
-                niveles_txt = (
-                    f" | entry={tl['entry']} TP={tl['take_profit']} "
-                    f"SL={tl['stop_loss']} R:R={tl['risk_reward']}"
-                )
-            logger.info(
-                f"[{symbol}] ALERTA {tier} | {display} | score={val} "
-                f"macro={st.macro_global} btc={btc_reg}{niveles_txt}"
-            )
-            self._log_db(symbol, "ALERT", f"{tier} | {display} | score={val}{niveles_txt}")
-            if self._emit:
+        # --- Alerta viva: refrescar contra sus niveles CONGELADOS ---
+        # Se hace antes de decidir una emision nueva: si el par ya tiene una
+        # alerta viva, no puede volver a emitir mas arriba.
+        if s.alerta_congelada_enabled:
+            cambio = self._alertas.actualizar(symbol, now_ms, h, l, c, impulso)
+            if cambio is not None and self._emit:
                 await self._emit({
-                    "type": "alert",
+                    "type": "alerta_cambio",
                     "ts": now_ms,
-                    "tier": tier,
-                    "state_changed": state_changed,
-                    **snap,
+                    "symbol": symbol,
+                    "alerta": cambio.to_dict(),
                 })
+            st.alerta = (
+                a.to_dict() if (a := self._alertas.get(symbol)) is not None else {}
+            )
+
+        if alertable and (state_changed or tier_changed):
+            emitir = True
+            if s.alerta_congelada_enabled:
+                emitir, motivo = self._alertas.puede_emitir(symbol, impulso, now_ms)
+                if not emitir:
+                    logger.debug(f"[{symbol}] alerta no emitida: {motivo}")
+                    self._log_db(symbol, "VETO_ALERTA", f"{display} score={val} — {motivo}")
+
+            if emitir:
+                self._last_tier[symbol] = tier
+                snap = st.snapshot()
+
+                # Auto-evaluacion: registrar la señal para medir su resultado
+                sig_id = abrir_senal(symbol, snap, self._db)
+                if sig_id is not None and self._outcomes is not None:
+                    try:
+                        self._outcomes.abrir(sig_id, symbol, now_ms, snap, st.trade_levels)
+                    except Exception as e:
+                        logger.debug(f"[{symbol}] abrir outcome error: {e}")
+
+                tl = st.trade_levels
+                if s.alerta_congelada_enabled:
+                    alerta = self._alertas.emitir(
+                        symbol, sig_id, now_ms, snap, tl, impulso
+                    )
+                    if alerta is not None:
+                        st.alerta = alerta.to_dict()
+                        snap = st.snapshot()
+
+                niveles_txt = ""
+                if tl.get("valid"):
+                    niveles_txt = (
+                        f" | entry={tl['entry']} TP={tl['take_profit']} "
+                        f"SL={tl['stop_loss']} R:R={tl['risk_reward']}"
+                    )
+                logger.info(
+                    f"[{symbol}] ALERTA {tier} | {display} | score={val} "
+                    f"macro={st.macro_global} btc={btc_reg}{niveles_txt}"
+                )
+                self._log_db(symbol, "ALERT", f"{tier} | {display} | score={val}{niveles_txt}")
+                if self._emit:
+                    await self._emit({
+                        "type": "alert",
+                        "ts": now_ms,
+                        "tier": tier,
+                        "state_changed": state_changed,
+                        **snap,
+                    })
         # --- Alertas de perfil (independientes del tier clasico) ---
         for kind, perfil, etiqueta in (
             ("alert_tendencia", grind, "TENDENCIA SOSTENIDA"),

@@ -41,24 +41,52 @@ interface Props {
   selected: boolean;
 }
 
+const FASE_STYLE: Record<string, { color: string; icono: string }> = {
+  ACELERANDO: { color: "#2d9c4a", icono: "▲▲" },
+  SOSTENIDA: { color: "#8a9a3a", icono: "▲" },
+  DESACELERANDO: { color: "#c07a1a", icono: "▼" },
+  AGOTADA: { color: "#a02020", icono: "▼▼" },
+  SIN_DATOS: { color: "#555", icono: "·" },
+};
+
 export default function PairRow({ pair, onClick, selected }: Props) {
   const style = STATE_STYLE[pair.display_state] ?? STATE_STYLE.NEUTRAL;
+  const alerta = pair.alerta && pair.alerta.entry ? pair.alerta : null;
+  const enDeclive = alerta?.estado === "PERDIENDO_FUERZA";
+  const fase = FASE_STYLE[pair.impulso?.fase ?? "SIN_DATOS"] ?? FASE_STYLE.SIN_DATOS;
 
   return (
     <tr
       onClick={() => onClick(pair.symbol)}
       style={{
         cursor: "pointer",
-        background: selected ? "#1a2a1a" : style.bg,
+        background: selected ? "#1a2a1a" : enDeclive ? "#2a1414" : style.bg,
         borderBottom: "1px solid #1e1e1e",
+        borderLeft: enDeclive ? "3px solid #a02020" : "3px solid transparent",
         transition: "background 0.15s, opacity 0.4s",
-        opacity: pair.fading ? 0.5 : 1,
+        opacity: pair.fading && !alerta ? 0.5 : 1,
       }}
-      title={pair.fading ? "Perdiendo fuerza — dejó de ser interesante" : undefined}
+      title={
+        enDeclive
+          ? `PERDIENDO FUERZA — ${pair.impulso?.reason ?? ""}. Entry congelado ${alerta?.entry}`
+          : alerta
+            ? `Alerta viva desde hace ${alerta.edad_min} min — entry congelado ${alerta.entry}`
+            : pair.fading
+              ? "Dejó de ser interesante"
+              : undefined
+      }
     >
       <td style={{ padding: "6px 10px", fontWeight: 700, color: "#ccc", fontSize: 13 }}>
         {pair.symbol.replace("USDT", "")}
         <span style={{ color: "#555", fontWeight: 400, fontSize: 10 }}>/USDT</span>
+        {alerta && (
+          <div style={{ fontSize: 9, marginTop: 2, whiteSpace: "nowrap" }}>
+            <span style={{ color: enDeclive ? "#d04040" : "#2d9c4a", fontWeight: 700 }}>
+              {enDeclive ? "PERDIENDO FUERZA" : "ALERTA VIVA"}
+            </span>
+            <span style={{ color: "#666", fontWeight: 400 }}> · {alerta.edad_min}min</span>
+          </div>
+        )}
       </td>
       <td style={{ padding: "6px 8px" }}>
         <span
@@ -98,6 +126,43 @@ export default function PairRow({ pair, onClick, selected }: Props) {
         <span style={{ color: TIER_COLOR[pair.tier], fontSize: 11 }}>
           {pair.tier === "NINGUNO" ? "—" : pair.tier}
         </span>
+      </td>
+      {/* Impulso: la derivada. Dice si el movimiento gana o pierde fuerza. */}
+      <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>
+        {pair.impulso?.valid ? (
+          <span title={pair.impulso.reason}>
+            <span style={{ color: fase.color, fontSize: 10, fontWeight: 700 }}>
+              {fase.icono} {pair.impulso.fuerza}
+            </span>
+            {pair.impulso.consumido_pct != null && (
+              <span style={{ color: "#666", fontSize: 9, marginLeft: 4 }}>
+                {pair.impulso.consumido_pct.toFixed(1)}%rec
+              </span>
+            )}
+          </span>
+        ) : (
+          <span style={{ color: "#444", fontSize: 10 }}>—</span>
+        )}
+      </td>
+      {/* Entry CONGELADO en la emisión + delta en vivo contra ese entry */}
+      <td style={{ padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap" }}>
+        {alerta ? (
+          <>
+            <div style={{ color: "#889", fontSize: 11 }}>{alerta.entry}</div>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: alerta.delta_pct >= 0 ? "#2d9c4a" : "#c04040",
+              }}
+            >
+              {alerta.delta_pct >= 0 ? "+" : ""}
+              {alerta.delta_pct.toFixed(2)}%
+            </div>
+          </>
+        ) : (
+          <span style={{ color: "#444", fontSize: 10 }}>—</span>
+        )}
       </td>
       <td style={{ padding: "6px 8px" }}>
         <TFConfluence trends={pair.macro_trends} />

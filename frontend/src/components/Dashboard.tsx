@@ -152,6 +152,12 @@ export default function Dashboard({
                 <th style={{ padding: "6px 8px" }}>ESTADO</th>
                 <th style={{ padding: "6px 8px", textAlign: "right" }}>SCORE</th>
                 <th style={{ padding: "6px 8px" }}>TIER</th>
+                <th style={{ padding: "6px 8px" }} title="Fuerza del impulso y % ya recorrido del movimiento">
+                  IMPULSO
+                </th>
+                <th style={{ padding: "6px 8px", textAlign: "right" }} title="Entry congelado en la emisión y delta actual contra él">
+                  ENTRY · Δ
+                </th>
                 <th style={{ padding: "6px 8px" }}>15M · 1H · 4H · 1D</th>
                 <th style={{ padding: "6px 8px", textAlign: "right" }}>GATE</th>
                 <th style={{ padding: "6px 10px" }}>DESDE</th>

@@ -173,6 +173,10 @@ class SymbolState:
         self.taxonomia: dict = {}
         self.prev_consolidando: bool = False
 
+        # Fuerza del impulso (derivada) y alerta congelada viva, si la hay
+        self.impulso: dict = {}
+        self.alerta: dict = {}
+
         # Niveles de trading, consolidacion y soporte/resistencia
         self.trade_levels: dict = {}
         self.consolidation_info: dict = {}
@@ -394,6 +398,8 @@ class SymbolState:
             "ignition": dict(self.ignition),
             "compresion": dict(self.compresion),
             "taxonomia": dict(self.taxonomia),
+            "impulso": dict(self.impulso),
+            "alerta": dict(self.alerta),
             "trade_levels": dict(self.trade_levels),
             "consolidation": dict(self.consolidation_info),
             "sr_levels": dict(self.sr_levels),

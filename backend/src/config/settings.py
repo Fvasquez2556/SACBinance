@@ -173,6 +173,47 @@ class Settings(BaseSettings):
     # --- Auto-evaluacion de señales ---
     signal_expiry_hours: int = Field(default=12)    # cierra como EXPIRED tras N horas
 
+    # --- Fuerza del impulso (derivada, no magnitud) ---
+    # El score mide cuanto subio; esto mide si SIGUE subiendo. Se compara la
+    # mitad reciente de la ventana contra la previa en 1m / 3m / 5m.
+    impulso_min_velas: int = Field(default=40)
+    impulso_ventana_1m: int = Field(default=12)   # 12 min
+    impulso_ventana_3m: int = Field(default=10)   # 30 min
+    impulso_ventana_5m: int = Field(default=8)    # 40 min
+    impulso_peso_1m: float = Field(default=0.25)  # rapido pero ruidoso
+    impulso_peso_3m: float = Field(default=0.40)
+    impulso_peso_5m: float = Field(default=0.35)
+
+    # Umbrales de fase. Se exigen DOS señales flojas de tres para declarar
+    # DESACELERANDO: una sola es ruido de una vela suelta.
+    impulso_acel_min: float = Field(default=0.75)     # bajo esto, pierde ritmo
+    impulso_acel_fuerte: float = Field(default=1.25)  # sobre esto, acelera
+    impulso_cuerpo_min: float = Field(default=0.80)   # cuerpos encogiendo
+    impulso_vol_min: float = Field(default=0.75)      # volumen secandose
+    impulso_rsi_techo: float = Field(default=78.0)
+    impulso_lookback_consumido: int = Field(default=60)   # velas 1m
+    impulso_consumido_penaliza: float = Field(default=4.0)   # % desde el minimo
+    impulso_consumido_agotado: float = Field(default=12.0)   # % = ya es tarde
+
+    # --- Alertas congeladas (ciclo de vida propio) ---
+    # Una alerta se emite UNA vez con entry/TP/SL fijos. No se recalcula ni se
+    # re-emite mas arriba: eso era perseguir el precio, no confirmar la señal.
+    alerta_congelada_enabled: bool = Field(default=True)
+    # Velas 1m seguidas con impulso degradado antes de marcarla en declive
+    alerta_velas_declive: int = Field(default=3)
+    # Minutos que sigue visible en "PERDIENDO FUERZA" antes de retirarse
+    alerta_minutos_declive: int = Field(default=10)
+    # Vida maxima de una alerta sin desenlace
+    alerta_vida_horas: int = Field(default=6)
+    # Espera antes de admitir una alerta nueva del mismo par
+    alerta_recooldown_minutos: int = Field(default=45)
+    # Recorrido maximo ya consumido para admitir una alerta NUEVA. Es una
+    # puerta distinta de la fase: en el caso COTI del 4-sep el impulso seguia
+    # vivo a las 11:13 (el techo no llego hasta las 11:17), pero el movimiento
+    # ya llevaba un 4.2% recorrido — entrar ahi es perseguir, no anticipar.
+    # Para MANTENER viva una alerta ya emitida no se aplica: solo la fase.
+    alerta_consumido_max: float = Field(default=3.5)
+
     # --- Medicion de outcomes (camino completo de cada señal) ---
     # A diferencia de signal_expiry_hours, esta ventana NO cierra la señal:
     # sigue el precio pase lo que pase con TP/SL, para poder responder que
