@@ -92,6 +92,8 @@ export interface AlertaActiva {
   fuerza_emision: number;
   consumido_emision: number | null;
   estado: "VIVA" | "PERDIENDO_FUERZA" | "CERRADA";
+  /** display_state del par ahora; si sale de los estados validos, la alerta decae */
+  estado_actual?: string;
   precio_actual: number;
   delta_pct: number;
   mfe_pct: number;

@@ -22,11 +22,17 @@ Nunca se re-emite el mismo par mas arriba mientras siga viva.
 
 Ciclo de vida:
 
-    VIVA              el impulso aguanta (fase ACELERANDO o SOSTENIDA)
-    PERDIENDO_FUERZA  la fase se degrado durante N velas seguidas; sigue
-                      visible unos minutos para que se vea que murio, en vez
-                      de que la fila desaparezca sin explicacion
-    CERRADA           toco TP o SL, se agoto el declive, o caduco
+    VIVA              el impulso aguanta Y el par sigue en un estado que
+                      sostenga la señal (subida, fondo o consolidacion)
+    PERDIENDO_FUERZA  se degrado durante N velas seguidas — por impulso o
+                      porque el par cayo a NEUTRAL; sigue visible unos
+                      minutos para que se vea que murio, en vez de que la
+                      fila desaparezca sin explicacion
+    CERRADA           toco TP o SL, se agoto el declive, el par paso a
+                      CAYENDO, o caduco
+
+Las dos condiciones se miran por separado a proposito: una alerta seguia
+VIVA con el par ya en NEUTRAL porque el ciclo solo consultaba el impulso.
 
 La puerta de entrada y la de salida son distintas a proposito: para EMITIR se
 exige impulso sano y poco recorrido consumido; para MANTENER solo se mira la
@@ -52,10 +58,17 @@ ESTADO_CERRADA = "CERRADA"
 # precio bajo la EMA7 es la condicion normal, no una señal de agotamiento.
 _SETUPS_DE_GIRO = {"TOCÓ_FONDO", "CONSOLIDANDO"}
 
+# Estados que sostienen una alerta viva. Si el par se sale de aqui, la
+# tesis de la señal ya no se cumple, aunque el impulso siga marcando bien.
+_ESTADOS_VALIDOS = {"TOCÓ_FONDO", "CONSOLIDANDO", "SUBIENDO", "BREAKOUT_INCIPIENTE"}
+# CAYENDO no espera al contador: la tesis esta rota, no debilitada.
+_ESTADO_ROTO = "CAYENDO"
+
 MOTIVO_TP = "TP_ALCANZADO"
 MOTIVO_SL = "SL_ALCANZADO"
 MOTIVO_IMPULSO = "IMPULSO_AGOTADO"
 MOTIVO_CADUCA = "CADUCADA"
+MOTIVO_ESTADO = "ESTADO_DEGRADADO"
 
 
 @dataclass
@@ -86,6 +99,7 @@ class AlertaActiva:
     fuerza_actual: int = 0
     velas_degradadas: int = 0
     es_giro: bool = False   # setup de fondo/consolidacion, no de continuacion
+    estado_actual: str = ""  # display_state del par ahora mismo
     ts_declive: Optional[int] = None
     ts_cierre: Optional[int] = None
     motivo_cierre: str = ""
@@ -118,6 +132,7 @@ class AlertaActiva:
             "mfe_pct": round(self.mfe_pct, 2),
             "mae_pct": round(self.mae_pct, 2),
             "es_giro": self.es_giro,
+            "estado_actual": self.estado_actual,
             "fase_actual": self.fase_actual,
             "fuerza_actual": self.fuerza_actual,
             "fuerza_tendencia": self._tendencia(),
@@ -241,7 +256,8 @@ class AlertManager:
     # --- Actualizacion ----------------------------------------------------
 
     def actualizar(self, symbol: str, now_ms: int, high: float, low: float,
-                   close: float, impulso) -> Optional[AlertaActiva]:
+                   close: float, impulso,
+                   display_state: str = "") -> Optional[AlertaActiva]:
         """
         Refresca la alerta viva con la vela recien cerrada. Devuelve la alerta
         si acaba de cambiar de estado (para emitir el evento), si no None.
@@ -272,6 +288,47 @@ class AlertManager:
         # --- Caducidad ---
         if now_ms - a.ts_emision >= s.alerta_vida_horas * 3600_000:
             return self._cerrar(a, now_ms, MOTIVO_CADUCA)
+
+        # --- El par dejo de estar en un estado que sostenga la alerta ---
+        # Una alerta seguia VIVA con el par ya en NEUTRAL porque el ciclo de
+        # vida solo miraba la fase de impulso. Pero si la FSM ya no ve ni
+        # subida ni fondo ni consolidacion, la tesis de la señal se acabo,
+        # marque lo que marque el impulso.
+        if display_state:
+            a.estado_actual = display_state
+            if display_state == _ESTADO_ROTO:
+                # Cayendo: no es debilidad, es lo contrario de la tesis.
+                a.estado = ESTADO_DECLIVE
+                a.ts_declive = a.ts_declive or now_ms
+                return self._cerrar(a, now_ms, MOTIVO_ESTADO)
+            if display_state not in _ESTADOS_VALIDOS:
+                a.velas_degradadas += 1
+                if (a.estado == ESTADO_VIVA
+                        and a.velas_degradadas >= s.alerta_velas_declive):
+                    a.estado = ESTADO_DECLIVE
+                    a.ts_declive = now_ms
+                    logger.info(
+                        f"[{symbol}] alerta PERDIENDO FUERZA | el par paso a "
+                        f"{display_state} | delta {a.delta_pct:+.2f}%"
+                    )
+                    return a
+                if a.estado == ESTADO_DECLIVE and a.ts_declive and (
+                        now_ms - a.ts_declive >= s.alerta_minutos_declive * 60_000):
+                    return self._cerrar(a, now_ms, MOTIVO_ESTADO)
+                return None
+            # Estado valido otra vez. Se reinicia aqui porque un setup de
+            # giro salta el bloque de impulso de abajo y su contador no
+            # se limpiaria nunca.
+            if a.velas_degradadas and a.es_giro:
+                a.velas_degradadas = 0
+                if a.estado == ESTADO_DECLIVE:
+                    a.estado = ESTADO_VIVA
+                    a.ts_declive = None
+                    logger.info(
+                        f"[{symbol}] alerta recupera estado ({display_state}) "
+                        f"| delta {a.delta_pct:+.2f}%"
+                    )
+                    return a
 
         # --- Degradacion del impulso ---
         # En un setup de giro no se aplica: su fase es AGOTADA por

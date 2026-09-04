@@ -629,7 +629,9 @@ class StateEngine:
         # Se hace antes de decidir una emision nueva: si el par ya tiene una
         # alerta viva, no puede volver a emitir mas arriba.
         if s.alerta_congelada_enabled:
-            cambio = self._alertas.actualizar(symbol, now_ms, h, l, c, impulso)
+            cambio = self._alertas.actualizar(
+                symbol, now_ms, h, l, c, impulso, display_state=display
+            )
             if cambio is not None and self._emit:
                 await self._emit({
                     "type": "alerta_cambio",
