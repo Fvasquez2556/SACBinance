@@ -34,13 +34,24 @@ while ($true) {
     $log   = Join-Path $LogDir "sacbinance_$stamp.log"
     Write-Host "[$(Get-Date -Format 'HH:mm:ss')] arrancando — log: $log" -ForegroundColor Cyan
 
-    # ToString() evita que PowerShell envuelva el stderr normal de uvicorn
-    # (warnings, banner) en ErrorRecord y lo pinte como fallo del script.
-    # -Encoding utf8: Tee-Object escribe UTF-16 por defecto, y eso deja el log
-    # lleno de bytes nulos — ilegible para grep y del doble de tamaño.
-    & $Python main.py 2>&1 |
-        ForEach-Object { $_.ToString() } |
-        Tee-Object -FilePath $log -Encoding utf8
+    # StreamWriter en vez de Tee-Object: en Windows PowerShell 5.1 (que es lo
+    # que arranca `Start-Process powershell`) Tee-Object NO acepta -Encoding, y
+    # sin el escribe UTF-16 — logs con bytes nulos, ilegibles para grep. Pedir
+    # -Encoding alli rompe el pipeline entero y el backend no llega a arrancar.
+    # Esto funciona igual en 5.1 y en 7, y da UTF-8 sin BOM.
+    # ToString() evita que el stderr normal de uvicorn (warnings, banner) se
+    # envuelva en ErrorRecord y se pinte como fallo del script.
+    $sw = [System.IO.StreamWriter]::new($log, $false, [System.Text.UTF8Encoding]::new($false))
+    try {
+        & $Python main.py 2>&1 | ForEach-Object {
+            $linea = $_.ToString()
+            Write-Host $linea
+            $sw.WriteLine($linea)
+            $sw.Flush()
+        }
+    } finally {
+        $sw.Dispose()
+    }
 
     Write-Host "[$(Get-Date -Format 'HH:mm:ss')] el proceso termino. Reintento en 10s..." -ForegroundColor Yellow
     Start-Sleep -Seconds 10
