@@ -177,6 +177,30 @@ class StateEngine:
         self._outcomes = OutcomeTracker(db)
         self._outcomes.cargar()
 
+
+    def _con_liquidez(self, symbol: str, st, snap: dict) -> dict:
+        """
+        Añade al snapshot la liquidez del par: volumen 24h y volumen medio por
+        minuto de las ultimas velas. Las metricas de impulso son todas ratios,
+        y un ratio no distingue "2x sobre 1.200 USDT/min" de "2x sobre 40.000".
+        Guardarlo permite cruzar liquidez contra resultado en el informe.
+        """
+        snap = dict(snap)
+        try:
+            if self._db is not None:
+                row = self._db.get_pair_meta(symbol)
+                snap["vol_24h"] = row.get("vol_24h") if row else None
+        except Exception:
+            snap["vol_24h"] = None
+        try:
+            ultimas = list(st.candles)[-15:]
+            snap["vol_1m_medio"] = (
+                sum(c.v for c in ultimas) / len(ultimas) if ultimas else None
+            )
+        except Exception:
+            snap["vol_1m_medio"] = None
+        return snap
+
     def _log_db(self, symbol: Optional[str], level: str, message: str) -> None:
         """Persiste un evento clave en analysis_log (no bloquea si falla)."""
         if self._db is None:
@@ -594,7 +618,9 @@ class StateEngine:
             if val_sin_gate >= s.score_min_dashboard:
                 try:
                     self._outcomes.abrir_sombra(
-                        symbol, now_ms, st.snapshot(), st.trade_levels, val_sin_gate
+                        symbol, now_ms,
+                        self._con_liquidez(symbol, st, st.snapshot()),
+                        st.trade_levels, val_sin_gate,
                     )
                 except Exception as e:
                     logger.debug(f"[{symbol}] abrir_sombra error: {e}")
@@ -630,6 +656,7 @@ class StateEngine:
                 snap = st.snapshot()
 
                 # Auto-evaluacion: registrar la señal para medir su resultado
+                snap = self._con_liquidez(symbol, st, snap)
                 sig_id = abrir_senal(symbol, snap, self._db)
                 if sig_id is not None and self._outcomes is not None:
                     try:

@@ -199,6 +199,56 @@ def desglose(rows: list, campo: str) -> None:
         print(f"\n  «(pocas)» = menos de {MIN_MUESTRAS} muestras; el porcentaje seria ruido.")
 
 
+
+def desglose_liquidez(rows: list) -> None:
+    """
+    Liquidez contra resultado.
+
+    Las metricas de impulso son todas ratios, y un ratio no tiene escala:
+    "volumen 1.77x" sobre 1.195 USDT/min no es el mismo suceso que 1.59x
+    sobre 40.048. Esta tabla existe para comprobar si esa intuicion se
+    sostiene con muestras, en vez de con el caso NILUSDT del 4-sep.
+    """
+    con = [r for r in rows if r.get("vol_24h")]
+    if not con:
+        _linea("DESGLOSE POR LIQUIDEZ")
+        print("  Sin datos de liquidez todavia (se registran desde la v5 del esquema).")
+        return
+
+    suf = _SUFIJO[OBJETIVO]
+    bandas = [("< 2M", 0, 2e6), ("2M - 5M", 2e6, 5e6), ("5M - 20M", 5e6, 2e7),
+              ("> 20M", 2e7, float("inf"))]
+    _linea("DESGLOSE POR LIQUIDEZ (volumen 24h del par)")
+    print(f"  {'vol 24h':>10s} {'n':>5s}  {'llega a +' + str(OBJETIVO) + '%':>16s}  "
+          f"{'MFE med':>9s}  {'MAE med':>9s}")
+    for nombre, lo, hi in bandas:
+        g = [r for r in con if lo <= r["vol_24h"] < hi]
+        if not g:
+            continue
+        alc = [r for r in g if r.get(f"ms_up_{suf}") is not None]
+        ratio = _pct(len(alc), len(g)) if len(g) >= MIN_MUESTRAS else "  (pocas)"
+        mfe = _mediana([r["mfe_pct"] for r in g if r.get("mfe_pct") is not None])
+        mae = _mediana([r["mae_pct"] for r in g if r.get("mae_pct") is not None])
+        print(f"  {nombre:>10s} {len(g):5d}  {ratio:>16s}  "
+              f"{(f'{mfe:+.2f}%' if mfe is not None else '—'):>9s}  "
+              f"{(f'{mae:+.2f}%' if mae is not None else '—'):>9s}")
+
+    v1m = [r for r in rows if r.get("vol_1m_medio")]
+    if v1m:
+        print("\n  Volumen por minuto en la señal (USDT):")
+        for nombre, lo, hi in (("< 2.000", 0, 2000), ("2.000-10.000", 2000, 10000),
+                               ("10.000-50.000", 10000, 50000),
+                               ("> 50.000", 50000, float("inf"))):
+            g = [r for r in v1m if lo <= r["vol_1m_medio"] < hi]
+            if not g:
+                continue
+            alc = [r for r in g if r.get(f"ms_up_{suf}") is not None]
+            ratio = _pct(len(alc), len(g)) if len(g) >= MIN_MUESTRAS else "  (pocas)"
+            mfe = _mediana([r["mfe_pct"] for r in g if r.get("mfe_pct") is not None])
+            print(f"  {nombre:>14s} {len(g):5d}  {ratio:>16s}  "
+                  f"{(f'{mfe:+.2f}%' if mfe is not None else '—'):>9s}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -216,6 +266,7 @@ def main() -> None:
         rows = [r for r in rows if r["ts_open"] >= corte]
 
     informe(rows, args.incluir_vivas)
+    desglose_liquidez(rows)
     if args.por:
         desglose(rows, args.por)
     print()

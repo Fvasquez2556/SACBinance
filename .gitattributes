@@ -1,0 +1,7 @@
+# Los scripts de shell van al servidor Ubuntu: con CRLF fallarian con
+# "bad interpreter: /usr/bin/env bash^M". Se fuerzan finales de linea LF.
+*.sh text eol=lf
+*.service text eol=lf
+
+# Los de PowerShell se quedan en Windows
+*.ps1 text eol=crlf

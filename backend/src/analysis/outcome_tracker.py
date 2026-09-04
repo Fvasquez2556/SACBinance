@@ -229,6 +229,8 @@ class OutcomeTracker:
             "n_velas": 0,
             "cerrado": 0,
             "sombra": 1 if sombra else 0,
+            "vol_24h": snapshot.get("vol_24h"),
+            "vol_1m_medio": snapshot.get("vol_1m_medio"),
         }
         try:
             self._db.abrir_outcome(row)

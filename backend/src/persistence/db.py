@@ -94,7 +94,12 @@ CREATE TABLE IF NOT EXISTS outcomes (
     cerrado       INTEGER DEFAULT 0,
     -- 1 = señal que el gate macro suprimio. Se mide pero NO se alerta:
     -- sin esto no hay forma de saber si el gate protege o cuesta dinero.
-    sombra        INTEGER DEFAULT 0
+    sombra        INTEGER DEFAULT 0,
+    -- Liquidez en el momento de la señal. Las metricas de impulso son
+    -- todas RATIOS, y un ratio no tiene escala: "volumen 1.77x" sobre
+    -- 1.195 USDT/min no es el mismo suceso que 1.59x sobre 40.048.
+    vol_24h       REAL,
+    vol_1m_medio  REAL
 );
 CREATE INDEX IF NOT EXISTS idx_out_cerrado ON outcomes (cerrado, ts_open DESC);
 CREATE INDEX IF NOT EXISTS idx_out_symbol  ON outcomes (symbol, ts_open DESC);
@@ -114,7 +119,8 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 #   2 -> 3: se marcan STALE las señales calificadas contra un precio muy
 #           posterior a su apertura (el sistema estuvo apagado en medio).
 #   3 -> 4: outcomes.sombra — mide las señales que el gate macro suprime.
-SCHEMA_VERSION = 4
+#   4 -> 5: outcomes.vol_24h / vol_1m_medio — liquidez en la señal.
+SCHEMA_VERSION = 5
 
 _CREATE_SIGNALS = """
 CREATE TABLE IF NOT EXISTS signals (
@@ -249,6 +255,13 @@ class Database:
                 )
                 logger.info("Migracion v3->4: columna outcomes.sombra añadida")
 
+        if version < 5:
+            cols = [r[1] for r in self._conn.execute("PRAGMA table_info(outcomes)")]
+            for col in ("vol_24h", "vol_1m_medio"):
+                if col not in cols:
+                    self._conn.execute(f"ALTER TABLE outcomes ADD COLUMN {col} REAL")
+            logger.info("Migracion v4->5: columnas de liquidez añadidas a outcomes")
+
         self._conn.execute(
             "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('version', ?)",
             (str(SCHEMA_VERSION),),
@@ -340,6 +353,17 @@ class Database:
             (symbol, vol_24h, ts),
         )
         self._conn.commit()
+
+    def get_pair_meta(self, symbol: str) -> Optional[dict]:
+        """Metadata del par (volumen 24h). None si no esta registrado."""
+        cur = self._conn.execute(
+            "SELECT symbol, vol_24h, updated FROM pair_metadata WHERE symbol = ?",
+            (symbol,),
+        )
+        row = cur.fetchone()
+        if row is None:
+            return None
+        return {"symbol": row[0], "vol_24h": row[1], "updated": row[2]}
 
     # --- Señales (auto-evaluacion) -------------------------------------------
 
