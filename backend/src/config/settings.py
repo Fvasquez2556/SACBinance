@@ -214,6 +214,22 @@ class Settings(BaseSettings):
     # Para MANTENER viva una alerta ya emitida no se aplica: solo la fase.
     alerta_consumido_max: float = Field(default=3.5)
 
+    # --- Base corta post-caida ("flush -> base -> reclaim") ---
+    # compression.py mira 96 velas de 15m (24h) y se pierde las bases de una
+    # hora. Estos parametros salen de medir CHIPUSDT el 5-sep: caida -2.93%
+    # en 32 min, base de 56 min con rango 3.01% y volumen al 61%, ruptura del
+    # techo con volumen 3.9x.
+    base_lookback_velas: int = Field(default=180)     # 3h de velas 1m
+    base_min_velas: int = Field(default=20)           # base minima
+    base_max_velas: int = Field(default=90)           # base maxima
+    base_rango_max_pct: float = Field(default=3.5)    # ancho maximo de la base
+    base_caida_min_velas: int = Field(default=10)     # historial previo minimo
+    base_caida_min_pct: float = Field(default=2.0)    # caida previa minima
+    base_vol_dryup_max: float = Field(default=0.85)   # vol base / vol caida
+    base_ruptura_vol_min: float = Field(default=2.0)  # volumen en la ruptura
+    base_max_sobre_techo_pct: float = Field(default=1.0)  # si no, llega tarde
+    base_score_min: int = Field(default=60)
+
     # --- Medicion de outcomes (camino completo de cada señal) ---
     # A diferencia de signal_expiry_hours, esta ventana NO cierra la señal:
     # sigue el precio pase lo que pase con TP/SL, para poder responder que

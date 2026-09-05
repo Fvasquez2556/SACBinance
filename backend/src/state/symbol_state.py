@@ -175,6 +175,7 @@ class SymbolState:
 
         # Fuerza del impulso (derivada) y alerta congelada viva, si la hay
         self.impulso: dict = {}
+        self.base_rebote: dict = {}
         self.alerta: dict = {}
 
         # Niveles de trading, consolidacion y soporte/resistencia
@@ -399,6 +400,7 @@ class SymbolState:
             "compresion": dict(self.compresion),
             "taxonomia": dict(self.taxonomia),
             "impulso": dict(self.impulso),
+            "base_rebote": dict(self.base_rebote),
             "alerta": dict(self.alerta),
             "trade_levels": dict(self.trade_levels),
             "consolidation": dict(self.consolidation_info),

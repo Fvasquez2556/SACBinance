@@ -10,6 +10,7 @@ import asyncio
 import time
 from typing import Awaitable, Callable, Dict, List, Optional
 
+from src.analysis.base_rebote import detectar_base_rebote
 from src.analysis.breakout import detectar_breakout
 from src.analysis.consolidation import detectar_consolidacion
 from src.analysis.daily_anchor import calcular_ancla
@@ -548,6 +549,13 @@ class StateEngine:
         )
         st.taxonomia = taxo.to_dict()
 
+        # --- Base corta post-caida y su ruptura ---
+        # Sin throttle: la ventana util de una ruptura de base son minutos, y
+        # el propio detector se veta si el precio ya paso mas de
+        # base_max_sobre_techo_pct del techo.
+        base_reb = detectar_base_rebote(list(st.candles))
+        st.base_rebote = base_reb.to_dict()
+
         # --- Fuerza del impulso (derivada: ¿sigue subiendo o se apaga?) ---
         # Va sin throttling: es la señal que decide emitir o retirar una
         # alerta, y llegar tarde aqui es justo el fallo que corrige.
@@ -698,6 +706,7 @@ class StateEngine:
         for kind, perfil, etiqueta in (
             ("alert_tendencia", grind, "TENDENCIA SOSTENIDA"),
             ("alert_ignicion", ignition, "IGNICION"),
+            ("alert_base_rebote", base_reb, "BASE Y REBOTE"),
         ):
             if not perfil.detected:
                 continue
