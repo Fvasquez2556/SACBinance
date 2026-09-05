@@ -21,30 +21,62 @@ echo ""
 # --- 1. Requisitos ---
 echo ">> Comprobando requisitos"
 falta=0
-for cmd in python3 npm; do
+for cmd in git npm node; do
     if command -v "$cmd" >/dev/null 2>&1; then
         echo "   $cmd  $($cmd --version 2>&1 | head -1)"
     else
         echo "   FALTA: $cmd"; falta=1
     fi
 done
-if ! python3 -c "import venv" 2>/dev/null; then
-    echo "   FALTA: python3-venv"; falta=1
+
+# Elegir interprete. Se prefiere una version PROBADA: las muy nuevas suelen
+# no tener wheels publicados para numpy/scipy/pydantic, y pip cae a compilar
+# desde fuente, que necesita toolchain de C, C++, Fortran y Rust.
+PY=""
+for cand in python3.13 python3.12 python3.11 python3; do
+    if command -v "$cand" >/dev/null 2>&1 && "$cand" -c "import venv" 2>/dev/null; then
+        PY="$cand"; break
+    fi
+done
+if [ -z "$PY" ]; then
+    echo "   FALTA: python3 con modulo venv"; falta=1
+else
+    VER="$($PY -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+    echo "   python  $PY ($VER)"
+    case "$VER" in
+        3.10|3.11|3.12|3.13) ;;
+        *)
+            echo ""
+            echo "   AVISO: $VER esta fuera de las versiones probadas (3.10-3.13)."
+            echo "   requirements.txt usa minimos, no pines, asi que pip deberia"
+            echo "   resolver wheels validos. Si la instalacion falla compilando"
+            echo "   numpy o scipy, instala una version probada y repite:"
+            echo "     sudo apt install -y python3.12 python3.12-venv"
+            echo ""
+            ;;
+    esac
 fi
+
 if [ "$falta" = "1" ]; then
     echo ""
     echo "Instala lo que falta y vuelve a ejecutar:"
-    echo "  sudo apt update && sudo apt install -y python3 python3-venv python3-pip nodejs npm"
+    echo "  sudo apt update && sudo apt install -y git python3 python3-venv python3-pip nodejs npm"
     exit 1
 fi
 
 # --- 2. Backend ---
 echo ">> Backend: entorno virtual + dependencias"
 cd "$RAIZ/backend"
-[ -d venv ] || python3 -m venv venv
+[ -d venv ] || "$PY" -m venv venv
 ./venv/bin/pip install --quiet --upgrade pip
-./venv/bin/pip install --quiet -r requirements.txt
-echo "   dependencias instaladas"
+if ! ./venv/bin/pip install --quiet -r requirements.txt; then
+    echo "   Fallo la instalacion completa. Reintentando sin scipy (es opcional:"
+    echo "   solo acelera la EMA; sin el se usa el bucle Python)."
+    grep -v '^scipy' requirements.txt > /tmp/req-sin-scipy.txt
+    ./venv/bin/pip install --quiet -r /tmp/req-sin-scipy.txt
+fi
+./venv/bin/python -c "import fastapi, numpy; print('   dependencias OK - numpy', numpy.__version__)"
+./venv/bin/python -c "import scipy; print('   scipy', scipy.__version__)" 2>/dev/null || echo "   scipy no instalado (se usara el fallback)"
 
 # .env a partir del ejemplo, si no existe
 if [ ! -f .env ] && [ -f .env.example ]; then
