@@ -95,6 +95,7 @@ export function useWebSocket() {
               "early",
               "alert_tendencia",
               "alert_ignicion",
+              "alert_base_rebote",
             ].includes(msg.type) &&
             msg.symbol
           ) {

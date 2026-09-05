@@ -109,6 +109,26 @@ export interface AlertaActiva {
   motivo_cierre: string;
 }
 
+/**
+ * Base corta post-caída y su ruptura ("flush → base → reclaim").
+ * Lo que compression.py no ve porque mira 24h de velas 15m: estas bases
+ * duran una hora y se miden en 1m.
+ */
+export interface BaseRebote {
+  detected: boolean;
+  score: number;
+  caida_pct: number | null;
+  base_velas: number;
+  base_rango_pct: number | null;
+  base_techo: number | null;
+  base_piso: number | null;
+  vol_dryup: number | null;
+  rompio: boolean;
+  ruptura_vol_ratio: number | null;
+  dist_techo_pct: number | null;
+  reason: string;
+}
+
 export interface PairState {
   symbol: string;
   display_state: DisplayState;
@@ -141,6 +161,7 @@ export interface PairState {
   slopes: Record<string, Record<string, number>>;
   trade_levels: TradeLevels;
   impulso?: Impulso;
+  base_rebote?: BaseRebote;
   alerta?: AlertaActiva;
   consolidation: ConsolidationInfo;
   sr_levels: SRLevels;
@@ -167,7 +188,8 @@ export interface WSMessage {
     | "watch"
     | "ping"
     | "alert_tendencia"
-    | "alert_ignicion";
+    | "alert_ignicion"
+    | "alert_base_rebote";
   ts: number;
   pairs?: PairState[];
   // En "update" el backend manda solo los pares que cambiaron; `removed` lista

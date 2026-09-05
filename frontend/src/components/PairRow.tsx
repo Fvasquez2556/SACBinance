@@ -63,6 +63,10 @@ export default function PairRow({ pair, onClick, selected }: Props) {
   const alerta = pair.alerta && pair.alerta.entry ? pair.alerta : null;
   const enDeclive = alerta?.estado === "PERDIENDO_FUERZA";
   const fase = FASE_STYLE[pair.impulso?.fase ?? "SIN_DATOS"] ?? FASE_STYLE.SIN_DATOS;
+  const br = pair.base_rebote;
+  // La base ya formada, aunque aún no rompa, es contexto útil: dice que el
+  // par está construyendo el patrón y conviene vigilarlo.
+  const baseFormada = !!br && !br.detected && (br.base_velas ?? 0) >= 20 && !!br.caida_pct && br.caida_pct <= -2;
 
   return (
     <tr
@@ -94,6 +98,34 @@ export default function PairRow({ pair, onClick, selected }: Props) {
               {enDeclive ? "PERDIENDO FUERZA" : "ALERTA VIVA"}
             </span>
             <span style={{ color: "#666", fontWeight: 400 }}> · {alerta.edad_min}min</span>
+          </div>
+        )}
+        {br?.detected && (
+          <div
+            style={{ fontSize: 9, marginTop: 2, whiteSpace: "nowrap" }}
+            title={br.reason}
+          >
+            <span
+              style={{
+                background: "#4a2d7a",
+                color: "#c9a9ff",
+                padding: "1px 5px",
+                borderRadius: 3,
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+              }}
+            >
+              ◔ VALLE {br.score}
+            </span>
+          </div>
+        )}
+        {baseFormada && (
+          <div
+            style={{ fontSize: 9, marginTop: 2, color: "#6a5a8a", whiteSpace: "nowrap" }}
+            title={br?.reason}
+          >
+            base {br?.base_velas}v · {br?.base_rango_pct}% · falta romper{" "}
+            {br?.base_techo}
           </div>
         )}
         {alerta && alerta.marcadores && alerta.marcadores.length > 0 && (
