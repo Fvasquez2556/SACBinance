@@ -92,6 +92,27 @@ npm run build
 echo "   frontend compilado en frontend/dist"
 
 # --- 4. Servicio systemd ---
+# --- Puerto libre ---
+# Si otro servicio ya escucha en el puerto, uvicorn no puede abrirlo, el
+# proceso muere y systemd lo reinicia en bucle. Paso el 5-sep: el bot viejo
+# ocupaba el 8000 y la instalacion parecia correcta.
+PUERTO="$(grep -oP '^API_PORT=\K[0-9]+' "$RAIZ/backend/.env" 2>/dev/null || echo 8000)"
+echo ">> Comprobando que el puerto ${PUERTO} este libre"
+if command -v ss >/dev/null 2>&1 && ss -tln 2>/dev/null | grep -q ":${PUERTO} "; then
+    QUIEN="$(sudo ss -tlnp 2>/dev/null | grep ":${PUERTO} " | head -1)"
+    echo ""
+    echo "   EL PUERTO ${PUERTO} YA ESTA OCUPADO:"
+    echo "   ${QUIEN}"
+    echo ""
+    echo "   Libera ese servicio, o usa otro puerto:"
+    echo "     echo 'API_PORT=8100' >> ${RAIZ}/backend/.env"
+    echo ""
+    read -rp "   Continuar de todos modos? [s/N] " seguir
+    [ "$seguir" = "s" ] || { echo "   Cancelado."; exit 1; }
+else
+    echo "   libre"
+fi
+
 echo ">> Registrando el servicio systemd"
 UNIDAD="/etc/systemd/system/${SERVICIO}.service"
 sudo tee "$UNIDAD" >/dev/null <<UNIT
@@ -121,13 +142,30 @@ sudo systemctl restart "$SERVICIO"
 
 echo ""
 echo "=============================================================="
-sleep 5
-if systemctl is-active --quiet "$SERVICIO"; then
-    echo "  ACTIVO — http://$(hostname -I | awk '{print $1}'):8000"
+# Verificacion real: no basta con is-active. La hidratacion tarda ~40s y el
+# proceso puede estar vivo y a punto de morir (puerto ocupado, por ejemplo).
+# Se espera a que la API conteste Y a que sea la nuestra, no otra cosa.
+echo "  Esperando a que la API responda (la hidratacion tarda ~40s)..."
+OK=0
+for _ in $(seq 1 30); do
+    sleep 3
+    if ! systemctl is-active --quiet "$SERVICIO"; then continue; fi
+    TITULO="$(curl -s --max-time 3 "http://127.0.0.1:${PUERTO}/openapi.json" 2>/dev/null               | grep -o '"title":"[^"]*"' | head -1 || true)"
+    case "$TITULO" in
+        *SACBinance*) OK=1; break ;;
+        *[!\ ]*) echo "  OJO: el puerto ${PUERTO} lo contesta OTRO servicio -> ${TITULO}"; break ;;
+    esac
+done
+
+if [ "$OK" = "1" ]; then
+    echo "  ACTIVO y respondiendo — http://$(hostname -I | awk '{print $1}'):${PUERTO}"
 else
-    echo "  El servicio NO arranco. Revisa:  journalctl -u ${SERVICIO} -n 50"
+    echo "  NO quedo operativo. Diagnostico:"
+    echo "    journalctl -u ${SERVICIO} -n 40 --no-pager"
+    echo "    sudo ss -tlnp | grep :${PUERTO}"
 fi
 echo ""
+echo "  URL             : http://$(hostname -I | awk '{print $1}'):${PUERTO}"
 echo "  Ver el log      : tail -f ${RAIZ}/logs/sacbinance.log"
 echo "  Estado          : systemctl status ${SERVICIO}"
 echo "  Parar / arrancar: sudo systemctl stop|start ${SERVICIO}"
