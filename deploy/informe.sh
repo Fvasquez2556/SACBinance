@@ -3,7 +3,9 @@
 #
 #   bash deploy/informe.sh hora    instantanea horaria (ultimo.txt + serie CSV)
 #   bash deploy/informe.sh dia     informe completo del dia, en fichero fechado
-#   bash deploy/informe.sh cron    instala las dos entradas en crontab
+#   bash deploy/informe.sh timers  instala los dos timers de systemd
+#                                  (alias: cron — pero NO usa crontab, que
+#                                  Ubuntu Server no trae instalado)
 #
 # Lee solo SQLite: funciona aunque el servicio este parado.
 set -uo pipefail
@@ -66,20 +68,64 @@ case "${1:-hora}" in
     echo "OK: $DEST"
     ;;
 
-  cron)
-    TMP="$(mktemp)"
-    crontab -l 2>/dev/null | grep -v 'deploy/informe.sh' > "$TMP" || true
-    {
-        echo "# SACBinance — instantanea cada hora"
-        echo "5 * * * * bash ${RAIZ}/deploy/informe.sh hora >/dev/null 2>&1"
-        echo "# SACBinance — informe completo del dia"
-        echo "30 6 * * * bash ${RAIZ}/deploy/informe.sh dia >/dev/null 2>&1"
-    } >> "$TMP"
-    crontab "$TMP" && rm -f "$TMP"
-    echo "Cron instalado:"
-    crontab -l | grep -A1 SACBinance
+  cron|timers)
+    # systemd timers, no crontab: Ubuntu Server suele venir SIN cron
+    # instalado, y systemd ya esta ahi por definicion. Ademas se integra con
+    # el mismo gestor que el servicio y sobrevive reinicios con `enable`.
+    if ! command -v systemctl >/dev/null 2>&1; then
+        echo "No hay systemd. Instala cron:  sudo apt install -y cron"
+        exit 1
+    fi
+    echo ">> Instalando timers de systemd (necesita sudo)"
+
+    for modo in hora dia; do
+        sudo tee "/etc/systemd/system/sacbinance-informe-${modo}.service" >/dev/null <<UNIT
+[Unit]
+Description=SACBinance - informe ${modo}
+After=sacbinance.service
+
+[Service]
+Type=oneshot
+User=${USER}
+WorkingDirectory=${RAIZ}
+ExecStart=/usr/bin/env bash ${RAIZ}/deploy/informe.sh ${modo}
+UNIT
+    done
+
+    # Horaria: al minuto 5 de cada hora
+    sudo tee /etc/systemd/system/sacbinance-informe-hora.timer >/dev/null <<'UNIT'
+[Unit]
+Description=SACBinance - instantanea horaria
+
+[Timer]
+OnCalendar=*:05
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNIT
+
+    # Diaria: 06:30. Persistent=true la ejecuta al arrancar si el servidor
+    # estuvo apagado a esa hora.
+    sudo tee /etc/systemd/system/sacbinance-informe-dia.timer >/dev/null <<'UNIT'
+[Unit]
+Description=SACBinance - informe completo del dia
+
+[Timer]
+OnCalendar=*-*-* 06:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNIT
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now sacbinance-informe-hora.timer sacbinance-informe-dia.timer
+    echo ""
+    echo "Timers activos:"
+    systemctl list-timers 'sacbinance-*' --no-pager
     ;;
 
   *)
-    echo "Uso: bash deploy/informe.sh [hora|dia|cron]"; exit 1 ;;
+    echo "Uso: bash deploy/informe.sh [hora|dia|timers]"; exit 1 ;;
 esac
