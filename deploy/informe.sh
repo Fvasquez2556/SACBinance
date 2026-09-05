@@ -68,6 +68,39 @@ case "${1:-hora}" in
     echo "OK: $DEST"
     ;;
 
+  semana)
+    # Cierre semanal: lunes 00:00 a domingo 23:59 hora de Guatemala. Se
+    # ejecuta el lunes de madrugada, asi que reporta la semana que acaba
+    # de cerrar (--periodo previa), no la que empieza.
+    DEST="$DIR/semana_$(date '+%Y-%m-%d').txt"
+    {
+        echo "=============================================================="
+        echo "  CIERRE SEMANAL SACBinance — generado $(date '+%Y-%m-%d %H:%M %Z')"
+        echo "=============================================================="
+        echo
+        echo "########## SEMANA QUE CIERRA (lun-dom, hora Guatemala) ##########"
+        "$PY" analyze_outcomes.py --periodo previa 2>&1
+        echo
+        echo "########## POR TIER ##########"
+        "$PY" analyze_outcomes.py --periodo previa --por tier 2>&1
+        echo
+        echo "########## POR TAXONOMIA ##########"
+        "$PY" analyze_outcomes.py --periodo previa --por taxonomia 2>&1
+    } | limpiar > "$DEST"
+    echo "OK: $DEST"
+    ;;
+
+  finde)
+    DEST="$DIR/finde_$(date '+%Y-%m-%d').txt"
+    {
+        echo "  FIN DE SEMANA SACBinance — $(date '+%Y-%m-%d %H:%M %Z')"
+        echo
+        "$PY" analyze_outcomes.py --periodo finde 2>&1
+        "$PY" analyze_outcomes.py --periodo finde --por tier 2>&1
+    } | limpiar > "$DEST"
+    echo "OK: $DEST"
+    ;;
+
   cron|timers)
     # systemd timers, no crontab: Ubuntu Server suele venir SIN cron
     # instalado, y systemd ya esta ahi por definicion. Ademas se integra con
@@ -78,7 +111,7 @@ case "${1:-hora}" in
     fi
     echo ">> Instalando timers de systemd (necesita sudo)"
 
-    for modo in hora dia; do
+    for modo in hora dia semana; do
         sudo tee "/etc/systemd/system/sacbinance-informe-${modo}.service" >/dev/null <<UNIT
 [Unit]
 Description=SACBinance - informe ${modo}
@@ -119,13 +152,26 @@ Persistent=true
 WantedBy=timers.target
 UNIT
 
+    # Semanal: lunes 07:00 hora local, con el domingo ya cerrado
+    sudo tee /etc/systemd/system/sacbinance-informe-semana.timer >/dev/null <<'UNIT'
+[Unit]
+Description=SACBinance - cierre semanal (lun-dom)
+
+[Timer]
+OnCalendar=Mon *-*-* 07:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNIT
+
     sudo systemctl daemon-reload
-    sudo systemctl enable --now sacbinance-informe-hora.timer sacbinance-informe-dia.timer
+    sudo systemctl enable --now sacbinance-informe-hora.timer         sacbinance-informe-dia.timer sacbinance-informe-semana.timer
     echo ""
     echo "Timers activos:"
     systemctl list-timers 'sacbinance-*' --no-pager
     ;;
 
   *)
-    echo "Uso: bash deploy/informe.sh [hora|dia|timers]"; exit 1 ;;
+    echo "Uso: bash deploy/informe.sh [hora|dia|semana|finde|timers]"; exit 1 ;;
 esac

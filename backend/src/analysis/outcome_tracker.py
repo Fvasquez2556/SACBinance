@@ -37,10 +37,37 @@ from src.utils.logger import get_logger
 logger = get_logger(__name__)
 
 # Escalera fija de umbrales, en %. El 3.2 es el objetivo de referencia.
-ESCALERA = (1.0, 2.0, 3.2, 5.0, 10.0)
-_SUFIJO = {1.0: "1", 2.0: "2", 3.2: "32", 5.0: "5", 10.0: "10"}
+# El 1.2 y el 4.2 estan para los marcadores del tablero (ver `marcadores`).
+ESCALERA = (1.0, 1.2, 2.0, 3.2, 4.2, 5.0, 10.0)
+_SUFIJO = {1.0: "1", 1.2: "12", 2.0: "2", 3.2: "32",
+           4.2: "42", 5.0: "5", 10.0: "10"}
 
 OBJETIVO = 3.2  # umbral sobre el que se clasifica la forma del camino
+
+# --- Marcadores del tablero -------------------------------------------------
+# Colores, y por que cada uno:
+#   VERDE     llego al objetivo de +3.2%
+#   MORADO    supero +4.2% (objetivo holgado)
+#   AMARILLO  cayo -1.2%, el SL medio observado en las señales que se torcieron
+#   ROJO      toco el SL que el propio sistema habia fijado
+# No son excluyentes a proposito: una señal puede bajar primero y luego subir
+# (el caso DIP_Y_SUBE), y ver los dos marcadores a la vez es justo el dato.
+MARCA_VERDE = "VERDE"
+MARCA_MORADO = "MORADO"
+MARCA_AMARILLO = "AMARILLO"
+MARCA_ROJO = "ROJO"
+
+MARCA_UMBRAL = {
+    MARCA_VERDE: ("ms_up_32", 3.2),
+    MARCA_MORADO: ("ms_up_42", 4.2),
+    MARCA_AMARILLO: ("ms_dn_12", -1.2),
+    MARCA_ROJO: ("ms_sl", None),
+}
+
+
+def marcadores(row: dict) -> list:
+    """Colores que le corresponden a un outcome. Puede llevar varios."""
+    return [m for m, (campo, _) in MARCA_UMBRAL.items() if row.get(campo) is not None]
 
 FORMA_DIRECTO = "DIRECTO"
 FORMA_DIP = "DIP_Y_SUBE"

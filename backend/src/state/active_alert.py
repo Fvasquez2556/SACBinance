@@ -70,6 +70,12 @@ MOTIVO_IMPULSO = "IMPULSO_AGOTADO"
 MOTIVO_CADUCA = "CADUCADA"
 MOTIVO_ESTADO = "ESTADO_DEGRADADO"
 
+# Marcadores del tablero. No son excluyentes: una alerta puede haber caido a
+# -1.2% y despues subir a +3.2%, y ver los dos a la vez es justo el dato.
+MARCA_VERDE_PCT = 3.2      # objetivo
+MARCA_MORADO_PCT = 4.2     # objetivo holgado
+MARCA_AMARILLO_PCT = -1.2  # SL medio observado en las señales que se torcieron
+
 
 @dataclass
 class AlertaActiva:
@@ -136,8 +142,27 @@ class AlertaActiva:
             "fase_actual": self.fase_actual,
             "fuerza_actual": self.fuerza_actual,
             "fuerza_tendencia": self._tendencia(),
+            "marcadores": self.marcadores(),
             "motivo_cierre": self.motivo_cierre,
         }
+
+    def marcadores(self) -> list:
+        """
+        Colores segun hasta donde llego el precio desde el entry CONGELADO.
+        ROJO usa el SL que el sistema fijo para esta señal, no un % fijo.
+        """
+        m = []
+        if self.mfe_pct >= MARCA_MORADO_PCT:
+            m.append("MORADO")
+        if self.mfe_pct >= MARCA_VERDE_PCT:
+            m.append("VERDE")
+        if self.mae_pct <= MARCA_AMARILLO_PCT:
+            m.append("AMARILLO")
+        if self.stop_loss and self.entry > 0:
+            sl_pct = (self.stop_loss - self.entry) / self.entry * 100.0
+            if self.mae_pct <= sl_pct:
+                m.append("ROJO")
+        return m
 
     def _tendencia(self) -> int:
         """Diferencia de fuerza contra hace unas velas: signo del declive."""

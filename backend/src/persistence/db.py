@@ -82,10 +82,12 @@ CREATE TABLE IF NOT EXISTS outcomes (
     ms_mfe        INTEGER,
     ms_mae        INTEGER,
     -- Primer cruce de cada umbral, en ms desde la apertura. NULL = no llego.
-    ms_up_1       INTEGER, ms_up_2  INTEGER, ms_up_32 INTEGER,
-    ms_up_5       INTEGER, ms_up_10 INTEGER,
-    ms_dn_1       INTEGER, ms_dn_2  INTEGER, ms_dn_32 INTEGER,
-    ms_dn_5       INTEGER, ms_dn_10 INTEGER,
+    ms_up_1       INTEGER, ms_up_12 INTEGER, ms_up_2  INTEGER,
+    ms_up_32      INTEGER, ms_up_42 INTEGER, ms_up_5  INTEGER,
+    ms_up_10      INTEGER,
+    ms_dn_1       INTEGER, ms_dn_12 INTEGER, ms_dn_2  INTEGER,
+    ms_dn_32      INTEGER, ms_dn_42 INTEGER, ms_dn_5  INTEGER,
+    ms_dn_10      INTEGER,
     ms_tp         INTEGER, ms_sl    INTEGER,
     -- Camino hasta +3.2%
     dip_antes_obj REAL,
@@ -120,7 +122,8 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 #           posterior a su apertura (el sistema estuvo apagado en medio).
 #   3 -> 4: outcomes.sombra — mide las señales que el gate macro suprime.
 #   4 -> 5: outcomes.vol_24h / vol_1m_medio — liquidez en la señal.
-SCHEMA_VERSION = 5
+#   5 -> 6: umbrales 1.2% y 4.2% (marcadores amarillo y morado del tablero).
+SCHEMA_VERSION = 6
 
 _CREATE_SIGNALS = """
 CREATE TABLE IF NOT EXISTS signals (
@@ -261,6 +264,17 @@ class Database:
                 if col not in cols:
                     self._conn.execute(f"ALTER TABLE outcomes ADD COLUMN {col} REAL")
             logger.info("Migracion v4->5: columnas de liquidez añadidas a outcomes")
+
+        if version < 6:
+            cols = [r[1] for r in self._conn.execute("PRAGMA table_info(outcomes)")]
+            nuevas = [c for c in ("ms_up_12", "ms_up_42", "ms_dn_12", "ms_dn_42")
+                      if c not in cols]
+            for col in nuevas:
+                self._conn.execute(f"ALTER TABLE outcomes ADD COLUMN {col} INTEGER")
+            if nuevas:
+                logger.info(
+                    f"Migracion v5->6: umbrales 1.2%/4.2% añadidos ({len(nuevas)} columnas)"
+                )
 
         self._conn.execute(
             "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('version', ?)",

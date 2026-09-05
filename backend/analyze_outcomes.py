@@ -18,13 +18,17 @@ un resultado, es ruido.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from src.analysis.outcome_tracker import ESCALERA, OBJETIVO, _SUFIJO  # noqa: E402
+from src.analysis.outcome_tracker import (  # noqa: E402
+    ESCALERA, MARCA_AMARILLO, MARCA_MORADO, MARCA_ROJO, MARCA_VERDE,
+    OBJETIVO, _SUFIJO, marcadores,
+)
 from src.persistence.db import Database  # noqa: E402
 
 MIN_MUESTRAS = 15
@@ -273,12 +277,90 @@ def linea_csv(rows: list) -> str:
 CSV_CABECERA = "fecha,total,cerrados,sombra,llegaron_32,toco_tp,toco_sl,mfe_mediana,mae_mediana"
 
 
+# Guatemala es UTC-6 todo el año (no aplica horario de verano), asi que basta
+# un desplazamiento fijo. Los cortes de periodo se calculan en hora LOCAL y
+# se convierten a UTC, que es en lo que estan los timestamps.
+TZ_OFFSET_H = -6
+
+
+def _local(ts_ms: int) -> dt.datetime:
+    return dt.datetime.utcfromtimestamp(ts_ms / 1000) + dt.timedelta(hours=TZ_OFFSET_H)
+
+
+def _ms_desde_local(local: dt.datetime) -> int:
+    """datetime en hora local de Guatemala -> epoch ms UTC."""
+    utc = local - dt.timedelta(hours=TZ_OFFSET_H)
+    return int(utc.replace(tzinfo=dt.timezone.utc).timestamp() * 1000)
+
+
+def rango_periodo(nombre: str) -> tuple:
+    """
+    Devuelve (desde_ms, hasta_ms, etiqueta) en hora local de Guatemala.
+
+      semana   lunes 00:00 -> domingo 23:59:59 de la semana en curso
+      finde    sabado 00:00 -> domingo 23:59:59 de la semana en curso
+      previa   la semana anterior completa
+      hoy      dia en curso
+    """
+    ahora = _local(int(time.time() * 1000))
+    hoy = ahora.replace(hour=0, minute=0, second=0, microsecond=0)
+    lunes = hoy - dt.timedelta(days=hoy.weekday())
+
+    if nombre == "semana":
+        ini, fin, eti = lunes, lunes + dt.timedelta(days=7), "semana en curso (lun-dom)"
+    elif nombre == "previa":
+        ini = lunes - dt.timedelta(days=7)
+        fin, eti = lunes, "semana anterior (lun-dom)"
+    elif nombre == "finde":
+        ini = lunes + dt.timedelta(days=5)
+        fin, eti = ini + dt.timedelta(days=2), "fin de semana (sab-dom)"
+    elif nombre == "hoy":
+        ini, fin, eti = hoy, hoy + dt.timedelta(days=1), "hoy"
+    else:
+        raise ValueError(nombre)
+    return _ms_desde_local(ini), _ms_desde_local(fin), f"{eti}: {ini:%d/%m %H:%M} a {fin:%d/%m %H:%M} (GT)"
+
+
+def desglose_marcadores(rows: list) -> None:
+    """
+    Reparto por marcador. No son excluyentes: una señal puede bajar -1.2% y
+    despues subir +3.2%, y verlo asi es justo el dato que interesa.
+    """
+    total = len(rows)
+    if not total:
+        return
+    _linea("MARCADORES (VERDE +3.2% · MORADO +4.2% · AMARILLO -1.2% · ROJO SL del sistema)")
+    etiqueta = {
+        MARCA_MORADO: "MORADO    llego a +4.2%",
+        MARCA_VERDE: "VERDE     llego a +3.2%",
+        MARCA_AMARILLO: "AMARILLO  cayo a -1.2%",
+        MARCA_ROJO: "ROJO      toco el SL del sistema",
+    }
+    marcas = [marcadores(r) for r in rows]
+    for m in (MARCA_MORADO, MARCA_VERDE, MARCA_AMARILLO, MARCA_ROJO):
+        n = sum(1 for ms in marcas if m in ms)
+        print(f"  {etiqueta[m]:36s} {n:4d} / {total}   {_pct(n, total)}")
+
+    print()
+    solo_verde = sum(1 for ms in marcas
+                     if MARCA_VERDE in ms and MARCA_AMARILLO not in ms and MARCA_ROJO not in ms)
+    verde_y_rojo = sum(1 for ms in marcas if MARCA_VERDE in ms and MARCA_AMARILLO in ms)
+    solo_perdida = sum(1 for ms in marcas if MARCA_VERDE not in ms and MARCA_AMARILLO in ms)
+    ni_una = sum(1 for ms in marcas if not ms)
+    print(f"  Subio limpio (verde, sin tocar -1.2%)   {solo_verde:4d} / {total}   {_pct(solo_verde, total)}")
+    print(f"  Bajo y luego subio (verde + amarillo)   {verde_y_rojo:4d} / {total}   {_pct(verde_y_rojo, total)}")
+    print(f"  Solo bajo (amarillo, nunca verde)       {solo_perdida:4d} / {total}   {_pct(solo_perdida, total)}")
+    print(f"  Se mantuvo en calma (ningun marcador)   {ni_una:4d} / {total}   {_pct(ni_una, total)}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--incluir-vivas", action="store_true",
                     help="incluye señales que aun no cumplieron la ventana")
     ap.add_argument("--dias", type=float, default=None, help="solo los ultimos N dias")
+    ap.add_argument("--periodo", choices=["hoy", "finde", "semana", "previa"],
+                    help="periodo en hora local de Guatemala (UTC-6)")
     ap.add_argument("--csv", action="store_true",
                     help="imprime una sola linea CSV con el estado actual")
     ap.add_argument("--cabecera-csv", action="store_true",
@@ -293,9 +375,15 @@ def main() -> None:
 
     db = Database()
     rows = db.get_outcomes(solo_cerrados=not args.incluir_vivas)
-    if args.dias:
+    etiqueta_periodo = ""
+    if args.periodo:
+        desde, hasta, etiqueta_periodo = rango_periodo(args.periodo)
+        rows = [r for r in rows if desde <= r["ts_open"] < hasta]
+    elif args.dias:
         corte = int((time.time() - args.dias * 86400) * 1000)
         rows = [r for r in rows if r["ts_open"] >= corte]
+    if etiqueta_periodo:
+        print(f"\nPERIODO — {etiqueta_periodo}")
 
     if args.csv:
         print(linea_csv(rows))
@@ -303,6 +391,7 @@ def main() -> None:
         return
 
     informe(rows, args.incluir_vivas)
+    desglose_marcadores(rows)
     desglose_liquidez(rows)
     if args.por:
         desglose(rows, args.por)

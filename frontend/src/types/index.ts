@@ -77,6 +77,8 @@ export interface Impulso {
  * Alerta con entry CONGELADO en la emisión. `entry`, `take_profit` y
  * `stop_loss` no cambian nunca; `delta_pct` se mide siempre contra ese entry.
  */
+export type Marcador = "VERDE" | "MORADO" | "AMARILLO" | "ROJO";
+
 export interface AlertaActiva {
   symbol: string;
   ts_emision: number;
@@ -101,6 +103,9 @@ export interface AlertaActiva {
   fase_actual: FaseImpulso;
   fuerza_actual: number;
   fuerza_tendencia: number;
+  /** VERDE +3.2% · MORADO +4.2% · AMARILLO -1.2% · ROJO el SL del sistema.
+   *  No excluyentes: bajar y luego subir da AMARILLO y VERDE a la vez. */
+  marcadores?: Marcador[];
   motivo_cierre: string;
 }
 

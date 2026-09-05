@@ -41,6 +41,15 @@ interface Props {
   selected: boolean;
 }
 
+// Hasta donde llego el precio desde el entry congelado. No excluyentes:
+// una alerta que bajo -1.2% y luego subio +3.2% muestra los dos puntos.
+const MARCA_STYLE: Record<string, { color: string; titulo: string }> = {
+  MORADO: { color: "#8b5cf6", titulo: "Llegó a +4.2%" },
+  VERDE: { color: "#22c55e", titulo: "Llegó a +3.2%" },
+  AMARILLO: { color: "#eab308", titulo: "Cayó a -1.2% (SL medio observado)" },
+  ROJO: { color: "#dc2626", titulo: "Tocó el SL que fijó el sistema" },
+};
+
 const FASE_STYLE: Record<string, { color: string; icono: string }> = {
   ACELERANDO: { color: "#2d9c4a", icono: "▲▲" },
   SOSTENIDA: { color: "#8a9a3a", icono: "▲" },
@@ -85,6 +94,27 @@ export default function PairRow({ pair, onClick, selected }: Props) {
               {enDeclive ? "PERDIENDO FUERZA" : "ALERTA VIVA"}
             </span>
             <span style={{ color: "#666", fontWeight: 400 }}> · {alerta.edad_min}min</span>
+          </div>
+        )}
+        {alerta && alerta.marcadores && alerta.marcadores.length > 0 && (
+          <div style={{ marginTop: 3, display: "flex", gap: 3 }}>
+            {alerta.marcadores.map((m) => {
+              const e = MARCA_STYLE[m];
+              if (!e) return null;
+              return (
+                <span
+                  key={m}
+                  title={e.titulo}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: e.color,
+                    display: "inline-block",
+                  }}
+                />
+              );
+            })}
           </div>
         )}
       </td>
