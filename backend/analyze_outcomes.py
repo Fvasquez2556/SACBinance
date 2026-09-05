@@ -249,21 +249,58 @@ def desglose_liquidez(rows: list) -> None:
                   f"{(f'{mfe:+.2f}%' if mfe is not None else '—'):>9s}")
 
 
+
+def linea_csv(rows: list) -> str:
+    """
+    Una linea CSV con el estado actual. Pensada para acumular una serie
+    horaria: leyendo el fichero de golpe se ve la evolucion sin tener que
+    abrir treinta informes.
+    """
+    suf = _SUFIJO[OBJETIVO]
+    total = len(rows)
+    cerrados = sum(1 for r in rows if r["cerrado"])
+    llegaron = sum(1 for r in rows if r.get(f"ms_up_{suf}") is not None)
+    tp = sum(1 for r in rows if r.get("ms_tp") is not None)
+    sl = sum(1 for r in rows if r.get("ms_sl") is not None)
+    sombra = sum(1 for r in rows if r.get("sombra"))
+    mfe = _mediana([r["mfe_pct"] for r in rows if r.get("mfe_pct") is not None])
+    mae = _mediana([r["mae_pct"] for r in rows if r.get("mae_pct") is not None])
+    return (f"{time.strftime('%Y-%m-%d %H:%M')},{total},{cerrados},{sombra},"
+            f"{llegaron},{tp},{sl},"
+            f"{mfe if mfe is not None else ''},{mae if mae is not None else ''}")
+
+
+CSV_CABECERA = "fecha,total,cerrados,sombra,llegaron_32,toco_tp,toco_sl,mfe_mediana,mae_mediana"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--incluir-vivas", action="store_true",
                     help="incluye señales que aun no cumplieron la ventana")
     ap.add_argument("--dias", type=float, default=None, help="solo los ultimos N dias")
+    ap.add_argument("--csv", action="store_true",
+                    help="imprime una sola linea CSV con el estado actual")
+    ap.add_argument("--cabecera-csv", action="store_true",
+                    help="imprime la cabecera del CSV y sale")
     ap.add_argument("--por", choices=["tier", "display_state", "taxonomia", "macro", "symbol"],
                     help="desglose por categoria")
     args = ap.parse_args()
+
+    if args.cabecera_csv:
+        print(CSV_CABECERA)
+        return
 
     db = Database()
     rows = db.get_outcomes(solo_cerrados=not args.incluir_vivas)
     if args.dias:
         corte = int((time.time() - args.dias * 86400) * 1000)
         rows = [r for r in rows if r["ts_open"] >= corte]
+
+    if args.csv:
+        print(linea_csv(rows))
+        db.close()
+        return
 
     informe(rows, args.incluir_vivas)
     desglose_liquidez(rows)
