@@ -145,7 +145,14 @@ class Settings(BaseSettings):
     sl_atr_mult: float = Field(default=2.0)         # SL fallback = entry - N×ATR
     rr_target: float = Field(default=2.0)           # ratio beneficio/riesgo objetivo
     max_risk_pct: float = Field(default=6.0)        # riesgo maximo aceptable (% del entry)
-    min_risk_atr: float = Field(default=0.5)        # riesgo minimo = N×ATR (evita SL pegado)
+    min_risk_atr: float = Field(default=1.5)        # riesgo minimo = N×ATR (evita SL pegado)
+    # El stop tiene que quedar fuera del ruido del par, no solo despegado del
+    # precio. Con min_risk_atr=0.5 se emitieron stops de 0.07%: dentro del
+    # spread. Ver _ruido_pullback_pct en trade_levels.py.
+    sl_ruido_tramo_1m: int = Field(default=60)      # ventana movil (min) del retroceso tipico
+    sl_ruido_paso_1m: int = Field(default=10)       # cada cuantas velas se muestrea
+    sl_ruido_mult: float = Field(default=1.0)       # margen sobre ese retroceso
+    objetivo_operador_pct: float = Field(default=3.2)  # a donde apuntas tu, no el sistema
 
     # --- Clasificacion de estado visible (filtro de contexto) ---
     # "TOCÓ FONDO" / "CONSOLIDANDO" solo si el precio esta en la zona baja del

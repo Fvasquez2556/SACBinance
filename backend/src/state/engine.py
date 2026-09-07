@@ -570,6 +570,7 @@ class StateEngine:
             st.metrics.price,
             st.candles_tf_live("15m") if s.htf_live_enabled else list(st.candles_15m),
             display, sr,
+            candles_1m=list(st.candles),
         )
         st.trade_levels = levels.to_dict()
 
