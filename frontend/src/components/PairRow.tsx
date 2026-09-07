@@ -64,9 +64,13 @@ export default function PairRow({ pair, onClick, selected }: Props) {
   const enDeclive = alerta?.estado === "PERDIENDO_FUERZA";
   const fase = FASE_STYLE[pair.impulso?.fase ?? "SIN_DATOS"] ?? FASE_STYLE.SIN_DATOS;
   const br = pair.base_rebote;
-  // La base ya formada, aunque aún no rompa, es contexto útil: dice que el
-  // par está construyendo el patrón y conviene vigilarlo.
-  const baseFormada = !!br && !br.detected && (br.base_velas ?? 0) >= 20 && !!br.caida_pct && br.caida_pct <= -2;
+  // El detector solo calcula `dist_techo_pct` cuando la caída previa Y el
+  // secado de volumen ya pasaron: significa que solo falta la ruptura. Filtrar
+  // por `base_velas` no servía — la base casi siempre ocupa la ventana entera
+  // (mediana 89 de 90 velas), así que marcaba 84 de 99 pares.
+  const enBase = !!br && !br.detected && !br.rompio && br.dist_techo_pct != null;
+  const faltaPct = enBase ? Math.abs(br!.dist_techo_pct!) : null;
+  const inminente = faltaPct != null && faltaPct <= 1.0;
 
   return (
     <tr
@@ -119,13 +123,21 @@ export default function PairRow({ pair, onClick, selected }: Props) {
             </span>
           </div>
         )}
-        {baseFormada && (
+        {enBase && (
           <div
-            style={{ fontSize: 9, marginTop: 2, color: "#6a5a8a", whiteSpace: "nowrap" }}
+            style={{
+              fontSize: 9,
+              marginTop: 2,
+              color: inminente ? "#a98ad0" : "#5a4d73",
+              fontWeight: inminente ? 700 : 400,
+              whiteSpace: "nowrap",
+            }}
             title={br?.reason}
           >
-            base {br?.base_velas}v · {br?.base_rango_pct}% · falta romper{" "}
-            {br?.base_techo}
+            {inminente ? "◔ " : ""}falta {faltaPct!.toFixed(2)}% → {br?.base_techo}
+            <span style={{ color: "#4a4055", fontWeight: 400 }}>
+              {" "}· rango {br?.base_rango_pct}% · vol {br?.vol_dryup}x
+            </span>
           </div>
         )}
         {alerta && alerta.marcadores && alerta.marcadores.length > 0 && (
