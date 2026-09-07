@@ -35,6 +35,11 @@ case "${1:-hora}" in
     } | limpiar > "$DIR/ultimo.txt"
 
     # Serie temporal: una linea por hora. Leyendola de golpe se ve la evolucion.
+    # Vigilar el regimen: el dia rojo es el unico examen que falta y puede
+    # caer un miercoles sin que nadie abra el informe. Solo avisa al CAMBIAR
+    # a bajista, no en cada corrida.
+    "$PY" "$RAIZ/deploy/aviso_regimen.py" --horas 6 2>&1 | limpiar || true
+
     CSV="$DIR/evolucion.csv"
     [ -f "$CSV" ] || "$PY" analyze_outcomes.py --cabecera-csv > "$CSV" 2>/dev/null
     "$PY" analyze_outcomes.py --incluir-vivas --csv 2>/dev/null | limpiar >> "$CSV"

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { DisplayState, PairState, Tier } from "../types";
 import PairDetail from "./PairDetail";
 import PairRow from "./PairRow";
+import Calculadora from "./Calculadora";
 import SignalStats from "./SignalStats";
 
 const INTERESTING_STATES: DisplayState[] = ["TOCÓ_FONDO", "CONSOLIDANDO", "SUBIENDO", "BREAKOUT_INCIPIENTE"];
@@ -144,6 +145,8 @@ export default function Dashboard({
         </div>
 
         {/* Tabla */}
+        <Calculadora />
+
         <div style={{ flex: 1, overflowY: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
