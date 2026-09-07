@@ -21,7 +21,10 @@ Uso
     cd ~/sacbinance/backend
     ./venv/bin/python ../deploy/telegram_chatid.py
 
-Antes de ejecutarlo: escribele algo al bot desde Telegram (un /start basta).
+Se puede ejecutar ANTES de escribirle al bot: si la cola esta vacia se queda
+esperando dos minutos con long polling y recoge el mensaje en cuanto llega.
+Mirar una sola vez obligaba a acertar el orden y fallaba en silencio cuando
+Telegram ya habia entregado esos updates.
 """
 from __future__ import annotations
 
@@ -91,24 +94,51 @@ def main() -> int:
     except Exception:
         pass
 
-    r = pedir(token, "getUpdates", "?offset=0&timeout=0")
-    if not r.get("ok"):
-        print(f"getUpdates fallo: {r.get('description')}")
-        return 1
+    def recoger(params: str) -> dict:
+        """Saca los chats de una respuesta de getUpdates."""
+        r = pedir(token, "getUpdates", params)
+        if not r.get("ok"):
+            print(f"getUpdates fallo: {r.get('description')}")
+            return {}
+        out = {}
+        for u in r.get("result", []):
+            msg = (u.get("message") or u.get("edited_message")
+                   or u.get("channel_post") or {})
+            ch = msg.get("chat") or {}
+            if ch.get("id") is not None:
+                out[ch["id"]] = ch
+        return out
 
-    chats = {}
-    for u in r.get("result", []):
-        msg = u.get("message") or u.get("edited_message") or {}
-        ch = msg.get("chat") or {}
-        if ch.get("id") is not None:
-            chats[ch["id"]] = ch
+    chats = recoger("?offset=0&timeout=0")
+
+    # Si la cola esta vacia, ESPERAR en vez de rendirse. Mirar una sola vez
+    # obliga a acertar el orden (escribir al bot y luego ejecutar) y falla en
+    # silencio cuando Telegram ya entrego esos updates: un update recogido no
+    # se vuelve a entregar, asi que el segundo intento sale vacio aunque el
+    # mensaje se enviara de verdad.
+    if not chats:
+        restante = 120
+        print(f"\nLa cola esta vacia. Esperando {restante}s.")
+        print(f"AHORA: abre Telegram y mandale cualquier cosa a "
+              f"@{bot.get('username')}")
+        print("(con escribir 'hola' y enviar basta)\n")
+        while restante > 0 and not chats:
+            trozo = min(30, restante)
+            try:
+                chats = recoger(f"?offset=-1&timeout={trozo}")
+            except Exception as e:
+                print(f"  reintentando ({type(e).__name__})")
+            restante -= trozo
+            if not chats and restante > 0:
+                print(f"  esperando... quedan {restante}s")
 
     if not chats:
-        print("\nNo hay mensajes todavia.")
-        print(f"Abre Telegram, busca @{bot.get('username')}, pulsa Iniciar")
-        print("o mandale un 'hola', y vuelve a ejecutar esto.")
-        print("\n(Telegram solo guarda los mensajes 24h sin recoger; si le")
-        print(" escribiste hace mucho, mandale otro.)")
+        print("\nSigue sin llegar nada. Las dos causas reales suelen ser:")
+        print(f"  1. El chat que tienes abierto no es @{bot.get('username')}.")
+        print("     Comprueba el nombre exacto tocando el titulo del chat.")
+        print("  2. El token del .env es de otro bot distinto al que escribes.")
+        print("\nAtajo que no falla: escribe a @userinfobot en Telegram. Te")
+        print("responde con tu id, y en un chat privado ese id ES el chat_id.")
         return 2
 
     print("\nchat_id encontrado:")
