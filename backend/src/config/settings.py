@@ -228,6 +228,10 @@ class Settings(BaseSettings):
     seguimiento_horas: int = Field(default=24)        # igual que outcome_window
     seguimiento_valle_minutos: int = Field(default=15)  # sin minimo nuevo -> EN_VALLE
     seguimiento_rebote_pct: float = Field(default=1.0)  # sobre el suelo -> RECUPERANDO
+    # Cuantas alertas en seguimiento caben en el tablero. Con ~500 señales al
+    # dia y ventana de 24h hay unas 460 abiertas a la vez: enseñarlas todas
+    # haria el tablero inservible. Se quedan las mas cerca de su meta.
+    seguimiento_max_filas: int = Field(default=25)
 
     # --- Patron validado: "viene de caer" ---
     # research/marea_ingredientes.py, 7-sep-2026: una caida >=2% en los 40

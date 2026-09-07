@@ -121,6 +121,11 @@ async def startup():
     if engine._outcomes is not None:
         engine._outcomes.backfill(engine)
 
+    # 5c. Alertas: devolver al tablero las que aun estan dentro de su ventana
+    # de seguimiento. Van despues del backfill a proposito, para que recuperen
+    # el MFE/MAE ya reconstruido y no empiecen de cero.
+    engine._alertas.rehidratar(db, int(time.time() * 1000))
+
     # 6. WebSockets Binance
     ws_mgr = WSManager(symbols, engine)
     await ws_mgr.start()

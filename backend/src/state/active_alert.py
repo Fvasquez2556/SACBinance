@@ -101,6 +101,8 @@ MOTIVO_SL = "SL_ALCANZADO"
 MOTIVO_IMPULSO = "IMPULSO_AGOTADO"
 MOTIVO_CADUCA = "CADUCADA"
 MOTIVO_ESTADO = "ESTADO_DEGRADADO"
+# No es un desenlace de mercado: la alerta venia de antes del reinicio.
+MOTIVO_REINICIO = "REINICIO"
 
 # Marcadores del tablero. No son excluyentes: una alerta puede haber caido a
 # -1.2% y despues subir a +3.2%, y ver los dos a la vez es justo el dato.
@@ -238,6 +240,79 @@ class AlertManager:
     def __init__(self) -> None:
         self._activas: Dict[str, AlertaActiva] = {}
         self._ultimo_cierre: Dict[str, int] = {}
+
+    # --- Recuperacion tras un reinicio ------------------------------------
+
+    def rehidratar(self, db, now_ms: int) -> int:
+        """
+        Devuelve al tablero las alertas cuya ventana de 24h sigue abierta.
+
+        Sin esto, la fase de seguimiento no sirve de nada: un reinicio borraba
+        la alerta y con ella justo la historia que se quiere conservar. Paso
+        con SOPHUSDT el 7-sep: la señal de las 01:29 llevaba +12.17% de MFE y
+        -6.08% de MAE y desaparecio en un reinicio de las 12:04.
+
+        Todo lo recuperado vuelve como NO accionable. Es deliberado: no se sabe
+        que hizo el impulso mientras el proceso estuvo caido, asi que decir
+        "esto pide actuar" seria inventarselo. Los niveles congelados y el
+        camino recorrido (MFE/MAE) si son hechos y se recuperan tal cual.
+        """
+        s = get_settings()
+        try:
+            # La fuente es `outcomes`, no `signals`. Una señal que ya toco su TP
+            # tiene status='TP' y desaparece de get_open_signals(), pero su
+            # ventana de seguimiento sigue abierta — que es justo el caso que
+            # esta fase existe para conservar. Paso con SOPHUSDT: status=TP,
+            # MFE +12.17%, y aun asi debe verse. La tabla outcomes trae ademas
+            # los niveles congelados, asi que no hace falta cruzar nada.
+            abiertos = [o for o in db.get_outcomes_abiertos()
+                        if (o.get("signal_id") or 0) > 0]
+        except Exception as e:
+            logger.warning(f"No se pudieron rehidratar alertas: {e}")
+            return 0
+
+        limite = s.seguimiento_horas * 3600_000
+        n = 0
+        for o in sorted(abiertos, key=lambda r: r.get("ts_open") or 0):
+            ts = o.get("ts_open") or 0
+            entry = o.get("entry")
+            if not entry or entry <= 0 or now_ms - ts >= limite:
+                continue
+            sym = o["symbol"]
+            # Una sola por par: si hay varias abiertas, la mas reciente
+            previa = self._activas.get(sym)
+            if previa is not None and previa.ts_emision >= ts:
+                continue
+            a = AlertaActiva(
+                symbol=sym,
+                signal_id=o.get("signal_id"),
+                ts_emision=ts,
+                entry=float(entry),
+                take_profit=o.get("take_profit"),
+                stop_loss=o.get("stop_loss"),
+                score_emision=o.get("score") or 0,
+                tier_emision=o.get("tier") or "NINGUNO",
+                estado_emision=o.get("display_state") or "",
+                macro_emision=o.get("macro") or "",
+                fase_emision="",
+                fuerza_emision=0,
+                consumido_emision=None,
+                precio_actual=float(entry),
+                accionable=False,
+                ts_fin_accion=now_ms,
+                motivo_cierre=MOTIVO_REINICIO,
+                mfe_pct=o.get("mfe_pct") or 0.0,
+                mae_pct=o.get("mae_pct") or 0.0,
+                es_giro=(o.get("display_state") or "") in _SETUPS_DE_GIRO,
+            )
+            a.estado = (ESTADO_CUMPLIDA if a.mfe_pct >= META_PCT
+                        else ESTADO_RETROCESO)
+            self._activas[sym] = a
+            n += 1
+        if n:
+            logger.info(f"Alertas devueltas al tablero tras el reinicio: {n} "
+                        f"(todas en seguimiento, no accionables)")
+        return n
 
     # --- Consulta ---------------------------------------------------------
 

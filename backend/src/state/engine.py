@@ -865,6 +865,7 @@ class StateEngine:
         now_ms = int(time.time() * 1000)
         retention_ms = s.dashboard_retention_minutes * 60_000
         out = []
+        seguimiento = []
         for st in self.states.values():
             interesting = st.display_state in _INTERESTING_DISPLAY
             # Retencion: sigue visible "perdiendo fuerza" tras dejar de interesar
@@ -872,8 +873,27 @@ class StateEngine:
                 st.last_interesting_ms > 0
                 and now_ms - st.last_interesting_ms < retention_ms
             )
+            al = st.alerta or {}
+            # Una alerta que pide actuar entra siempre, la mire quien la mire:
+            # es el motivo de que exista el tablero.
+            if al.get("accionable"):
+                out.append(st.snapshot())
+                continue
+            if al:
+                # En seguimiento. El sistema emite ~500 señales al dia y la
+                # ventana es de 24h, asi que enseñarlas todas serian ~460 filas
+                # y el tablero dejaria de servir. Se apartan y se recortan.
+                seguimiento.append(st.snapshot())
+                continue
             if st.score >= threshold or interesting or in_retention:
                 out.append(st.snapshot())
+
+        # De las que estan en seguimiento se conservan las que siguen cerca de
+        # su meta: `prob_meta` es la frecuencia observada de llegar, asi que
+        # ordenar por ella deja arriba justo las que aun pueden hacer algo.
+        seguimiento.sort(key=_orden_tablero, reverse=True)
+        out.extend(seguimiento[:s.seguimiento_max_filas])
+
         out.sort(key=_orden_tablero, reverse=True)
         return out
 
