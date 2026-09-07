@@ -232,6 +232,13 @@ class Settings(BaseSettings):
     # dia y ventana de 24h hay unas 460 abiertas a la vez: enseñarlas todas
     # haria el tablero inservible. Se quedan las mas cerca de su meta.
     seguimiento_max_filas: int = Field(default=25)
+    # Entrada alternativa: el nivel al que esperar un retroceso antes de
+    # entrar. Medido en research/esperar_retroceso.py: entrando ahi el
+    # rendimiento POR OPERACION sube de +0.54% a +0.87% con stop del 2%, pero
+    # solo se ejecuta el 42% de las veces. Conviene si lo que limita es el
+    # capital, no las oportunidades. Se probo hacerlo proporcional al par
+    # (retroceso_dinamico.py) y no aporta nada sobre el numero fijo.
+    retroceso_entrada_pct: float = Field(default=1.8)
 
     # --- Avisos por Telegram ---
     # El token y el chat_id NO van aqui: se ponen en backend/.env, que no esta

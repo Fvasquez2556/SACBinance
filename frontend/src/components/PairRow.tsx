@@ -303,6 +303,17 @@ export default function PairRow({ pair, onClick, selected }: Props) {
               {alerta.delta_pct >= 0 ? "+" : ""}
               {alerta.delta_pct.toFixed(2)}%
             </div>
+            {/* Entrada alternativa: esperar el retroceso sube el rendimiento
+                POR OPERACION de +0.54% a +0.87%, pero solo se ejecuta el 42%
+                de las veces. Sirve cuando lo que limita es el capital. */}
+            {alerta.entrada_alt > 0 && (
+              <div
+                style={{ fontSize: 9, marginTop: 1, color: "#7a8a9a", whiteSpace: "nowrap" }}
+                title={`Esperar a que caiga ${alerta.retroceso_pct}% desde el entry y entrar ahi. El objetivo sigue siendo ${alerta.meta} (+3.2% sobre el entry original), asi que entrar mas abajo lo acerca. Solo se ejecuta ~42% de las veces.`}
+              >
+                ↓{alerta.retroceso_pct}% · {alerta.entrada_alt}
+              </div>
+            )}
             {/* La puntuacion que baja: no es un invento, es la frecuencia
                 observada de llegar a la meta desde esa distancia. Si el precio
                 se aleja baja, si se acerca sube. */}

@@ -159,6 +159,15 @@ class AlertaActiva:
     def meta(self) -> float:
         return self.entry * (1 + META_PCT / 100.0)
 
+    @property
+    def entrada_alt(self) -> float:
+        """
+        Nivel al que esperar un retroceso antes de entrar. El objetivo sigue
+        siendo la meta sobre el entry ORIGINAL, no sobre este precio: entrar
+        mas abajo acerca el objetivo, no lo mueve.
+        """
+        return self.entry * (1 - get_settings().retroceso_entrada_pct / 100.0)
+
     def to_dict(self) -> dict:
         return {
             "symbol": self.symbol,
@@ -195,6 +204,8 @@ class AlertaActiva:
             # seguimiento
             "accionable": self.accionable,
             "meta": round(self.meta, 10),
+            "entrada_alt": round(self.entrada_alt, 10),
+            "retroceso_pct": get_settings().retroceso_entrada_pct,
             "dist_meta_pct": self.dist_meta_pct,
             "prob_meta": self.prob_meta,
             "prob_meta_n": self.prob_meta_n,

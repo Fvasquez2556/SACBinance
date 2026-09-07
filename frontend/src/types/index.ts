@@ -141,6 +141,10 @@ export interface AlertaActiva {
   accionable: boolean;
   /** Meta de referencia: +3.2% sobre el entry congelado. */
   meta: number;
+  /** Nivel al que esperar un retroceso antes de entrar. El objetivo NO se
+   *  mueve: sigue siendo la meta sobre el entry original. */
+  entrada_alt: number;
+  retroceso_pct: number;
   /** Lo que le falta al precio actual para la meta. */
   dist_meta_pct: number | null;
   /** Frecuencia OBSERVADA de llegar a la meta, por distancia Y edad de la

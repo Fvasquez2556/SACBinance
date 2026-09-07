@@ -174,6 +174,11 @@ def texto_alerta(symbol: str, alerta: dict, retroceso: dict,
     if tp is not None or sl is not None:
         lineas.append(f"TP {_fmt(tp, 2, '%')}   SL {_fmt(sl, 2, '%')}")
 
+    alt = alerta.get("entrada_alt")
+    if alt:
+        lineas.append(f"esperando -{alerta.get('retroceso_pct')}%: "
+                      f"<code>{alt}</code>")
+
     d = alerta.get("dist_meta_pct")
     if d is not None:
         p = alerta.get("prob_meta", 0)
