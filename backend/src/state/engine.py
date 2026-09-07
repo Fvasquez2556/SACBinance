@@ -910,7 +910,10 @@ class StateEngine:
                 snap["vol_24h"] = None
         ok, motivo = _merece_aviso(snap, st.retroceso or {}, s)
         if not ok:
-            logger.debug(f"[{symbol}] sin aviso: {motivo}")
+            # A nivel INFO a proposito: sin ver el motivo, un telefono callado
+            # es indistinguible de un sistema roto, y la unica reaccion posible
+            # es desconfiar de todo.
+            logger.info(f"[{symbol}] sin aviso: {motivo}")
             return
         ultimo = self._aviso_ultimo.get(symbol, 0)
         if now_ms - ultimo < s.aviso_cooldown_min * 60_000:
