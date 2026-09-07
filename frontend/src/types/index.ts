@@ -29,6 +29,10 @@ export interface TradeLevels {
   risk_pct: number | null;
   reward_pct: number | null;
   atr_pct: number | null;
+  /** Retroceso tipico del par en ventanas de 1h, medido en 1m. El SL no baja de aqui. */
+  ruido_1m_pct: number | null;
+  /** ¿El TP ofrecido llega al objetivo del operador (+3.2%)? Solo medicion. */
+  objetivo_alcanzable: boolean;
   nearest_resistance: number | null;
   tp_blocked_by_resistance: boolean;
   sl_basis: string;
