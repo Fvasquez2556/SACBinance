@@ -309,7 +309,7 @@ export default function PairRow({ pair, onClick, selected }: Props) {
             {alerta.dist_meta_pct != null && (
               <div
                 style={{ fontSize: 9, marginTop: 1, whiteSpace: "nowrap" }}
-                title={`Meta +3.2% = ${alerta.meta}. Probabilidad medida sobre ${alerta.prob_meta_n} casos del grupo de control (horizonte 6h).`}
+                title={`Meta +3.2% = ${alerta.meta}. Probabilidad medida sobre ${alerta.prob_meta_n} casos con esta misma distancia Y esta misma edad (horizonte 6h). No es un modelo: es la frecuencia observada.`}
               >
                 <span style={{ color: "#667" }}>
                   {alerta.dist_meta_pct <= 0

@@ -143,8 +143,9 @@ export interface AlertaActiva {
   meta: number;
   /** Lo que le falta al precio actual para la meta. */
   dist_meta_pct: number | null;
-  /** Frecuencia OBSERVADA de llegar a la meta desde esa distancia. No es un
-   *  modelo: es la tabla del grupo de control, con su n al lado. */
+  /** Frecuencia OBSERVADA de llegar a la meta, por distancia Y edad de la
+   *  señal. No es un modelo: es la tabla medida, con su n al lado. La edad
+   *  importa — a 3.2% una alerta nueva vale 20% y una de 10 horas, 15%. */
   prob_meta: number;
   prob_meta_n: number;
   /** El par cumple ahora mismo el patron validado. */

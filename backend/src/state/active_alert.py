@@ -365,7 +365,10 @@ class AlertManager:
         # Distancia a la meta y su probabilidad OBSERVADA a esa distancia
         a.dist_meta_pct = round((a.meta / close - 1) * 100.0, 2) if close > 0 else None
         if a.dist_meta_pct is not None:
-            a.prob_meta, a.prob_meta_n = prob_llegar_meta(a.dist_meta_pct)
+            # La edad importa tanto como la distancia: una senal a 3.2% recien
+            # emitida vale 20%, y una a 3.2% que lleva diez horas parada, 15%.
+            edad = (now_ms - a.ts_emision) / 60_000.0
+            a.prob_meta, a.prob_meta_n = prob_llegar_meta(a.dist_meta_pct, edad)
 
         # Fin de la ventana de seguimiento: aqui si se retira del tablero
         if now_ms - a.ts_emision >= s.seguimiento_horas * 3600_000:

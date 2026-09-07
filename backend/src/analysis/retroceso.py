@@ -30,6 +30,8 @@ from typing import Optional
 
 from src.config.settings import get_settings
 
+INF = float("inf")
+
 
 @dataclass
 class Retroceso:
@@ -124,38 +126,102 @@ def detectar_retroceso(candles_1m: list) -> Retroceso:
     return res
 
 
-# --- Probabilidad medida de llegar a la meta segun lo que falte -------------
+# --- Probabilidad medida de llegar a la meta -------------------------------
 #
-# Tabla del grupo de control de research/cascada.py: instantes al azar sobre
-# senales abiertas, horizonte 6h, meta +3.2% sobre el entry congelado. NO es
-# un modelo: es la frecuencia observada, con su n al lado.
+# research/tabla_meta.py, 215,373 muestras del recorrido real de 1332 senales.
+# Para cada muestra: lo que faltaba para la meta, la edad de la senal, y si
+# llego en las 6h siguientes.
 #
-#     le faltaba      llego en 6h        n
-#       < 0.5%           87.3%           55     <- pocas, tomar con pinzas
-#       0.5-1%           69.7%          198
-#         1-2%           42.3%        1,075
-#         2-3%           22.0%        2,824
-#         3-5%           12.3%        5,771
-#         > 5%            4.4%        2,077
+# Por que hace falta la EDAD y no basta la distancia
+# --------------------------------------------------
+# La tabla anterior era solo por distancia y ponia 12% en la banda 3-5%. Pero
+# una senal recien emitida esta SIEMPRE a 3.2% de su meta — precio = entry en
+# ese instante — asi que el tablero le pegaba un 12% a cada alerta nueva. La
+# medicion directa sobre las 767 senales cerradas, desde su entry y a 6h:
+# 27.5%. Un factor de 2.3.
 #
+# Afinar las bandas no bastaba: "3.0-3.5%" da 15.5% sobre 16,919 muestras, pero
+# las que ademas son recien emitidas dan 24.8%. La banda mezclaba dos cosas
+# que no se parecen en nada:
+#
+#     recien emitida a 3.2%     acaba de pasar las puertas del sistema
+#     diez horas viva a 3.2%    lleva medio dia sin ir a ninguna parte
+#
+# La distancia sola no las separa. La edad si.
+#
+#     le falta        0-15min    15-60min      1-6h       >6h
+#       0-0.5%              —       90%         91%        89%
+#     2.5-3.0%            32%       25%         24%        19%
+#     3.0-3.5%            20%       18%         15%        15%   <- alerta nueva
+#       > 7%                —         —          4%         2%
+#
+# Celdas con menos de 60 casos se dejan a None y caen al tramo de edad
+# siguiente, que siempre tiene mas muestra.
 _TABLA_META = (
-    (0.5, 87.0, 55),
-    (1.0, 70.0, 198),
-    (2.0, 42.0, 1075),
-    (3.0, 22.0, 2824),
-    (5.0, 12.0, 5771),
-    (float("inf"), 4.0, 2077),
+    # (limite de distancia, ((limite de edad en min, prob, n), ...))
+    (0.5, ((15, None, 4), (60, 90.0, 60), (360, 91.0, 1224), (INF, 89.0, 5815))),
+    (1.0, ((15, None, 3), (60, 81.0, 107), (360, 75.0, 1906), (INF, 73.0, 7135))),
+    (1.5, ((15, None, 12), (60, 71.0, 173), (360, 63.0, 2607), (INF, 58.0, 8777))),
+    (2.0, ((15, None, 35), (60, 54.0, 411), (360, 43.0, 4302), (INF, 42.0, 10470))),
+    (2.5, ((15, 48.0, 125), (60, 45.0, 753), (360, 33.0, 6263), (INF, 30.0, 12668))),
+    (3.0, ((15, 32.0, 615), (60, 25.0, 2131), (360, 24.0, 9493), (INF, 19.0, 15548))),
+    (3.5, ((15, 20.0, 2368), (60, 18.0, 3619), (360, 15.0, 11652), (INF, 15.0, 15573))),
+    (4.0, ((15, 26.0, 400), (60, 18.0, 2104), (360, 15.0, 8785), (INF, 11.0, 13181))),
+    (5.0, ((15, 48.0, 64), (60, 21.0, 902), (360, 14.0, 9006), (INF, 7.0, 20796))),
+    (7.0, ((15, None, 10), (60, 35.0, 231), (360, 9.0, 4981), (INF, 5.0, 17955))),
+    (INF, ((15, None, 0), (60, None, 14), (360, 4.0, 1179), (INF, 2.0, 11916))),
 )
 
 
-def prob_llegar_meta(dist_pct: float) -> tuple:
+def _monotona(tabla: tuple) -> tuple:
     """
-    dist_pct: cuanto le falta al precio actual para la meta, en %.
-    Devuelve (probabilidad_observada, n_de_la_banda). Si ya la paso, 100.
+    Fuerza que alejarse de la meta nunca suba la probabilidad.
+
+    La tabla cruda tiene celdas que la rompen: 4-5% a los 15min da 48.4% con
+    n=64, y 5-7% entre 15 y 60min da 34.6% con n=231, ambas por encima de sus
+    vecinas mas cercanas a la meta. Puede ser real —una caida violenta rebota
+    violenta— pero con esas muestras es indistinguible del ruido, y en pantalla
+    quedaria un par MAS lejos de su objetivo con MAS probabilidad, que se lee
+    como un fallo. Se aplica minimo acumulado bajando por la distancia.
+
+    Ajusta hacia abajo, nunca hacia arriba: en la duda, el numero conservador.
+    """
+    n_edades = len(tabla[0][1])
+    tope = [None] * n_edades
+    salida = []
+    for dist, celdas in tabla:
+        fila = []
+        for i, (edad, p, n) in enumerate(celdas):
+            if p is not None:
+                if tope[i] is not None and p > tope[i]:
+                    p = tope[i]
+                tope[i] = p
+            fila.append((edad, p, n))
+        salida.append((dist, tuple(fila)))
+    return tuple(salida)
+
+
+_TABLA_META = _monotona(_TABLA_META)
+
+
+def prob_llegar_meta(dist_pct: float, edad_min: float = 0.0) -> tuple:
+    """
+    dist_pct: lo que le falta al precio actual para la meta, en %.
+    edad_min: minutos desde que se emitio la senal.
+
+    Devuelve (probabilidad_observada, n_de_la_celda). Si ya paso la meta, 100.
     """
     if dist_pct <= 0:
         return 100.0, 0
-    for limite, p, n in _TABLA_META:
+    for limite, celdas in _TABLA_META:
         if dist_pct < limite:
-            return p, n
-    return 4.0, 2077
+            # Primera celda de edad que aplique Y tenga muestra suficiente. Si
+            # la del tramo joven se descarto por pocas, cae a la siguiente.
+            for edad_lim, p, n in celdas:
+                if edad_min < edad_lim and p is not None:
+                    return p, n
+            for edad_lim, p, n in reversed(celdas):
+                if p is not None:
+                    return p, n
+            return 0.0, 0
+    return 2.0, 11916
