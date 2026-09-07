@@ -43,10 +43,21 @@ _last_sent: dict = {}
 # siempre y el broadcast diferencial no ahorraria un solo byte.
 _VOLATILE_FIELDS = ("htf_live_age_ms",)
 
+# Lo mismo dentro de `alerta`. Importa mas desde que las alertas viven las 24h
+# de su ventana en vez de morir a las pocas horas: ahora casi cada par lleva
+# una, y con `edad_min` en el hash todos contarian como cambiados en cada
+# snapshot. El diferencial dejaria de diferenciar nada.
+_VOLATILE_ALERTA = ("edad_min", "minutos_en_estado")
+
 
 def _fingerprint(pair: dict) -> int:
     """Hash del par ignorando los campos que dependen solo del reloj."""
-    return hash(_dumps({k: v for k, v in pair.items() if k not in _VOLATILE_FIELDS}))
+    limpio = {k: v for k, v in pair.items() if k not in _VOLATILE_FIELDS}
+    al = limpio.get("alerta")
+    if isinstance(al, dict) and al:
+        limpio["alerta"] = {k: v for k, v in al.items()
+                            if k not in _VOLATILE_ALERTA}
+    return hash(_dumps(limpio))
 
 
 def set_engine(engine) -> None:

@@ -50,6 +50,18 @@ const MARCA_STYLE: Record<string, { color: string; titulo: string }> = {
   ROJO: { color: "#dc2626", titulo: "Tocó el SL que fijó el sistema" },
 };
 
+// Estados de la alerta. Los cuatro ultimos son de SEGUIMIENTO: la señal ya no
+// pide actuar, pero sigue en el tablero hasta cumplir sus 24h. Antes
+// desaparecia y con ella toda su historia.
+const ALERTA_STYLE: Record<string, { color: string; texto: string }> = {
+  VIVA: { color: "#2d9c4a", texto: "ALERTA VIVA" },
+  PERDIENDO_FUERZA: { color: "#d04040", texto: "PERDIENDO FUERZA" },
+  EN_RETROCESO: { color: "#8a6a3a", texto: "EN RETROCESO" },
+  EN_VALLE: { color: "#6a7a8a", texto: "EN VALLE" },
+  RECUPERANDO: { color: "#4a8a6a", texto: "RECUPERANDO" },
+  CUMPLIDA: { color: "#22c55e", texto: "CUMPLIDA +3.2%" },
+};
+
 const FASE_STYLE: Record<string, { color: string; icono: string }> = {
   ACELERANDO: { color: "#2d9c4a", icono: "▲▲" },
   SOSTENIDA: { color: "#8a9a3a", icono: "▲" },
@@ -64,6 +76,13 @@ export default function PairRow({ pair, onClick, selected }: Props) {
   const enDeclive = alerta?.estado === "PERDIENDO_FUERZA";
   const fase = FASE_STYLE[pair.impulso?.fase ?? "SIN_DATOS"] ?? FASE_STYLE.SIN_DATOS;
   const br = pair.base_rebote;
+  const rt = pair.retroceso;
+  // El unico patron que batio al grupo de control: venir de una caida >=2%.
+  // Por eso el tablero lo ordena arriba y aqui se marca en grande.
+  const patron = !!rt?.detectado;
+  const est = alerta ? ALERTA_STYLE[alerta.estado] : undefined;
+  const enSeguimiento = !!alerta && alerta.accionable === false;
+  const sr = pair.sr_levels;
   // El detector solo calcula `dist_techo_pct` cuando la caída previa Y el
   // secado de volumen ya pasaron: significa que solo falta la ruptura. Filtrar
   // por `base_velas` no servía — la base casi siempre ocupa la ventana entera
@@ -79,7 +98,15 @@ export default function PairRow({ pair, onClick, selected }: Props) {
         cursor: "pointer",
         background: selected ? "#1a2a1a" : enDeclive ? "#2a1414" : style.bg,
         borderBottom: "1px solid #1e1e1e",
-        borderLeft: enDeclive ? "3px solid #a02020" : "3px solid transparent",
+        // La barra naranja marca el patron validado; es lo que sube la fila
+        // al principio del tablero, asi que conviene que se vea por que.
+        borderLeft: patron
+          ? "3px solid #c2703a"
+          : enDeclive
+            ? "3px solid #a02020"
+            : "3px solid transparent",
+        // En seguimiento la fila se atenua: sigue ahi, pero ya no pide actuar.
+        filter: enSeguimiento ? "saturate(0.55)" : undefined,
         transition: "background 0.15s, opacity 0.4s",
         opacity: pair.fading && !alerta ? 0.5 : 1,
       }}
@@ -96,11 +123,30 @@ export default function PairRow({ pair, onClick, selected }: Props) {
       <td style={{ padding: "6px 10px", fontWeight: 700, color: "#ccc", fontSize: 13 }}>
         {pair.symbol.replace("USDT", "")}
         <span style={{ color: "#555", fontWeight: 400, fontSize: 10 }}>/USDT</span>
-        {alerta && (
-          <div style={{ fontSize: 9, marginTop: 2, whiteSpace: "nowrap" }}>
-            <span style={{ color: enDeclive ? "#d04040" : "#2d9c4a", fontWeight: 700 }}>
-              {enDeclive ? "PERDIENDO FUERZA" : "ALERTA VIVA"}
+        {patron && (
+          <div style={{ fontSize: 9, marginTop: 2, whiteSpace: "nowrap" }} title={rt?.reason}>
+            <span
+              style={{
+                background: "#5a2d1a",
+                color: "#ffb27a",
+                padding: "1px 5px",
+                borderRadius: 3,
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+              }}
+            >
+              ▼ VIENE DE CAER {rt?.caida_pct}%
             </span>
+            {rt?.rebote_pct != null && rt.rebote_pct > 0 && (
+              <span style={{ color: "#7a6a5a", marginLeft: 4 }}>
+                +{rt.rebote_pct}% del suelo
+              </span>
+            )}
+          </div>
+        )}
+        {alerta && est && (
+          <div style={{ fontSize: 9, marginTop: 2, whiteSpace: "nowrap" }}>
+            <span style={{ color: est.color, fontWeight: 700 }}>{est.texto}</span>
             <span style={{ color: "#666", fontWeight: 400 }}> · {alerta.edad_min}min</span>
           </div>
         )}
@@ -138,6 +184,21 @@ export default function PairRow({ pair, onClick, selected }: Props) {
             <span style={{ color: "#4a4055", fontWeight: 400 }}>
               {" "}· rango {br?.base_rango_pct}% · vol {br?.vol_dryup}x
             </span>
+          </div>
+        )}
+        {sr && (sr.apoyado || sr.perdido) && (
+          <div
+            style={{
+              fontSize: 9,
+              marginTop: 2,
+              whiteSpace: "nowrap",
+              color: sr.perdido ? "#a05050" : "#4a8a6a",
+            }}
+            title={sr.lectura}
+          >
+            {sr.perdido
+              ? `✕ soporte perdido · estorba a +${sr.dist_resistencia_pct}%`
+              : `⌐ probando soporte · a -${sr.dist_soporte_pct}%`}
           </div>
         )}
         {alerta && alerta.marcadores && alerta.marcadores.length > 0 && (
@@ -233,6 +294,35 @@ export default function PairRow({ pair, onClick, selected }: Props) {
               {alerta.delta_pct >= 0 ? "+" : ""}
               {alerta.delta_pct.toFixed(2)}%
             </div>
+            {/* La puntuacion que baja: no es un invento, es la frecuencia
+                observada de llegar a la meta desde esa distancia. Si el precio
+                se aleja baja, si se acerca sube. */}
+            {alerta.dist_meta_pct != null && (
+              <div
+                style={{ fontSize: 9, marginTop: 1, whiteSpace: "nowrap" }}
+                title={`Meta +3.2% = ${alerta.meta}. Probabilidad medida sobre ${alerta.prob_meta_n} casos del grupo de control (horizonte 6h).`}
+              >
+                <span style={{ color: "#667" }}>
+                  {alerta.dist_meta_pct <= 0
+                    ? "meta hecha"
+                    : `falta ${alerta.dist_meta_pct.toFixed(2)}%`}
+                </span>
+                <span
+                  style={{
+                    marginLeft: 4,
+                    fontWeight: 700,
+                    color:
+                      alerta.prob_meta >= 60
+                        ? "#22c55e"
+                        : alerta.prob_meta >= 30
+                          ? "#b8860b"
+                          : "#7a5a5a",
+                  }}
+                >
+                  {alerta.prob_meta.toFixed(0)}%
+                </span>
+              </div>
+            )}
           </>
         ) : (
           <span style={{ color: "#444", fontSize: 10 }}>—</span>

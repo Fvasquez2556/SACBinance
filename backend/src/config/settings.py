@@ -221,6 +221,23 @@ class Settings(BaseSettings):
     # Para MANTENER viva una alerta ya emitida no se aplica: solo la fase.
     alerta_consumido_max: float = Field(default=3.5)
 
+    # --- Seguimiento: la señal no se borra, cambia de estado ---
+    # Una alerta emitida a las 09:00 desaparecia a las 13:00 y con ella toda
+    # su historia. Ahora vive la ventana entera y lo que cae es su
+    # probabilidad medida de llegar a la meta.
+    seguimiento_horas: int = Field(default=24)        # igual que outcome_window
+    seguimiento_valle_minutos: int = Field(default=15)  # sin minimo nuevo -> EN_VALLE
+    seguimiento_rebote_pct: float = Field(default=1.0)  # sobre el suelo -> RECUPERANDO
+
+    # --- Patron validado: "viene de caer" ---
+    # research/marea_ingredientes.py, 7-sep-2026: una caida >=2% en los 40
+    # minutos previos lleva a +3.2% en 3h el 30.1% de las veces contra 13.1%
+    # de base (n=1673). Los parametros replican la medicion; cambiarlos
+    # invalida el respaldo.
+    retroceso_velas_zona: int = Field(default=8)      # velas 1m donde se busca el suelo
+    retroceso_lookback: int = Field(default=40)       # velas 1m previas para el pico
+    retroceso_caida_min: float = Field(default=2.0)   # caida minima, %
+
     # --- Base corta post-caida ("flush -> base -> reclaim") ---
     # compression.py mira 96 velas de 15m (24h) y se pierde las bases de una
     # hora. Estos parametros salen de medir CHIPUSDT el 5-sep: caida -2.93%
@@ -254,6 +271,7 @@ class Settings(BaseSettings):
     sr_cluster_pct: float = Field(default=0.6)      # % para agrupar pivotes en un nivel
     sr_min_touches: int = Field(default=2)          # toques minimos para validar un nivel
     sr_max_levels: int = Field(default=6)           # niveles a conservar por lado
+    sr_apoyo_pct: float = Field(default=1.0)        # % para considerar el precio pegado a un nivel
 
     # --- Ancla diaria fija (00:00 UTC) ---
     # Reemplaza la ventana rolling 24h de Binance, cuyo denominador se mueve

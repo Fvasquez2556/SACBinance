@@ -24,6 +24,7 @@ from src.analysis.scoring import score_and_tier
 from src.analysis.impulse import medir_impulso
 from src.analysis.outcome_tracker import OutcomeTracker
 from src.analysis.signal_tracker import abrir_senal, evaluar_senales
+from src.analysis.retroceso import detectar_retroceso
 from src.analysis.trade_levels import calcular_niveles
 from src.config.settings import get_settings
 from src.indicators.calculator import indicators_from_candles
@@ -148,6 +149,40 @@ def _tier_from_score(val: int) -> str:
 
 def _tier_order(tier: str) -> int:
     return {"NINGUNO": 0, "VIGILANCIA": 1, "MODERADA": 2, "FUERTE": 3, "EXTRA-FUERTE": 4}.get(tier, 0)
+
+
+def _orden_tablero(x: dict) -> tuple:
+    """
+    Arriba lo que cumple el patron con respaldo.
+
+    El estudio del 7-sep-2026 dejo un solo predictor en pie: venir de una
+    caida >=2%. Ordenar por score no lo reflejaba, asi que el par que cumple
+    el patron podia quedar enterrado bajo veinte filas irrelevantes.
+
+    Grupos, de arriba abajo:
+        4  patron + alerta que pide actuar
+        3  patron (aunque no haya alerta)
+        2  alerta que pide actuar, sin patron
+        1  alerta en seguimiento
+        0  el resto
+
+    Dentro del grupo desempata `prob_meta` — la frecuencia observada de llegar
+    a la meta desde la distancia actual — y despues el score.
+    """
+    a = x.get("alerta") or {}
+    patron = bool((x.get("retroceso") or {}).get("detectado"))
+    accionable = bool(a.get("accionable"))
+    if patron and accionable:
+        grupo = 4
+    elif patron:
+        grupo = 3
+    elif accionable:
+        grupo = 2
+    elif a:
+        grupo = 1
+    else:
+        grupo = 0
+    return (grupo, a.get("prob_meta", 0.0), x.get("score", 0))
 
 
 class StateEngine:
@@ -556,6 +591,12 @@ class StateEngine:
         base_reb = detectar_base_rebote(list(st.candles))
         st.base_rebote = base_reb.to_dict()
 
+        # --- El patron que si resulto: "viene de caer" ---
+        # Es el unico de los cuatro medidos que batio al control (2.3x la tasa
+        # base). Va sin throttling: ordena el tablero y no puede ir con retraso.
+        retro = detectar_retroceso(list(st.candles))
+        st.retroceso = retro.to_dict()
+
         # --- Fuerza del impulso (derivada: ¿sigue subiendo o se apaga?) ---
         # Va sin throttling: es la señal que decide emitir o retirar una
         # alerta, y llegar tarde aqui es justo el fallo que corrige.
@@ -639,7 +680,8 @@ class StateEngine:
         # alerta viva, no puede volver a emitir mas arriba.
         if s.alerta_congelada_enabled:
             cambio = self._alertas.actualizar(
-                symbol, now_ms, h, l, c, impulso, display_state=display
+                symbol, now_ms, h, l, c, impulso, display_state=display,
+                viene_de_caida=retro.detectado,
             )
             if cambio is not None and self._emit:
                 await self._emit({
@@ -813,7 +855,7 @@ class StateEngine:
             )
             if st.score >= threshold or interesting or in_retention:
                 out.append(st.snapshot())
-        out.sort(key=lambda x: x.get("score", 0), reverse=True)
+        out.sort(key=_orden_tablero, reverse=True)
         return out
 
     def get_symbol(self, symbol: str) -> Optional[SymbolState]:

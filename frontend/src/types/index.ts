@@ -47,6 +47,14 @@ export interface SRLevel {
 export interface SRLevels {
   soportes: SRLevel[];
   resistencias: SRLevel[];
+  /** Lectura direccional: una lista de precios no dice si va a seguir bajando. */
+  dist_soporte_pct: number | null;
+  dist_resistencia_pct: number | null;
+  /** Pegado al soporte y por encima: lo esta probando. */
+  apoyado: boolean;
+  /** Rompio hacia abajo un nivel que era soporte y ahora estorba desde arriba. */
+  perdido: boolean;
+  lectura: string;
 }
 
 export interface ConsolidationInfo {
@@ -83,6 +91,35 @@ export interface Impulso {
  */
 export type Marcador = "VERDE" | "MORADO" | "AMARILLO" | "ROJO";
 
+/**
+ * Fase accionable: VIVA, PERDIENDO_FUERZA.
+ * Fase de seguimiento (ya no pide actuar, pero no desaparece del tablero):
+ * EN_RETROCESO, EN_VALLE, RECUPERANDO, CUMPLIDA.
+ */
+export type EstadoAlerta =
+  | "VIVA"
+  | "PERDIENDO_FUERZA"
+  | "EN_RETROCESO"
+  | "EN_VALLE"
+  | "RECUPERANDO"
+  | "CUMPLIDA"
+  | "CERRADA";
+
+/**
+ * El patron que si resulto: venir de una caida >=2% en los 40 min previos.
+ * Llega a +3.2% en 3h el 30.1% de las veces contra 13.1% de base (n=1673).
+ * La "marea tranquila" se midio y no aportaba nada: no esta aqui a proposito.
+ */
+export interface Retroceso {
+  detectado: boolean;
+  caida_pct: number | null;
+  suelo: number | null;
+  pico_previo: number | null;
+  minutos_desde_suelo: number;
+  rebote_pct: number | null;
+  reason: string;
+}
+
 export interface AlertaActiva {
   symbol: string;
   ts_emision: number;
@@ -97,7 +134,20 @@ export interface AlertaActiva {
   fase_emision: FaseImpulso;
   fuerza_emision: number;
   consumido_emision: number | null;
-  estado: "VIVA" | "PERDIENDO_FUERZA" | "CERRADA";
+  estado: EstadoAlerta;
+  /** La señal deja de pedir actuar pero sigue en seguimiento hasta las 24h. */
+  accionable: boolean;
+  /** Meta de referencia: +3.2% sobre el entry congelado. */
+  meta: number;
+  /** Lo que le falta al precio actual para la meta. */
+  dist_meta_pct: number | null;
+  /** Frecuencia OBSERVADA de llegar a la meta desde esa distancia. No es un
+   *  modelo: es la tabla del grupo de control, con su n al lado. */
+  prob_meta: number;
+  prob_meta_n: number;
+  /** El par cumple ahora mismo el patron validado. */
+  viene_de_caida: boolean;
+  minutos_en_estado: number | null;
   /** display_state del par ahora; si sale de los estados validos, la alerta decae */
   estado_actual?: string;
   precio_actual: number;
@@ -166,6 +216,7 @@ export interface PairState {
   trade_levels: TradeLevels;
   impulso?: Impulso;
   base_rebote?: BaseRebote;
+  retroceso?: Retroceso;
   alerta?: AlertaActiva;
   consolidation: ConsolidationInfo;
   sr_levels: SRLevels;
@@ -193,7 +244,8 @@ export interface WSMessage {
     | "ping"
     | "alert_tendencia"
     | "alert_ignicion"
-    | "alert_base_rebote";
+    | "alert_base_rebote"
+    | "alerta_cambio";
   ts: number;
   pairs?: PairState[];
   // En "update" el backend manda solo los pares que cambiaron; `removed` lista
@@ -208,4 +260,7 @@ export interface WSMessage {
   perfil?: string;
   perfil_score?: number;
   perfil_reason?: string;
+  // "alerta_cambio" trae la alerta entera al cambiar de estado, para que las
+  // transiciones de seguimiento se vean sin esperar al siguiente broadcast.
+  alerta?: AlertaActiva;
 }

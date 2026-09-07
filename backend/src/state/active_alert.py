@@ -22,14 +22,32 @@ Nunca se re-emite el mismo par mas arriba mientras siga viva.
 
 Ciclo de vida:
 
+Fase ACCIONABLE (la señal pide actuar):
+
     VIVA              el impulso aguanta Y el par sigue en un estado que
                       sostenga la señal (subida, fondo o consolidacion)
     PERDIENDO_FUERZA  se degrado durante N velas seguidas — por impulso o
-                      porque el par cayo a NEUTRAL; sigue visible unos
-                      minutos para que se vea que murio, en vez de que la
-                      fila desaparezca sin explicacion
-    CERRADA           toco TP o SL, se agoto el declive, el par paso a
-                      CAYENDO, o caduco
+                      porque el par cayo a NEUTRAL
+
+Fase de SEGUIMIENTO (ya no pide actuar, pero no desaparece):
+
+    EN_RETROCESO      el precio esta por debajo del entry congelado
+    EN_VALLE          lleva N minutos sin marcar un minimo nuevo
+    RECUPERANDO       sube desde el suelo del retroceso, aun bajo la meta
+    CUMPLIDA          llego a la meta de referencia (+3.2% sobre el entry)
+    ARCHIVADA         se acabo la ventana de 24h; aqui si se retira
+
+Por que no se borra
+-------------------
+Una señal emitida a las 09:00 desaparecia a las 13:00 al detectarse la caida,
+y con ella se iba toda su historia. Ahora la señal vive las 24h de su ventana
+de seguimiento y lo que cambia es su ESTADO y su probabilidad medida de llegar
+a la meta. Una que retrocede y luego se recupera se ve entera.
+
+La puntuacion que baja no es un invento: es `prob_meta`, la frecuencia OBSERVADA
+con la que se llega a la meta desde la distancia a la que esta el precio ahora
+mismo (research/cascada.py, grupo de control). Si el precio se aleja, baja; si
+se acerca, sube.
 
 Las dos condiciones se miran por separado a proposito: una alerta seguia
 VIVA con el par ya en NEUTRAL porque el ciclo solo consultaba el impulso.
@@ -45,6 +63,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from src.analysis.impulse import FASES_OK, FASE_AGOTADA, FASE_DESACELERANDO
+from src.analysis.retroceso import prob_llegar_meta
 from src.config.settings import get_settings
 from src.utils.logger import get_logger
 
@@ -52,7 +71,20 @@ logger = get_logger(__name__)
 
 ESTADO_VIVA = "VIVA"
 ESTADO_DECLIVE = "PERDIENDO_FUERZA"
-ESTADO_CERRADA = "CERRADA"
+ESTADO_CERRADA = "CERRADA"          # se mantiene por compatibilidad de eventos
+# Fase de seguimiento: la señal ya no es accionable pero sigue en el tablero
+ESTADO_RETROCESO = "EN_RETROCESO"
+ESTADO_VALLE = "EN_VALLE"
+ESTADO_RECUPERANDO = "RECUPERANDO"
+ESTADO_CUMPLIDA = "CUMPLIDA"
+ESTADO_ARCHIVADA = "ARCHIVADA"
+
+ESTADOS_SEGUIMIENTO = {ESTADO_RETROCESO, ESTADO_VALLE, ESTADO_RECUPERANDO,
+                       ESTADO_CUMPLIDA}
+
+# La meta de referencia la fijo Felix: +3.2% sobre el entry congelado, con
+# independencia del TP que ofrezca el sistema para ese par.
+META_PCT = 3.2
 
 # Setups cuya tesis es el GIRO, no la continuacion del impulso. En estos el
 # precio bajo la EMA7 es la condicion normal, no una señal de agotamiento.
@@ -111,6 +143,20 @@ class AlertaActiva:
     motivo_cierre: str = ""
     historia_fuerza: List[int] = field(default_factory=list)
 
+    # --- Seguimiento (la señal ya no pide actuar, pero sigue viva) ---
+    accionable: bool = True
+    ts_fin_accion: Optional[int] = None
+    suelo_retroceso: Optional[float] = None   # minimo desde que entro en retroceso
+    ts_suelo: Optional[int] = None            # cuando se marco ese minimo
+    dist_meta_pct: Optional[float] = None     # lo que falta para +META_PCT%
+    prob_meta: float = 0.0                    # frecuencia observada a esa distancia
+    prob_meta_n: int = 0                      # tamaño de muestra de esa banda
+    viene_de_caida: bool = False              # el patron validado, del par ahora
+
+    @property
+    def meta(self) -> float:
+        return self.entry * (1 + META_PCT / 100.0)
+
     def to_dict(self) -> dict:
         return {
             "symbol": self.symbol,
@@ -144,6 +190,16 @@ class AlertaActiva:
             "fuerza_tendencia": self._tendencia(),
             "marcadores": self.marcadores(),
             "motivo_cierre": self.motivo_cierre,
+            # seguimiento
+            "accionable": self.accionable,
+            "meta": round(self.meta, 10),
+            "dist_meta_pct": self.dist_meta_pct,
+            "prob_meta": self.prob_meta,
+            "prob_meta_n": self.prob_meta_n,
+            "viene_de_caida": self.viene_de_caida,
+            "minutos_en_estado": (
+                round((int(time.time() * 1000) - self.ts_fin_accion) / 60000.0)
+                if self.ts_fin_accion else None),
         }
 
     def marcadores(self) -> list:
@@ -215,7 +271,11 @@ class AlertManager:
                                 la falta de impulso alcista (que es normal).
         """
         s = get_settings()
-        if symbol in self._activas:
+        a = self._activas.get(symbol)
+        # Solo bloquea mientras la alerta pide actuar. En seguimiento el par
+        # puede volver a emitir: si no, con la ventana de 24h un par quedaria
+        # mudo un dia entero despues de la primera señal.
+        if a is not None and a.accionable:
             return False, "ya hay una alerta viva para el par"
 
         ultimo = self._ultimo_cierre.get(symbol)
@@ -281,11 +341,15 @@ class AlertManager:
     # --- Actualizacion ----------------------------------------------------
 
     def actualizar(self, symbol: str, now_ms: int, high: float, low: float,
-                   close: float, impulso,
-                   display_state: str = "") -> Optional[AlertaActiva]:
+                   close: float, impulso, display_state: str = "",
+                   viene_de_caida: bool = False) -> Optional[AlertaActiva]:
         """
-        Refresca la alerta viva con la vela recien cerrada. Devuelve la alerta
-        si acaba de cambiar de estado (para emitir el evento), si no None.
+        Refresca la alerta con la vela recien cerrada. Devuelve la alerta si
+        acaba de cambiar de estado (para emitir el evento), si no None.
+
+        Dos fases: mientras es accionable manda el ciclo de vida de siempre;
+        cuando deja de serlo pasa a seguimiento y ya no se borra hasta que se
+        agota la ventana.
         """
         a = self._activas.get(symbol)
         if a is None:
@@ -296,6 +360,19 @@ class AlertManager:
         a.delta_pct = (close - a.entry) / a.entry * 100.0
         a.mfe_pct = max(a.mfe_pct, (high - a.entry) / a.entry * 100.0)
         a.mae_pct = min(a.mae_pct, (low - a.entry) / a.entry * 100.0)
+        a.viene_de_caida = viene_de_caida
+
+        # Distancia a la meta y su probabilidad OBSERVADA a esa distancia
+        a.dist_meta_pct = round((a.meta / close - 1) * 100.0, 2) if close > 0 else None
+        if a.dist_meta_pct is not None:
+            a.prob_meta, a.prob_meta_n = prob_llegar_meta(a.dist_meta_pct)
+
+        # Fin de la ventana de seguimiento: aqui si se retira del tablero
+        if now_ms - a.ts_emision >= s.seguimiento_horas * 3600_000:
+            return self._archivar(a, now_ms)
+
+        if not a.accionable:
+            return self._seguir(a, now_ms, low, close)
 
         if impulso is not None and impulso.valid:
             a.fase_actual = impulso.fase
@@ -396,15 +473,70 @@ class AlertManager:
         return None
 
     def _cerrar(self, a: AlertaActiva, now_ms: int, motivo: str) -> AlertaActiva:
-        a.estado = ESTADO_CERRADA
+        """
+        Fin de la fase accionable. NO borra la alerta: la pasa a seguimiento,
+        que es justo lo que antes se perdia. El cooldown arranca aqui, para que
+        el par pueda volver a emitir sin esperar las 24h enteras.
+        """
+        a.accionable = False
+        a.ts_fin_accion = now_ms
         a.ts_cierre = now_ms
         a.motivo_cierre = motivo
-        self._activas.pop(a.symbol, None)
+        a.suelo_retroceso = a.precio_actual
+        a.ts_suelo = now_ms
+        a.estado = (ESTADO_CUMPLIDA if a.mfe_pct >= META_PCT
+                    else ESTADO_RETROCESO)
         self._ultimo_cierre[a.symbol] = now_ms
         logger.info(
-            f"[{a.symbol}] ALERTA CERRADA -> {motivo} | entry={a.entry} "
-            f"final={a.precio_actual} delta={a.delta_pct:+.2f}% | "
+            f"[{a.symbol}] ALERTA -> SEGUIMIENTO ({motivo}) | entry={a.entry} "
+            f"actual={a.precio_actual} delta={a.delta_pct:+.2f}% | "
             f"MFE {a.mfe_pct:+.2f}% MAE {a.mae_pct:+.2f}% | "
-            f"vivio {(now_ms - a.ts_emision)/60000.0:.0f} min"
+            f"accionable {(now_ms - a.ts_emision)/60000.0:.0f} min | "
+            f"estado {a.estado}"
         )
         return a
+
+    def _archivar(self, a: AlertaActiva, now_ms: int) -> AlertaActiva:
+        """Se agoto la ventana de seguimiento: ahora si sale del tablero."""
+        a.estado = ESTADO_ARCHIVADA
+        self._activas.pop(a.symbol, None)
+        logger.info(
+            f"[{a.symbol}] ALERTA ARCHIVADA | entry={a.entry} "
+            f"MFE {a.mfe_pct:+.2f}% MAE {a.mae_pct:+.2f}% | "
+            f"marcadores {','.join(a.marcadores()) or 'ninguno'}"
+        )
+        return a
+
+    def _seguir(self, a: AlertaActiva, now_ms: int, low: float,
+                close: float) -> Optional[AlertaActiva]:
+        """
+        Maquina de estados del seguimiento. Solo describe donde esta el precio;
+        no afirma nada sobre lo que va a hacer. EN_VALLE en particular es una
+        observacion ("lleva rato sin bajar mas"), no un pronostico: el estudio
+        del 7-sep no encontro que la quietud prediga la subida.
+        """
+        s = get_settings()
+        anterior = a.estado
+
+        if a.mfe_pct >= META_PCT:
+            a.estado = ESTADO_CUMPLIDA
+            return a if anterior != a.estado else None
+
+        # Minimo nuevo: se reinicia el reloj del valle
+        if a.suelo_retroceso is None or low < a.suelo_retroceso:
+            a.suelo_retroceso = low
+            a.ts_suelo = now_ms
+            a.estado = ESTADO_RETROCESO
+            return a if anterior != a.estado else None
+
+        quieto_min = (now_ms - (a.ts_suelo or now_ms)) / 60_000.0
+        rebote = ((close - a.suelo_retroceso) / a.suelo_retroceso * 100.0
+                  if a.suelo_retroceso else 0.0)
+
+        if rebote >= s.seguimiento_rebote_pct:
+            a.estado = ESTADO_RECUPERANDO
+        elif quieto_min >= s.seguimiento_valle_minutos:
+            a.estado = ESTADO_VALLE
+        else:
+            a.estado = ESTADO_RETROCESO
+        return a if anterior != a.estado else None
