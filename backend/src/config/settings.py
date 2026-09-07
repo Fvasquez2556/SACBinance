@@ -237,6 +237,9 @@ class Settings(BaseSettings):
     retroceso_velas_zona: int = Field(default=8)      # velas 1m donde se busca el suelo
     retroceso_lookback: int = Field(default=40)       # velas 1m previas para el pico
     retroceso_caida_min: float = Field(default=2.0)   # caida minima, %
+    # Confirmacion: rebote minimo desde el suelo para el nivel fuerte del
+    # patron. 24.4% cobrable contra 19.5% sin el (n=960 de 1737).
+    retroceso_rebote_min: float = Field(default=1.0)  # % sobre el suelo
 
     # --- Base corta post-caida ("flush -> base -> reclaim") ---
     # compression.py mira 96 velas de 15m (24h) y se pierde las bases de una

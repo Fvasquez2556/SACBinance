@@ -112,6 +112,8 @@ export type EstadoAlerta =
  */
 export interface Retroceso {
   detectado: boolean;
+  /** Nivel fuerte: ya rebota >=1% del suelo. 24.4% cobrable contra 19.5%. */
+  confirmado: boolean;
   caida_pct: number | null;
   suelo: number | null;
   pico_previo: number | null;

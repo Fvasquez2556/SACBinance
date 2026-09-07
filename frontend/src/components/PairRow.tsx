@@ -80,6 +80,9 @@ export default function PairRow({ pair, onClick, selected }: Props) {
   // El unico patron que batio al grupo de control: venir de una caida >=2%.
   // Por eso el tablero lo ordena arriba y aqui se marca en grande.
   const patron = !!rt?.detectado;
+  // Nivel fuerte: cayo Y ya rebota. Es la diferencia entre 24.4% y 19.5% de
+  // acierto cobrable, asi que merece verse distinto y ordenarse mas arriba.
+  const confirmado = !!rt?.confirmado;
   const est = alerta ? ALERTA_STYLE[alerta.estado] : undefined;
   const enSeguimiento = !!alerta && alerta.accionable === false;
   const sr = pair.sr_levels;
@@ -100,8 +103,10 @@ export default function PairRow({ pair, onClick, selected }: Props) {
         borderBottom: "1px solid #1e1e1e",
         // La barra naranja marca el patron validado; es lo que sube la fila
         // al principio del tablero, asi que conviene que se vea por que.
-        borderLeft: patron
-          ? "3px solid #c2703a"
+        borderLeft: confirmado
+          ? "3px solid #2d9c4a"
+          : patron
+            ? "3px solid #c2703a"
           : enDeclive
             ? "3px solid #a02020"
             : "3px solid transparent",
@@ -127,21 +132,25 @@ export default function PairRow({ pair, onClick, selected }: Props) {
           <div style={{ fontSize: 9, marginTop: 2, whiteSpace: "nowrap" }} title={rt?.reason}>
             <span
               style={{
-                background: "#5a2d1a",
-                color: "#ffb27a",
+                background: confirmado ? "#1f5a2d" : "#5a2d1a",
+                color: confirmado ? "#8dffab" : "#ffb27a",
                 padding: "1px 5px",
                 borderRadius: 3,
                 fontWeight: 700,
                 letterSpacing: "0.04em",
               }}
             >
-              ▼ VIENE DE CAER {rt?.caida_pct}%
+              {confirmado
+                ? `▲ REBOTA +${rt?.rebote_pct}%`
+                : `▼ CAYO ${rt?.caida_pct}%`}
             </span>
-            {rt?.rebote_pct != null && rt.rebote_pct > 0 && (
-              <span style={{ color: "#7a6a5a", marginLeft: 4 }}>
-                +{rt.rebote_pct}% del suelo
-              </span>
-            )}
+            <span style={{ color: "#7a6a5a", marginLeft: 4 }}>
+              {confirmado
+                ? `cayo ${rt?.caida_pct}%`
+                : rt?.rebote_pct != null && rt.rebote_pct > 0
+                  ? `+${rt.rebote_pct}% del suelo`
+                  : ""}
+            </span>
           </div>
         )}
         {alerta && est && (

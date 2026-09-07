@@ -34,6 +34,12 @@ from src.config.settings import get_settings
 @dataclass
 class Retroceso:
     detectado: bool = False
+    # Segundo nivel, medido despues (research/suelo_maduro.py, 7-sep-2026):
+    # esperar a que el precio ya haya rebotado >=1% del suelo sube el acierto
+    # cobrable de 19.5% a 24.4% conservando 960 de 1737 detecciones. Esperar a
+    # que el suelo "madure" en cambio NO aporta nada: con el minimo en la vela
+    # actual el resultado es el mismo que con 5 velas de antiguedad.
+    confirmado: bool = False
     caida_pct: Optional[float] = None       # del pico previo al suelo de la zona
     suelo: Optional[float] = None
     pico_previo: Optional[float] = None
@@ -44,6 +50,7 @@ class Retroceso:
     def to_dict(self) -> dict:
         return {
             "detectado": self.detectado,
+            "confirmado": self.confirmado,
             "caida_pct": self.caida_pct,
             "suelo": self.suelo,
             "pico_previo": self.pico_previo,
@@ -100,8 +107,11 @@ def detectar_retroceso(candles_1m: list) -> Retroceso:
         return res
 
     res.detectado = True
+    res.confirmado = (res.rebote_pct is not None
+                      and res.rebote_pct >= s.retroceso_rebote_min)
     res.reason = (f"cayo {res.caida_pct}% desde {pico} | suelo {suelo} hace "
-                  f"{res.minutos_desde_suelo}min | rebotado {res.rebote_pct}%")
+                  f"{res.minutos_desde_suelo}min | rebotado {res.rebote_pct}%"
+                  + (" | REBOTE CONFIRMADO" if res.confirmado else ""))
     return res
 
 

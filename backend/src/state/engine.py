@@ -159,9 +159,16 @@ def _orden_tablero(x: dict) -> tuple:
     caida >=2%. Ordenar por score no lo reflejaba, asi que el par que cumple
     el patron podia quedar enterrado bajo veinte filas irrelevantes.
 
+    El patron tiene dos niveles porque se midieron por separado:
+        confirmado  cayo Y ya rebota >=1% del suelo   24.4% cobrable (n=960)
+        detectado   solo cayo                         19.5%          (n=1737)
+        control     un instante cualquiera            10.4%
+
     Grupos, de arriba abajo:
-        4  patron + alerta que pide actuar
-        3  patron (aunque no haya alerta)
+        6  rebote confirmado + alerta que pide actuar
+        5  rebote confirmado
+        4  cayo + alerta que pide actuar
+        3  cayo
         2  alerta que pide actuar, sin patron
         1  alerta en seguimiento
         0  el resto
@@ -170,9 +177,15 @@ def _orden_tablero(x: dict) -> tuple:
     a la meta desde la distancia actual — y despues el score.
     """
     a = x.get("alerta") or {}
-    patron = bool((x.get("retroceso") or {}).get("detectado"))
+    r = x.get("retroceso") or {}
+    confirmado = bool(r.get("confirmado"))
+    patron = bool(r.get("detectado"))
     accionable = bool(a.get("accionable"))
-    if patron and accionable:
+    if confirmado and accionable:
+        grupo = 6
+    elif confirmado:
+        grupo = 5
+    elif patron and accionable:
         grupo = 4
     elif patron:
         grupo = 3
