@@ -874,19 +874,22 @@ class StateEngine:
                 and now_ms - st.last_interesting_ms < retention_ms
             )
             al = st.alerta or {}
-            # Una alerta que pide actuar entra siempre, la mire quien la mire:
-            # es el motivo de que exista el tablero.
-            if al.get("accionable"):
+            # Merece sitio por si mismo, al margen de si arrastra una alerta
+            por_si_mismo = st.score >= threshold or interesting or in_retention
+
+            # Una alerta que pide actuar entra siempre: es el motivo de que
+            # exista el tablero. Y un par interesante entra aunque ademas
+            # lleve una alerta vieja encima — al separar los dos cubos sin
+            # esta condicion, un par con score alto podia quedar fuera solo
+            # por arrastrar un seguimiento de hace horas.
+            if al.get("accionable") or por_si_mismo:
                 out.append(st.snapshot())
                 continue
             if al:
-                # En seguimiento. El sistema emite ~500 señales al dia y la
-                # ventana es de 24h, asi que enseñarlas todas serian ~460 filas
-                # y el tablero dejaria de servir. Se apartan y se recortan.
+                # Seguimiento y nada mas. El sistema emite ~500 señales al dia
+                # con ventana de 24h: enseñarlas todas serian ~460 filas y el
+                # tablero dejaria de servir. Se apartan y se recortan.
                 seguimiento.append(st.snapshot())
-                continue
-            if st.score >= threshold or interesting or in_retention:
-                out.append(st.snapshot())
 
         # De las que estan en seguimiento se conservan las que siguen cerca de
         # su meta: `prob_meta` es la frecuencia observada de llegar, asi que
