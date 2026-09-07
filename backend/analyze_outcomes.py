@@ -175,8 +175,7 @@ def informe(rows: list, incluir_vivas: bool) -> None:
     anchos = [abs(r["sl_pct"]) for r in rows if r.get("sl_pct")]
     maes_a = [abs(r["mae_pct"]) for r in rows if r.get("mae_pct") is not None]
     if anchos and maes_a:
-        print(f"
-  Ancho del SL: mediana {_mediana(anchos):.2f}%   "
+        print(f"\n  Ancho del SL: mediana {_mediana(anchos):.2f}%   "
               f"|MAE| real: mediana {_mediana(maes_a):.2f}%")
         estrechos = [r for r in rows if r.get("sl_pct") and r.get("mae_pct") is not None
                      and abs(r["mae_pct"]) > abs(r["sl_pct"])]
@@ -186,8 +185,7 @@ def informe(rows: list, incluir_vivas: bool) -> None:
     # Comparativa con stops FIJOS. El orden se decide con los sellos de tiempo
     # reales (ms_dn_*), no con el MAE, que es el maximo de toda la ventana y
     # puede ocurrir despues de haber tocado el objetivo.
-    print(f"
-  Si el stop fuera FIJO, ¿cuantas se cobrarian? (objetivo +{OBJETIVO}%)")
+    print(f"\n  Si el stop fuera FIJO, ¿cuantas se cobrarian? (objetivo +{OBJETIVO}%)")
     print(f"  {'stop':>7s} {'cobra':>13s} {'salta el stop':>15s} {'ni una ni otra':>15s}")
     for u in ESCALERA:
         if u > 5.0:
