@@ -155,6 +155,58 @@ def informe(rows: list, incluir_vivas: bool) -> None:
                   f"{len(rebotes)} / {len(toco_sl)}   {_pct(len(rebotes), len(toco_sl))}")
             print("    (esto es lo que el win rate por si solo no puede ver)")
 
+    # --- 3b. El SL: ¿protege, o saca de trades que iban a funcionar? ---
+    # El precio no sabe donde esta el stop: llegar a +OBJETIVO% y COBRARLO son
+    # cosas distintas. Esta seccion mide la diferencia, que es justo lo que un
+    # win rate calculado sobre el precio no puede ver.
+    _linea("3b. EL SL: ¿PROTEGE O ESTORBA?")
+    llegaron = [r for r in rows if r.get(f"ms_up_{suf_obj}") is not None]
+    if llegaron:
+        muertas = [r for r in llegaron
+                   if r.get("ms_sl") is not None and r["ms_sl"] < r[f"ms_up_{suf_obj}"]]
+        vivas = len(llegaron) - len(muertas)
+        print(f"  El precio llego a +{OBJETIVO}% en {len(llegaron)} / {total}   "
+              f"{_pct(len(llegaron), total)}")
+        print(f"    pero el SL salto ANTES en   {len(muertas):4d}   "
+              f"{_pct(len(muertas), len(llegaron))} de ellas")
+        print(f"    se habria cobrado de verdad {vivas:4d} / {total}   "
+              f"{_pct(vivas, total)}")
+
+    anchos = [abs(r["sl_pct"]) for r in rows if r.get("sl_pct")]
+    maes_a = [abs(r["mae_pct"]) for r in rows if r.get("mae_pct") is not None]
+    if anchos and maes_a:
+        print(f"
+  Ancho del SL: mediana {_mediana(anchos):.2f}%   "
+              f"|MAE| real: mediana {_mediana(maes_a):.2f}%")
+        estrechos = [r for r in rows if r.get("sl_pct") and r.get("mae_pct") is not None
+                     and abs(r["mae_pct"]) > abs(r["sl_pct"])]
+        print(f"  Señales que se movieron en contra mas de lo que su SL aguanta: "
+              f"{len(estrechos)} / {total}   {_pct(len(estrechos), total)}")
+
+    # Comparativa con stops FIJOS. El orden se decide con los sellos de tiempo
+    # reales (ms_dn_*), no con el MAE, que es el maximo de toda la ventana y
+    # puede ocurrir despues de haber tocado el objetivo.
+    print(f"
+  Si el stop fuera FIJO, ¿cuantas se cobrarian? (objetivo +{OBJETIVO}%)")
+    print(f"  {'stop':>7s} {'cobra':>13s} {'salta el stop':>15s} {'ni una ni otra':>15s}")
+    for u in ESCALERA:
+        if u > 5.0:
+            continue
+        col = f"ms_dn_{_SUFIJO[u]}"
+        cobra = salta = nada = 0
+        for r in rows:
+            up, dn = r.get(f"ms_up_{suf_obj}"), r.get(col)
+            if up is not None and (dn is None or dn > up):
+                cobra += 1
+            elif dn is not None and (up is None or dn < up):
+                salta += 1
+            else:
+                nada += 1
+        print(f"  {'-' + str(u) + '%':>7s} {cobra:5d} {_pct(cobra, total)} "
+              f"{salta:7d} {_pct(salta, total)} {nada:7d} {_pct(nada, total)}")
+    print("    (sin comisiones ni deslizamiento; un stop mas ancho cobra mas")
+    print("     veces pero pierde mas cuando falla — la tabla no decide por ti)")
+
     # --- 4. Escalera fija ---
     _linea("4. ESCALERA: ¿HASTA DONDE LLEGAN?")
     print(f"  {'umbral':>8s}  {'alcanzado':>19s}   {'mediana tiempo':>15s}")
