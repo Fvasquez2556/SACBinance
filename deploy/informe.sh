@@ -27,6 +27,10 @@ case "${1:-hora}" in
         echo "Instantanea — $(date '+%Y-%m-%d %H:%M:%S %Z')"
         echo "(se regenera cada hora; el informe firme del dia es diario_*.txt)"
         echo
+        # Lo primero, siempre: ¿bate a no hacer nada? Un informe que empieza
+        # por el % de aciertos invita a creerselo sin mirar la referencia.
+        "$PY" analyze_edge.py --dias 2 2>&1
+        echo
         "$PY" analyze_outcomes.py --incluir-vivas 2>&1
     } | limpiar > "$DIR/ultimo.txt"
 
@@ -46,6 +50,11 @@ case "${1:-hora}" in
         echo "=============================================================="
         echo "  INFORME DIARIO SACBinance — $(date '+%Y-%m-%d %H:%M %Z')"
         echo "=============================================================="
+        echo
+        echo "########## 0. ¿HAY FILO, O SOLO HUBO MERCADO? ##########"
+        echo "(la unica seccion que compara contra NO hacer nada; si esta"
+        echo " dice que no bate a las referencias, el resto es decoracion)"
+        "$PY" analyze_edge.py --dias 3 2>&1
         echo
         echo "########## 1. SOLO VENTANA CUMPLIDA (veredicto firme) ##########"
         "$PY" analyze_outcomes.py 2>&1
@@ -77,6 +86,9 @@ case "${1:-hora}" in
         echo "=============================================================="
         echo "  CIERRE SEMANAL SACBinance — generado $(date '+%Y-%m-%d %H:%M %Z')"
         echo "=============================================================="
+        echo
+        echo "########## 0. ¿HAY FILO, O SOLO HUBO MERCADO? ##########"
+        "$PY" analyze_edge.py --periodo previa 2>&1
         echo
         echo "########## SEMANA QUE CIERRA (lun-dom, hora Guatemala) ##########"
         "$PY" analyze_outcomes.py --periodo previa 2>&1
