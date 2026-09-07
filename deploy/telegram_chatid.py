@@ -19,7 +19,8 @@ no pasa por ningun sitio nuevo.
 Uso
 ---
     cd ~/sacbinance/backend
-    ./venv/bin/python ../deploy/telegram_chatid.py
+    ./venv/bin/python ../deploy/telegram_chatid.py            # averigua el chat_id
+    ./venv/bin/python ../deploy/telegram_chatid.py --probar   # manda una prueba
 
 Se puede ejecutar ANTES de escribirle al bot: si la cola esta vacia se queda
 esperando dos minutos con long polling y recoge el mensaje en cuanto llega.
@@ -55,6 +56,42 @@ def pedir(token: str, metodo: str, params: str = "") -> dict:
         return json.loads(r.read().decode("utf-8"))
 
 
+def enviar_prueba(token: str, chat_id: str) -> int:
+    """
+    Manda un mensaje de prueba con el mismo formato que usan los avisos.
+
+    Sin esto habria que esperar a la primera alerta real —que puede tardar
+    horas— para descubrir que el chat_id estaba mal.
+    """
+    texto = "\n".join([
+        "\U0001F7E2 <b>PRUEBA</b>  ·  SACBinance",
+        "",
+        "Si lees esto, los avisos estan bien configurados.",
+        "Los de verdad llegan con el par, la entrada, el TP/SL y la",
+        "probabilidad medida de llegar a +3.2%.",
+        "",
+        "<i>~15 avisos al dia: solo patron confirmado, score >= 75",
+        "y volumen 24h >= 2M</i>",
+    ])
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    datos = json.dumps({
+        "chat_id": chat_id, "text": texto, "parse_mode": "HTML",
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=datos, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            resp = json.loads(r.read().decode("utf-8"))
+    except Exception as e:
+        print(f"No se pudo enviar: {e}")
+        return 1
+    if not resp.get("ok"):
+        print(f"Telegram rechazo el envio: {resp.get('description')}")
+        return 1
+    print("Mensaje de prueba enviado. Miralo en Telegram.")
+    return 0
+
+
 def main() -> int:
     raiz = Path(__file__).resolve().parent.parent
     env = leer_env(raiz / "backend" / ".env")
@@ -69,6 +106,15 @@ def main() -> int:
 
     # Nunca imprimir el token entero
     print(f"token leido del .env (...{token[-6:]})")
+
+    if "--probar" in sys.argv:
+        chat = (env.get("TELEGRAM_CHAT_ID") or "").strip()
+        if not chat:
+            print("Falta TELEGRAM_CHAT_ID en el .env. Ejecuta este script sin")
+            print("--probar para averiguarlo primero.")
+            return 1
+        print(f"enviando prueba al chat {chat}...")
+        return enviar_prueba(token, chat)
 
     try:
         yo = pedir(token, "getMe")
