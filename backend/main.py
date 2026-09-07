@@ -126,6 +126,11 @@ async def startup():
     # el MFE/MAE ya reconstruido y no empiecen de cero.
     engine._alertas.rehidratar(db, int(time.time() * 1000))
 
+    # 5d. Telegram: comprobar credenciales al arrancar, no cuando salte el
+    # primer aviso a las 3 de la manana.
+    if engine._tg.activo:
+        await engine._tg.probar()
+
     # 6. WebSockets Binance
     ws_mgr = WSManager(symbols, engine)
     await ws_mgr.start()
@@ -162,6 +167,16 @@ async def shutdown():
     """
     # Se lee el singleton directamente: get_db() crearia una conexion nueva si
     # aun no hubiera ninguna, que es justo lo que no queremos al apagar.
+    # Cerrar la sesion HTTP de Telegram antes que nada: aiohttp se queja si
+    # el loop muere con una sesion abierta.
+    from src.api.ws_server import _engine as motor
+    tg = getattr(motor, "_tg", None) if motor is not None else None
+    if tg is not None:
+        try:
+            await tg.cerrar()
+        except Exception:
+            pass
+
     from src.persistence import db as db_mod
     db = db_mod._db
     if db is not None:

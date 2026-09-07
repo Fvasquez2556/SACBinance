@@ -25,6 +25,7 @@ from src.analysis.impulse import medir_impulso
 from src.analysis.outcome_tracker import OutcomeTracker
 from src.analysis.signal_tracker import abrir_senal, evaluar_senales
 from src.analysis.retroceso import detectar_retroceso
+from src.notify.telegram import Telegram, texto_alerta
 from src.analysis.trade_levels import calcular_niveles
 from src.config.settings import get_settings
 from src.indicators.calculator import indicators_from_candles
@@ -151,6 +152,27 @@ def _tier_order(tier: str) -> int:
     return {"NINGUNO": 0, "VIGILANCIA": 1, "MODERADA": 2, "FUERTE": 3, "EXTRA-FUERTE": 4}.get(tier, 0)
 
 
+def _merece_aviso(snap: dict, retro: dict, s) -> tuple:
+    """
+    ¿Este par justifica sonar el telefono? Devuelve (bool, motivo).
+
+    El sistema emite ~460 señales al dia. Avisar de todas es lo mismo que no
+    avisar de ninguna, porque se silencia el primer dia. Estos filtros lo dejan
+    en ~15 diarios y son los que tienen respaldo medido
+    (research/volumen_avisos.py).
+    """
+    if s.aviso_solo_confirmado and not retro.get("confirmado"):
+        return False, "sin rebote confirmado"
+    if not retro.get("detectado"):
+        return False, "no viene de una caida"
+    if (snap.get("score") or 0) < s.aviso_score_min:
+        return False, f"score {snap.get('score')} < {s.aviso_score_min}"
+    vol = (snap.get("vol_24h") or 0)
+    if vol and vol < s.aviso_vol24h_min:
+        return False, f"volumen 24h {vol:.0f} bajo"
+    return True, ""
+
+
 def _orden_tablero(x: dict) -> tuple:
     """
     Arriba lo que cumple el patron con respaldo.
@@ -213,6 +235,8 @@ class StateEngine:
         self._db = None
         self._outcomes: Optional[OutcomeTracker] = None
         self._alertas = AlertManager()
+        self._tg = Telegram()
+        self._aviso_ultimo: dict = {}   # symbol -> ts del ultimo aviso
         # Caches del analisis pesado (ver throttling en on_closed_candle)
         self._sr_cache: Dict[str, object] = {}
         self._cons_cache: Dict[str, object] = {}
@@ -702,13 +726,23 @@ class StateEngine:
                 symbol, now_ms, h, l, c, impulso, display_state=display,
                 viene_de_caida=retro.detectado,
             )
-            if cambio is not None and self._emit:
-                await self._emit({
-                    "type": "alerta_cambio",
-                    "ts": now_ms,
-                    "symbol": symbol,
-                    "alerta": cambio.to_dict(),
-                })
+            if cambio is not None:
+                if self._emit:
+                    await self._emit({
+                        "type": "alerta_cambio",
+                        "ts": now_ms,
+                        "symbol": symbol,
+                        "alerta": cambio.to_dict(),
+                    })
+                # Si ya se aviso de este par, se EDITA ese mensaje en vez de
+                # mandar otro: el aviso de las 03:00 se actualiza solo y el
+                # historial no se llena de repeticiones del mismo simbolo.
+                if self._tg.activo and self._tg.tiene_mensaje(symbol):
+                    try:
+                        await self._tg.actualizar(symbol, texto_alerta(
+                            symbol, cambio.to_dict(), st.retroceso, st.sr_levels))
+                    except Exception as e:
+                        logger.debug(f"[{symbol}] editar aviso: {e}")
             st.alerta = (
                 a.to_dict() if (a := self._alertas.get(symbol)) is not None else {}
             )
@@ -744,6 +778,7 @@ class StateEngine:
                     if alerta is not None:
                         st.alerta = alerta.to_dict()
                         snap = st.snapshot()
+                        await self._quiza_avisar(symbol, st, snap, now_ms)
 
                 niveles_txt = ""
                 if tl.get("valid"):
@@ -856,6 +891,39 @@ class StateEngine:
         if st is None:
             return
         st.flow.add_trade(t, price, qty, is_buyer_maker)
+
+    async def _quiza_avisar(self, symbol: str, st, snap: dict,
+                            now_ms: int) -> None:
+        """Manda el aviso a Telegram si el par pasa el criterio y no repite."""
+        if not self._tg.activo:
+            return
+        s = get_settings()
+        # El snapshot base no trae vol_24h — lo añade el helper de liquidez
+        # solo al abrir outcomes — asi que sin esto el filtro de volumen
+        # quedaria inerte y pasaria cualquier par ilíquido.
+        snap = dict(snap)
+        if snap.get("vol_24h") is None and self._db is not None:
+            try:
+                row = self._db.get_pair_meta(symbol)
+                snap["vol_24h"] = row.get("vol_24h") if row else None
+            except Exception:
+                snap["vol_24h"] = None
+        ok, motivo = _merece_aviso(snap, st.retroceso or {}, s)
+        if not ok:
+            logger.debug(f"[{symbol}] sin aviso: {motivo}")
+            return
+        ultimo = self._aviso_ultimo.get(symbol, 0)
+        if now_ms - ultimo < s.aviso_cooldown_min * 60_000:
+            logger.debug(f"[{symbol}] sin aviso: en cooldown")
+            return
+        self._aviso_ultimo[symbol] = now_ms
+        self._tg.olvidar(symbol)     # aviso nuevo = hilo nuevo que editar
+        try:
+            await self._tg.avisar(symbol, texto_alerta(
+                symbol, st.alerta, st.retroceso, st.sr_levels))
+            logger.info(f"[{symbol}] AVISO enviado a Telegram")
+        except Exception as e:
+            logger.warning(f"[{symbol}] aviso fallo: {e}")
 
     # --- Snapshot -------------------------------------------------------------
 

@@ -233,6 +233,20 @@ class Settings(BaseSettings):
     # haria el tablero inservible. Se quedan las mas cerca de su meta.
     seguimiento_max_filas: int = Field(default=25)
 
+    # --- Avisos por Telegram ---
+    # El token y el chat_id NO van aqui: se ponen en backend/.env, que no esta
+    # en git. Un token en el codigo es un token publicado.
+    telegram_enabled: bool = Field(default=False)
+    telegram_token: str = Field(default="")
+    telegram_chat_id: str = Field(default="")
+    # Criterio de aviso. Con ~460 señales al dia, avisar de todas equivale a no
+    # avisar de ninguna: se silencia el primer dia. Estos filtros lo bajan a
+    # ~15 diarios (research/volumen_avisos.py) y son los que tienen respaldo.
+    aviso_solo_confirmado: bool = Field(default=True)   # exige rebote >=1%
+    aviso_score_min: int = Field(default=75)
+    aviso_vol24h_min: float = Field(default=2_000_000)
+    aviso_cooldown_min: int = Field(default=45)   # por par, evita repetir
+
     # --- Patron validado: "viene de caer" ---
     # research/marea_ingredientes.py, 7-sep-2026: una caida >=2% en los 40
     # minutos previos lleva a +3.2% en 3h el 30.1% de las veces contra 13.1%
