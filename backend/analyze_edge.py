@@ -122,7 +122,22 @@ def boot_ci(x: np.ndarray, rng, reps: int = BOOT) -> tuple:
     return float(np.percentile(medias, 5)), float(np.percentile(medias, 95))
 
 
-def linea(nombre, rets, rng, base_media=None):
+def acierto_sin_filo(stop_pct) -> float:
+    """
+    Tasa de acierto que sale SOLO de la geometria, sin ninguna habilidad.
+
+    En un paseo aleatorio la probabilidad de tocar +A antes que -B es
+    B/(A+B). Sin esta referencia, un "62% de aciertos" parece bueno cuando es
+    exactamente lo que da un stop de -3.2% contra un objetivo de +3.2%
+    tirando una moneda. El % de acierto se fabrica moviendo el stop: solo
+    significa algo comparado con su propia geometria.
+    """
+    if not stop_pct:
+        return float("nan")
+    return 100.0 * stop_pct / (META + stop_pct)
+
+
+def linea(nombre, rets, rng, base_media=None, stop_pct=None):
     if len(rets) < MIN_N:
         print(f"  {nombre:<38} (pocas: {len(rets)})")
         return None
@@ -132,8 +147,11 @@ def linea(nombre, rets, rng, base_media=None):
     extra = ""
     if base_media is not None:
         extra = f"  vs referencia {m - base_media:+6.2f}"
+    ac = 100 * (r > 0).mean()
+    geo = acierto_sin_filo(stop_pct)
+    ref = f" (sin filo {geo:.0f}%)" if geo == geo else ""
     print(f"  {nombre:<38} {len(r):>5} ops  {m:>+6.2f}%  "
-          f"[{lo:>+5.2f}, {hi:>+5.2f}]  acierto {100*(r > 0).mean():>4.1f}%{extra}")
+          f"[{lo:>+5.2f}, {hi:>+5.2f}]  acierto {ac:>4.1f}%{ref}{extra}")
     return m
 
 
@@ -233,7 +251,7 @@ def main() -> None:
             if r is not None:
                 rets.append(r)
         etq = f"stop -{stop}%" if stop else "sin stop"
-        azar_por_stop[stop] = linea(f"AZAR ({etq})", rets, rng)
+        azar_por_stop[stop] = linea(f"AZAR ({etq})", rets, rng, stop_pct=stop)
 
     # --- Estrategia ---
     print("\n  EL SISTEMA")
@@ -243,7 +261,8 @@ def main() -> None:
         rets = [r for r in (simular(kl[f["symbol"]], f["i"], f["entry"], stop)
                             for f in usables) if r is not None]
         etq = f"stop -{stop}%" if stop else "sin stop"
-        m = linea(f"todas las senales ({etq})", rets, rng, azar_por_stop.get(stop))
+        m = linea(f"todas las senales ({etq})", rets, rng,
+                  azar_por_stop.get(stop), stop_pct=stop)
         if m is not None and (mejor is None or m > mejor[1]):
             mejor = (etq, m, stop)
 
@@ -255,7 +274,7 @@ def main() -> None:
                                 for f in conf) if r is not None]
             etq = f"stop -{stop}%" if stop else "sin stop"
             linea(f"patron confirmado ({etq})", rets, rng,
-                  azar_por_stop.get(stop))
+                  azar_por_stop.get(stop), stop_pct=stop)
     else:
         print(f"\n  patron confirmado: solo {len(conf)} casos, no se reporta")
 
@@ -299,6 +318,10 @@ def main() -> None:
         print(f"    {p}")
     print("\n  Un filo por debajo de ~0.3%/op se lo come el deslizamiento en")
     print("  pares de poca liquidez, que aqui NO esta modelado.")
+    print("\n  El % de acierto NO mide habilidad: se fabrica moviendo el stop.")
+    print("  Con objetivo +3.2%, un stop de -9.6% da 75% de aciertos tirando")
+    print("  una moneda, perdiendo el triple de lo que gana. Lo que no se")
+    print("  puede fabricar es el valor esperado por operacion.")
     if subs is not None and len(subs) and abs(np.median(subs)) > 0.5:
         print(f"\n  AVISO: el mercado fue {regimen} en esta ventana. Cualquier")
         print("  resultado aqui dice poco sobre el regimen contrario.")
