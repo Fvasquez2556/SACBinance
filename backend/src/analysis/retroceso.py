@@ -39,6 +39,15 @@ class Retroceso:
     # cobrable de 19.5% a 24.4% conservando 960 de 1737 detecciones. Esperar a
     # que el suelo "madure" en cambio NO aporta nada: con el minimo en la vela
     # actual el resultado es el mismo que con 5 velas de antiguedad.
+    #
+    # Se comprobo tambien si el rebote necesita un TECHO — la sospecha era que
+    # rebotar mucho significa movimiento ya gastado, como en
+    # alerta_consumido_max. research/techo_rebote.py dice que no: el acierto
+    # cobrable sube de forma monotona con el rebote (19.7% entre 0 y 0.5%,
+    # 23.8% entre 1 y 1.5%, 29.2% entre 2 y 3%, 30.7% entre 3 y 5%). No hay
+    # techo, asi que `confirmado` solo tiene suelo. Ojo: la variable es casi un
+    # medidor de momento a 8 minutos, y crecer hasta el borde de lo probado
+    # sobre 2.7 dias alcistas es justo lo que se da la vuelta en una caida.
     confirmado: bool = False
     caida_pct: Optional[float] = None       # del pico previo al suelo de la zona
     suelo: Optional[float] = None

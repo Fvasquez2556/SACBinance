@@ -174,7 +174,12 @@ def _orden_tablero(x: dict) -> tuple:
         0  el resto
 
     Dentro del grupo desempata `prob_meta` — la frecuencia observada de llegar
-    a la meta desde la distancia actual — y despues el score.
+    a la meta desde la distancia actual —, luego el rebote y luego el score.
+
+    El rebote entra como desempate porque el acierto crece de forma monotona
+    con el (19.7% cobrable entre 0 y 0.5% de rebote, 29.2% entre 2 y 3%). Se
+    busco un techo y no lo hay, asi que en vez de un segundo umbral se usa el
+    gradiente para ordenar.
     """
     a = x.get("alerta") or {}
     r = x.get("retroceso") or {}
@@ -195,7 +200,8 @@ def _orden_tablero(x: dict) -> tuple:
         grupo = 1
     else:
         grupo = 0
-    return (grupo, a.get("prob_meta", 0.0), x.get("score", 0))
+    return (grupo, a.get("prob_meta", 0.0), r.get("rebote_pct") or 0.0,
+            x.get("score", 0))
 
 
 class StateEngine:
