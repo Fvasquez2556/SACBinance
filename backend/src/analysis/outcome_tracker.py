@@ -31,6 +31,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
+from src.analysis import hoyo
 from src.config.settings import get_settings
 from src.utils.logger import get_logger
 
@@ -312,6 +313,7 @@ class OutcomeTracker:
             "vol_1m_medio": snapshot.get("vol_1m_medio"),
         }
         row.update(_contexto(snapshot, trade_levels))
+        row.update(hoyo.inicial(sl))
         try:
             self._db.abrir_outcome(row)
         except Exception as e:
@@ -326,6 +328,7 @@ class OutcomeTracker:
         row["ms_mfe"] = row["ms_mae"] = None
         row["dip_antes_obj"] = None
         row["forma"] = None
+        row.update(hoyo.campos_memoria())
         self._registrar_memoria(row)
 
     # --- Actualizacion por vela -----------------------------------------
@@ -383,6 +386,10 @@ class OutcomeTracker:
                 row["ms_tp"] = cambios["ms_tp"] = transcurrido
             if row.get("ms_sl") is None and sl and low <= sl:
                 row["ms_sl"] = cambios["ms_sl"] = transcurrido
+
+            # --- Sombra: la regla de entrar en el hoyo ---
+            # No decide nada; solo anota que habria pasado entrando abajo.
+            hoyo.actualizar(row, cambios, transcurrido, high, low, close)
 
             # --- Peor caida ANTES de alcanzar el objetivo ---
             # Es el dato que responde "¿bajo primero y despues subio?".

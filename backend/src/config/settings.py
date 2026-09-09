@@ -297,6 +297,16 @@ class Settings(BaseSettings):
     # Retroceso (%) a partir del cual el camino deja de considerarse "directo"
     forma_dip_umbral: float = Field(default=1.0)
 
+    # --- Sombra: entrar en el hoyo en vez de en la señal ---
+    # Entrar al precio de la señal da -0.26%/op con el intervalo entero en
+    # negativo (1347 señales). Esto mide la alternativa de Felix: esperar a que
+    # el precio baje cerca del stop y entrar ahi, con el mismo TP. Solo mide.
+    hoyo_margen_pct: float = Field(default=0.5)   # cuanto por encima del SL se entra
+    hoyo_stop_c2: float = Field(default=2.0)      # stop fijo de la regla C2
+    hoyo_stop_c3: float = Field(default=3.0)      # stop fijo de la regla C3
+    hoyo_rapido_min: int = Field(default=60)      # bajar al hoyo en menos = "rapido"
+    hoyo_sl_ancho: float = Field(default=2.0)     # |sl_pct| a partir de ahi = "ancho"
+
     # --- Deteccion de fakeout ---
     fakeout_lookback_candles: int = Field(default=15)   # velas 1m tras breakout
     fakeout_penalty_minutes: int = Field(default=30)    # duracion de la penalizacion

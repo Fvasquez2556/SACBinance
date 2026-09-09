@@ -123,7 +123,9 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 #   3 -> 4: outcomes.sombra — mide las señales que el gate macro suprime.
 #   4 -> 5: outcomes.vol_24h / vol_1m_medio — liquidez en la señal.
 #   5 -> 6: umbrales 1.2% y 4.2% (marcadores amarillo y morado del tablero).
-SCHEMA_VERSION = 7
+#   6 -> 7: 31 columnas de contexto de la señal (antes se tiraban).
+#   7 -> 8: medicion en sombra de "entrar en el hoyo" (ver analysis/hoyo.py).
+SCHEMA_VERSION = 8
 
 # --- Contexto de la senal: lo que el engine ya calcula y hasta ahora se tiraba
 #
@@ -154,6 +156,22 @@ COLS_CONTEXTO = (
     "btc_regime", "macro_gate_mult", "score_trend", "es_fakeout",
     "senal_n",               # la enesima senal de ese par
 )
+
+# --- Sombra: entrar en el hoyo en vez de en la señal ------------------------
+#
+# Entrar al precio de la señal da -0.26% por operacion con el intervalo entero
+# por debajo de cero. Estas columnas miden en vivo la alternativa: esperar a
+# que el precio baje a un pelo del stop y entrar ahi, apuntando al mismo TP.
+# Nada de esto decide nada — ver el docstring de src/analysis/hoyo.py.
+COLS_HOYO_TEXTO = ("hoyo_celda", "hoyo_a", "hoyo_c2", "hoyo_c3")
+COLS_HOYO_INT = ("ms_hoyo", "ms_hoyo_mfe", "ms_hoyo_mae",
+                 "ms_hoyo_a", "ms_hoyo_c2", "ms_hoyo_c3")
+COLS_HOYO = (
+    "hoyo_disparo",      # nivel al que se entraria: stop_loss + margen
+    "hoyo_fill",         # precio anotado de entrada (el peor posible)
+    "hoyo_mfe_pct", "hoyo_mae_pct",
+    "precio_ultimo",     # ultimo cierre visto dentro de la ventana
+) + COLS_HOYO_INT + COLS_HOYO_TEXTO
 
 _CREATE_SIGNALS = """
 CREATE TABLE IF NOT EXISTS signals (
@@ -320,6 +338,26 @@ class Database:
                 logger.info(
                     f"Migracion v6->7: {len(nuevas)} columnas de contexto añadidas "
                     f"a outcomes (las filas viejas quedan a NULL)"
+                )
+
+        if version < 8:
+            # Medicion en sombra de la regla de entrada en el hoyo. Las filas
+            # anteriores quedan a NULL: no se puede reconstruir hacia atras sin
+            # las velas, y para eso ya esta research/entrada_en_el_hoyo.py.
+            cols = [r[1] for r in self._conn.execute("PRAGMA table_info(outcomes)")]
+            nuevas = [c for c in COLS_HOYO if c not in cols]
+            for col in nuevas:
+                if col in COLS_HOYO_TEXTO:
+                    tipo = "TEXT"
+                elif col in COLS_HOYO_INT:
+                    tipo = "INTEGER"
+                else:
+                    tipo = "REAL"
+                self._conn.execute(f"ALTER TABLE outcomes ADD COLUMN {col} {tipo}")
+            if nuevas:
+                logger.info(
+                    f"Migracion v7->8: {len(nuevas)} columnas de la sombra del "
+                    f"hoyo añadidas a outcomes"
                 )
 
         self._conn.execute(
