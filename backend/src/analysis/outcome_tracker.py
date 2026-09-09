@@ -150,6 +150,12 @@ class OutcomeTracker:
         try:
             for row in self._db.get_outcomes_abiertos():
                 self._registrar_memoria(row)
+            # El contador de sombras tiene que continuar por debajo del minimo
+            # de TODA la tabla, no solo de las que siguen abiertas. Si se mira
+            # solo lo abierto, en cuanto se cierran todas el contador vuelve a
+            # 0, choca con un id ya usado, y como el INSERT es OR IGNORE la
+            # sombra desaparece sin dar error.
+            self._sombra_id = min(self._sombra_id, self._db.min_signal_id())
         except Exception as e:
             logger.warning(f"No se pudieron cargar outcomes abiertos: {e}")
             return 0
@@ -336,9 +342,16 @@ class OutcomeTracker:
         row.update(_contexto(snapshot, trade_levels))
         row.update(hoyo.inicial(sl))
         try:
-            self._db.abrir_outcome(row)
+            if not self._db.abrir_outcome(row):
+                # Nunca deberia pasar: el id ya existia. A nivel WARNING porque
+                # el modo de fallo es una fila que se pierde en silencio.
+                logger.warning(
+                    f"[{symbol}] outcome #{signal_id} NO se guardo: ese id ya "
+                    f"existe en la tabla"
+                )
+                return
         except Exception as e:
-            logger.debug(f"[{symbol}] abrir_outcome error: {e}")
+            logger.warning(f"[{symbol}] abrir_outcome error: {e}")
             return
 
         # La fila en memoria necesita todas las columnas de cruce a None

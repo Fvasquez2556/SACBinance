@@ -545,15 +545,33 @@ class Database:
 
     # --- Outcomes (seguimiento del camino de cada señal) ---------------------
 
-    def abrir_outcome(self, row: dict) -> None:
-        """Registra el outcome de una señal recien abierta (idempotente)."""
+    def abrir_outcome(self, row: dict) -> bool:
+        """
+        Registra el outcome de una señal recien abierta. Idempotente.
+
+        Devuelve False si la fila NO se escribio porque ya existia ese
+        signal_id. Antes no devolvia nada, y como el INSERT es OR IGNORE, un id
+        repetido no daba error: la fila simplemente desaparecia. Los ids de
+        sombra son negativos y su contador arranca en 0 en cada proceso, asi
+        que el choque era cuestion de tiempo.
+        """
         cols = ", ".join(row.keys())
         marks = ", ".join("?" * len(row))
-        self._conn.execute(
+        cur = self._conn.execute(
             f"INSERT OR IGNORE INTO outcomes ({cols}) VALUES ({marks})",
             tuple(row.values()),
         )
         self._dirty = True
+        return cur.rowcount > 0
+
+    def min_signal_id(self) -> int:
+        """El signal_id mas bajo de toda la tabla, incluidas las cerradas.
+
+        Los ids de sombra bajan desde 0, y hay que seguir por debajo del minimo
+        HISTORICO: mirar solo las abiertas hace que el contador se reinicie en
+        cuanto se cierran todas."""
+        r = self._conn.execute("SELECT MIN(signal_id) FROM outcomes").fetchone()
+        return int(r[0]) if r and r[0] is not None else 0
 
     def get_outcomes_abiertos(self) -> List[dict]:
         cur = self._conn.execute("SELECT * FROM outcomes WHERE cerrado = 0")
