@@ -123,7 +123,37 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 #   3 -> 4: outcomes.sombra — mide las señales que el gate macro suprime.
 #   4 -> 5: outcomes.vol_24h / vol_1m_medio — liquidez en la señal.
 #   5 -> 6: umbrales 1.2% y 4.2% (marcadores amarillo y morado del tablero).
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
+
+# --- Contexto de la senal: lo que el engine ya calcula y hasta ahora se tiraba
+#
+# La tabla `outcomes` guardaba 7 variables del momento de la emision, pero el
+# engine calcula unas 40 en cada vela. Sin persistirlas no hay forma de correr
+# una regresion sobre que distingue una senal que llega de una que no, que es
+# justo la pregunta abierta.
+#
+# Guardarlas no cambia ninguna decision del sistema. Solo deja de tirarlas.
+COLS_CONTEXTO_TEXTO = ("fase_impulso", "btc_regime")
+COLS_CONTEXTO = (
+    # posicion y estructura
+    "pos_en_rango", "dist_soporte_pct", "dist_resistencia_pct",
+    # movimiento reciente
+    "z_drop", "z_rise", "velocity", "ret_1m_pct", "drawdown_pct",
+    "rango_1h_pct",          # cuanto se movio el par en los 60 min previos
+    # volatilidad
+    "sigma_pct", "atr_pct", "ruido_1m_pct", "atr_percentile",
+    # volumen y flujo
+    "vol_ratio", "buy_ratio_30s", "flow_trades_30s",
+    # indicadores
+    "rsi5", "rsi14", "macd_hist", "bb_position",
+    # impulso
+    "fase_impulso", "fuerza_impulso", "consumido_pct",
+    # patron de retroceso
+    "retro_caida_pct", "retro_rebote_pct", "retro_confirmado",
+    # contexto global y de la propia senal
+    "btc_regime", "macro_gate_mult", "score_trend", "es_fakeout",
+    "senal_n",               # la enesima senal de ese par
+)
 
 _CREATE_SIGNALS = """
 CREATE TABLE IF NOT EXISTS signals (
@@ -274,6 +304,22 @@ class Database:
             if nuevas:
                 logger.info(
                     f"Migracion v5->6: umbrales 1.2%/4.2% añadidos ({len(nuevas)} columnas)"
+                )
+
+        if version < 7:
+            # El engine calcula ~40 variables por vela y `outcomes` guardaba 7.
+            # Las otras se tiraban, y sin ellas no se puede correr una regresion
+            # sobre lo que de verdad distingue a una senal buena de una mala.
+            # Esto no cambia ninguna decision: solo deja de tirar la medicion.
+            cols = [r[1] for r in self._conn.execute("PRAGMA table_info(outcomes)")]
+            nuevas = [c for c in COLS_CONTEXTO if c not in cols]
+            for col in nuevas:
+                tipo = "TEXT" if col in COLS_CONTEXTO_TEXTO else "REAL"
+                self._conn.execute(f"ALTER TABLE outcomes ADD COLUMN {col} {tipo}")
+            if nuevas:
+                logger.info(
+                    f"Migracion v6->7: {len(nuevas)} columnas de contexto añadidas "
+                    f"a outcomes (las filas viejas quedan a NULL)"
                 )
 
         self._conn.execute(

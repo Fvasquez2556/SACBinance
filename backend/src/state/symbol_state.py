@@ -177,6 +177,14 @@ class SymbolState:
         self.impulso: dict = {}
         self.base_rebote: dict = {}
         self.retroceso: dict = {}
+        # Cuanto se movio el par en los 60 min previos. Es la variable que
+        # mejor separo el resultado en research/caida_profunda.py: con rango
+        # <1% llega a la meta el 40.6% y con 3.5-6% el 75.6%. Se guarda en el
+        # outcome para poder regresar sobre ella.
+        self.rango_1h_pct: float | None = None
+        # La enesima señal de este par. La 1a llega el 58.8% y la 5a o mas el
+        # 49.0% (research/contexto_limpio.py).
+        self.senal_n: int = 0
         self.alerta: dict = {}
 
         # Niveles de trading, consolidacion y soporte/resistencia
@@ -403,6 +411,8 @@ class SymbolState:
             "impulso": dict(self.impulso),
             "base_rebote": dict(self.base_rebote),
             "retroceso": dict(self.retroceso),
+            "rango_1h_pct": self.rango_1h_pct,
+            "senal_n": self.senal_n,
             "alerta": dict(self.alerta),
             "trade_levels": dict(self.trade_levels),
             "consolidation": dict(self.consolidation_info),

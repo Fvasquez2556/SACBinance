@@ -75,6 +75,58 @@ FORMA_SOLO_BAJO = "SOLO_BAJO"
 FORMA_LATERAL = "LATERAL"
 
 
+def _contexto(snapshot: dict, trade_levels: dict) -> dict:
+    """
+    Saca del snapshot las variables que hasta la v7 se tiraban.
+
+    El engine calcula unas 40 por vela y `outcomes` guardaba 7. Sin las otras
+    no hay con que responder la pregunta que queda abierta: que distingue una
+    señal que llega de una que no. Nada de esto cambia una decision del
+    sistema — solo deja de tirar la medicion.
+
+    Todo va con .get() y sin excepciones: si un campo falta se guarda NULL, que
+    es mejor que perder la fila entera.
+    """
+    imp = snapshot.get("impulso") or {}
+    ret = snapshot.get("retroceso") or {}
+    sr = snapshot.get("sr_levels") or {}
+    cons = snapshot.get("consolidation") or {}
+    ind = snapshot.get("ind_htf") or {}
+    return {
+        "pos_en_rango": snapshot.get("pos_en_rango"),
+        "dist_soporte_pct": sr.get("dist_soporte_pct"),
+        "dist_resistencia_pct": sr.get("dist_resistencia_pct"),
+        "z_drop": snapshot.get("z_drop"),
+        "z_rise": snapshot.get("z_rise"),
+        "velocity": snapshot.get("velocity"),
+        "ret_1m_pct": snapshot.get("ret_1m_pct"),
+        "drawdown_pct": snapshot.get("drawdown_pct"),
+        "rango_1h_pct": snapshot.get("rango_1h_pct"),
+        "sigma_pct": snapshot.get("sigma_pct"),
+        "atr_pct": trade_levels.get("atr_pct"),
+        "ruido_1m_pct": trade_levels.get("ruido_1m_pct"),
+        "atr_percentile": cons.get("atr_percentile"),
+        "vol_ratio": snapshot.get("vol_ratio"),
+        "buy_ratio_30s": snapshot.get("buy_ratio_30s"),
+        "flow_trades_30s": snapshot.get("flow_trades_30s"),
+        "rsi5": snapshot.get("rsi5"),
+        "rsi14": snapshot.get("rsi14") or ind.get("rsi14"),
+        "macd_hist": snapshot.get("macd_hist"),
+        "bb_position": snapshot.get("bb_position"),
+        "fase_impulso": imp.get("fase"),
+        "fuerza_impulso": imp.get("fuerza"),
+        "consumido_pct": imp.get("consumido_pct"),
+        "retro_caida_pct": ret.get("caida_pct"),
+        "retro_rebote_pct": ret.get("rebote_pct"),
+        "retro_confirmado": 1 if ret.get("confirmado") else 0,
+        "btc_regime": snapshot.get("btc_regime"),
+        "macro_gate_mult": snapshot.get("macro_gate_mult"),
+        "score_trend": snapshot.get("score_trend"),
+        "es_fakeout": 1 if snapshot.get("is_fakeout") else 0,
+        "senal_n": snapshot.get("senal_n"),
+    }
+
+
 class OutcomeTracker:
     """
     Mantiene en memoria los outcomes abiertos y los actualiza con cada vela
@@ -259,6 +311,7 @@ class OutcomeTracker:
             "vol_24h": snapshot.get("vol_24h"),
             "vol_1m_medio": snapshot.get("vol_1m_medio"),
         }
+        row.update(_contexto(snapshot, trade_levels))
         try:
             self._db.abrir_outcome(row)
         except Exception as e:

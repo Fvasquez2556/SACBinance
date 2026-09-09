@@ -640,6 +640,16 @@ class StateEngine:
         retro = detectar_retroceso(list(st.candles))
         st.retroceso = retro.to_dict()
 
+        # Rango de la hora previa. Barato de calcular y es la variable que
+        # mejor separo el resultado en las mediciones del 9-sep. No decide
+        # nada todavia: se guarda para poder validarla con datos nuevos.
+        ult = list(st.candles)[-60:]
+        if len(ult) == 60:
+            lo = min(c.l for c in ult)
+            if lo > 0:
+                st.rango_1h_pct = round(
+                    (max(c.h for c in ult) - lo) / lo * 100.0, 3)
+
         # --- Fuerza del impulso (derivada: ¿sigue subiendo o se apaga?) ---
         # Va sin throttling: es la señal que decide emitir o retirar una
         # alerta, y llegar tarde aqui es justo el fallo que corrige.
@@ -771,6 +781,8 @@ class StateEngine:
                         logger.debug(f"[{symbol}] abrir outcome error: {e}")
 
                 tl = st.trade_levels
+                st.senal_n += 1
+                snap["senal_n"] = st.senal_n
                 if s.alerta_congelada_enabled:
                     alerta = self._alertas.emitir(
                         symbol, sig_id, now_ms, snap, tl, impulso

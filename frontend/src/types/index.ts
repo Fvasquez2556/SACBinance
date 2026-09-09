@@ -224,6 +224,12 @@ export interface PairState {
   impulso?: Impulso;
   base_rebote?: BaseRebote;
   retroceso?: Retroceso;
+  /** Cuanto se movio el par en los 60 min previos. En las mediciones del
+   *  9-sep separo mas que ninguna otra: <1% llega a la meta el 40.6%, con
+   *  3.5-6% el 75.6%. Todavia NO decide nada — se muestra y se mide. */
+  rango_1h_pct?: number | null;
+  /** La enesima señal de este par. La 1a llega el 58.8%, la 5a o mas 49.0%. */
+  senal_n?: number;
   alerta?: AlertaActiva;
   consolidation: ConsolidationInfo;
   sr_levels: SRLevels;

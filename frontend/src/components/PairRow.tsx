@@ -86,6 +86,13 @@ export default function PairRow({ pair, onClick, selected }: Props) {
   const est = alerta ? ALERTA_STYLE[alerta.estado] : undefined;
   const enSeguimiento = !!alerta && alerta.accionable === false;
   const sr = pair.sr_levels;
+  // Filtro de calidad EN SOMBRA: se marca pero no cambia nada, para poder
+  // validarlo el lunes con datos que no se usaron para encontrarlo.
+  // 1a o 2a señal del par + fuera de 12-18h GT -> 61.3% contra 52.4% de base.
+  const horaGt = new Date().getUTCHours() - 6;
+  const fueraDeLaFranja = !((horaGt + 24) % 24 >= 12 && (horaGt + 24) % 24 < 18);
+  const calidad =
+    !!pair.senal_n && pair.senal_n <= 2 && fueraDeLaFranja && !!alerta;
   // El detector solo calcula `dist_techo_pct` cuando la caída previa Y el
   // secado de volumen ya pasaron: significa que solo falta la ruptura. Filtrar
   // por `base_velas` no servía — la base casi siempre ocupa la ventana entera
@@ -150,6 +157,14 @@ export default function PairRow({ pair, onClick, selected }: Props) {
                 : rt?.rebote_pct != null && rt.rebote_pct > 0
                   ? `+${rt.rebote_pct}% del suelo`
                   : ""}
+            </span>
+          </div>
+        )}
+        {calidad && (
+          <div style={{ fontSize: 9, marginTop: 2, whiteSpace: "nowrap" }}
+               title={`Señal nº${pair.senal_n} de este par, fuera de la franja 12-18h. En los datos del 4-8 sep esa combinación llegó a la meta el 61.3% de las veces contra 52.4% de base (n=292). EN SOMBRA: se marca, no decide nada.`}>
+            <span style={{ color: "#5a8a9a", letterSpacing: "0.04em" }}>
+              ◇ calidad · {pair.senal_n}ª del par
             </span>
           </div>
         )}
@@ -286,6 +301,14 @@ export default function PairRow({ pair, onClick, selected }: Props) {
           </span>
         ) : (
           <span style={{ color: "#444", fontSize: 10 }}>—</span>
+        )}
+        {pair.rango_1h_pct != null && (
+          <div
+            style={{ fontSize: 9, color: "#5a6a7a", marginTop: 1 }}
+            title="Cuánto se movió el par en los 60 min previos. Medido el 9-sep: con rango <1% llega a la meta el 40.6% y con 3.5-6% el 75.6%. En sombra, no decide nada."
+          >
+            1h {pair.rango_1h_pct.toFixed(1)}%
+          </div>
         )}
       </td>
       {/* Entry CONGELADO en la emisión + delta en vivo contra ese entry */}
