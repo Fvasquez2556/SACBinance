@@ -19,10 +19,13 @@ referencias que hay que batir:
 Ambas referencias se sacan de la MISMA ventana de tiempo que las senales, para
 que el regimen de mercado sea el mismo y la comparacion sea limpia.
 
-El intervalo se calcula por bootstrap y no con la formula normal: los retornos
-por operacion tienen cola larga —una senal puede hacer +50%— y la aproximacion
-normal daria un intervalo demasiado estrecho, que es la forma educada de
-mentir.
+El intervalo se calcula por bootstrap POR PAR, no operacion a operacion. Dos
+razones: los retornos tienen cola larga —una senal puede hacer +50%— asi que
+la formula normal daria un intervalo demasiado estrecho; y sobre todo, el
+84.1% de las senales nace con otra del mismo par aun dentro de su ventana de
+24h. Esas no son observaciones independientes: miden tramos del mismo
+movimiento. Con 1392 senales la muestra efectiva esta mas cerca de 456, y
+fingir lo contrario es la forma educada de mentir.
 
 Uso
 ---
@@ -113,12 +116,43 @@ def simular(a: np.ndarray, i0: int, entry: float, stop_pct):
     return (float(seg[-1][3]) / entry - 1) * 100.0
 
 
-def boot_ci(x: np.ndarray, rng, reps: int = BOOT) -> tuple:
-    """Intervalo del 90% de la media, por remuestreo."""
+def boot_ci(x: np.ndarray, rng, pares=None, reps: int = BOOT) -> tuple:
+    """
+    Intervalo del 90% de la media. Con `pares`, remuestrea POR PAR.
+
+    Por que por bloques y no operacion a operacion: el 84.1% de las senales
+    nace con otra del mismo par todavia dentro de su ventana de 24h (medido en
+    research/solapamiento.py, mediana 2 a la vez y hasta 11). Dos senales
+    solapadas del mismo par no son dos observaciones independientes — miden
+    tramos del mismo movimiento.
+
+    Remuestrear una a una finge que si lo son, y devuelve un intervalo
+    demasiado estrecho: con 1392 senales la muestra efectiva esta mas cerca de
+    456. El bootstrap por conglomerados sortea PARES enteros con reemplazo, y
+    asi el intervalo refleja la incertidumbre que hay de verdad.
+    """
     if len(x) < 5:
         return float("nan"), float("nan")
-    idx = rng.integers(0, len(x), size=(reps, len(x)))
-    medias = x[idx].mean(axis=1)
+    if pares is None:
+        idx = rng.integers(0, len(x), size=(reps, len(x)))
+        medias = x[idx].mean(axis=1)
+        return float(np.percentile(medias, 5)), float(np.percentile(medias, 95))
+
+    # Agrupar posiciones por par
+    grupos: dict = {}
+    for i, p in enumerate(pares):
+        grupos.setdefault(p, []).append(i)
+    claves = list(grupos)
+    bloques = [np.array(grupos[k]) for k in claves]
+    n_b = len(bloques)
+    if n_b < 5:
+        return boot_ci(x, rng, None, reps)
+
+    medias = np.empty(reps)
+    for r in range(reps):
+        elegidos = rng.integers(0, n_b, size=n_b)
+        muestra = np.concatenate([bloques[i] for i in elegidos])
+        medias[r] = x[muestra].mean()
     return float(np.percentile(medias, 5)), float(np.percentile(medias, 95))
 
 
@@ -137,13 +171,13 @@ def acierto_sin_filo(stop_pct) -> float:
     return 100.0 * stop_pct / (META + stop_pct)
 
 
-def linea(nombre, rets, rng, base_media=None, stop_pct=None):
+def linea(nombre, rets, rng, base_media=None, stop_pct=None, pares=None):
     if len(rets) < MIN_N:
         print(f"  {nombre:<38} (pocas: {len(rets)})")
         return None
     r = np.array(rets) - FEE
     m = r.mean()
-    lo, hi = boot_ci(r, rng)
+    lo, hi = boot_ci(r, rng, pares)
     extra = ""
     if base_media is not None:
         extra = f"  vs referencia {m - base_media:+6.2f}"
@@ -226,13 +260,15 @@ def main() -> None:
     # --- Referencias ---
     print("  REFERENCIAS")
     print("  " + "-" * 88)
-    aguantar = []
+    aguantar, pares_ag = [], []
     for f in usables:
         a = kl[f["symbol"]]
         fin = min(f["i"] + VENTANA_H * 60, len(a))
         if fin - f["i"] >= 10:
             aguantar.append((float(a[fin - 1, 3]) / f["entry"] - 1) * 100.0)
-    ref_aguantar = linea("AGUANTAR (mismas monedas, sin TP/SL)", aguantar, rng)
+            pares_ag.append(f["symbol"])
+    ref_aguantar = linea("AGUANTAR (mismas monedas, sin TP/SL)", aguantar, rng,
+                         pares=pares_ag)
 
     syms = [s for s, a in kl.items() if len(a) > VENTANA_H * 60 + 100]
     azar_por_stop = {}
@@ -258,11 +294,15 @@ def main() -> None:
     print("  " + "-" * 88)
     mejor = None
     for stop in (1.2, 2.0, 3.2, None):
-        rets = [r for r in (simular(kl[f["symbol"]], f["i"], f["entry"], stop)
-                            for f in usables) if r is not None]
+        rets, pares_s = [], []
+        for f in usables:
+            r = simular(kl[f["symbol"]], f["i"], f["entry"], stop)
+            if r is not None:
+                rets.append(r)
+                pares_s.append(f["symbol"])
         etq = f"stop -{stop}%" if stop else "sin stop"
         m = linea(f"todas las senales ({etq})", rets, rng,
-                  azar_por_stop.get(stop), stop_pct=stop)
+                  azar_por_stop.get(stop), stop_pct=stop, pares=pares_s)
         if m is not None and (mejor is None or m > mejor[1]):
             mejor = (etq, m, stop)
 
@@ -270,11 +310,15 @@ def main() -> None:
     if len(conf) >= MIN_N:
         print()
         for stop in (2.0, 3.2, None):
-            rets = [r for r in (simular(kl[f["symbol"]], f["i"], f["entry"], stop)
-                                for f in conf) if r is not None]
+            rets, pares_c = [], []
+            for f in conf:
+                r = simular(kl[f["symbol"]], f["i"], f["entry"], stop)
+                if r is not None:
+                    rets.append(r)
+                    pares_c.append(f["symbol"])
             etq = f"stop -{stop}%" if stop else "sin stop"
             linea(f"patron confirmado ({etq})", rets, rng,
-                  azar_por_stop.get(stop), stop_pct=stop)
+                  azar_por_stop.get(stop), stop_pct=stop, pares=pares_c)
     else:
         print(f"\n  patron confirmado: solo {len(conf)} casos, no se reporta")
 
