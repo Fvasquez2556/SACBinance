@@ -85,6 +85,9 @@ ESTADOS_SEGUIMIENTO = {ESTADO_RETROCESO, ESTADO_VALLE, ESTADO_RECUPERANDO,
 # La meta de referencia la fijo Felix: +3.2% sobre el entry congelado, con
 # independencia del TP que ofrezca el sistema para ese par.
 META_PCT = 3.2
+# Se considera SUPERADO cuando pasa de +4.2% sobre el entry de la primera
+# señal del episodio, no sobre el de la señal en curso.
+SUPERA_PCT = 4.2
 
 # Setups cuya tesis es el GIRO, no la continuacion del impulso. En estos el
 # precio bajo la EMA7 es la condicion normal, no una señal de agotamiento.
@@ -176,10 +179,25 @@ class AlertaActiva:
     bajadas_avisadas: set = field(default_factory=set)
     # Escalones cruzados en la ultima vela; el engine los lee y los limpia.
     bajadas_nuevas: List[float] = field(default_factory=list)
+    # Entry de la PRIMERA señal del episodio. El "superado" se mide desde aqui:
+    # si la quinta señal entra mas abajo y sube 4.2% desde SU entry, puede
+    # seguir por debajo del precio de la primera, y contarlo seria engañarse.
+    entry_primera: Optional[float] = None
+    senal_n: int = 0                          # la enesima señal de este par
+    # Hitos ya avisados, para que cada uno suene una vez.
+    hitos_avisados: set = field(default_factory=set)
+    hitos_nuevos: List[str] = field(default_factory=list)
 
     @property
     def meta(self) -> float:
         return self.entry * (1 + META_PCT / 100.0)
+
+    @property
+    def delta_primera_pct(self) -> Optional[float]:
+        """Cuanto lleva el precio sobre el entry de la PRIMERA del episodio."""
+        if not self.entry_primera or self.entry_primera <= 0:
+            return None
+        return round((self.precio_actual / self.entry_primera - 1) * 100.0, 2)
 
     @property
     def entrada_alt(self) -> float:
@@ -232,6 +250,9 @@ class AlertaActiva:
             "prob_meta": self.prob_meta,
             "prob_meta_n": self.prob_meta_n,
             "viene_de_caida": self.viene_de_caida,
+            "entry_primera": self.entry_primera,
+            "senal_n": self.senal_n,
+            "delta_primera_pct": self.delta_primera_pct,
             "minutos_en_estado": (
                 round((int(time.time() * 1000) - self.ts_fin_accion) / 60000.0)
                 if self.ts_fin_accion else None),
@@ -435,6 +456,8 @@ class AlertManager:
             fase_actual=impulso.fase,
             fuerza_actual=impulso.fuerza,
             es_giro=snapshot.get("display_state", "") in _SETUPS_DE_GIRO,
+            entry_primera=snapshot.get("primer_entry") or float(entry),
+            senal_n=snapshot.get("senal_n") or 0,
         )
         a.historia_fuerza.append(impulso.fuerza)
         self._activas[symbol] = a
@@ -469,6 +492,22 @@ class AlertManager:
         a.mfe_pct = max(a.mfe_pct, (high - a.entry) / a.entry * 100.0)
         a.mae_pct = min(a.mae_pct, (low - a.entry) / a.entry * 100.0)
         a.viene_de_caida = viene_de_caida
+
+        # --- Hitos hacia arriba ---
+        # LLEGO se mide sobre el entry propio (es la meta de ESTA señal) y
+        # SUPERO sobre el de la primera del episodio, que es lo que Felix
+        # pidio: subir 4.2% desde una entrada tardia puede no ser superar nada.
+        if a.entry > 0:
+            subida = (high - a.entry) / a.entry * 100.0
+            if subida >= META_PCT and "LLEGO" not in a.hitos_avisados:
+                a.hitos_avisados.add("LLEGO")
+                a.hitos_nuevos.append("LLEGO")
+            base = a.entry_primera or a.entry
+            if base > 0:
+                sub_prim = (high - base) / base * 100.0
+                if sub_prim >= SUPERA_PCT and "SUPERO" not in a.hitos_avisados:
+                    a.hitos_avisados.add("SUPERO")
+                    a.hitos_nuevos.append("SUPERO")
 
         # --- Escalones de bajada ---
         # Se miran contra el MINIMO de la vela, no contra el cierre: si el

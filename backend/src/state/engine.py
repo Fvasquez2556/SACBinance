@@ -26,7 +26,7 @@ from src.analysis.outcome_tracker import OutcomeTracker
 from src.analysis.signal_tracker import abrir_senal, evaluar_senales
 from src.analysis.retroceso import detectar_retroceso
 from src.notify.telegram import (Telegram, texto_alerta, texto_bajada,
-                                 texto_stop)
+                                 texto_hito, texto_stop, texto_tp)
 from src.analysis.trade_levels import calcular_niveles
 from src.config.settings import get_settings
 from src.indicators.calculator import indicators_from_candles
@@ -41,7 +41,7 @@ from src.state.state_machine import (
     evaluate,
     provisional_state,
 )
-from src.state.active_alert import MOTIVO_SL, AlertManager
+from src.state.active_alert import MOTIVO_SL, MOTIVO_TP, AlertManager
 from src.state.symbol_state import (
     DISPLAY_BREAKOUT,
     DISPLAY_CAYENDO,
@@ -756,17 +756,34 @@ class StateEngine:
                         logger.debug(f"[{symbol}] editar aviso: {e}")
                     # El SL sale como mensaje aparte, no como edicion: una
                     # edicion no hace sonar el telefono y esto hay que verlo.
-                    if cambio.motivo_cierre == MOTIVO_SL:
+                    if cambio.motivo_cierre in (MOTIVO_SL, MOTIVO_TP):
+                        redactar = (texto_stop if cambio.motivo_cierre == MOTIVO_SL
+                                    else texto_tp)
+                        que = ("stop" if cambio.motivo_cierre == MOTIVO_SL
+                               else "TP")
                         try:
                             await self._tg.responder(
-                                symbol, texto_stop(symbol, cambio.to_dict()))
-                            logger.info(f"[{symbol}] AVISO stop enviado")
+                                symbol, redactar(symbol, cambio.to_dict()))
+                            logger.info(f"[{symbol}] AVISO {que} enviado")
                         except Exception as e:
-                            logger.warning(f"[{symbol}] aviso stop fallo: {e}")
+                            logger.warning(f"[{symbol}] aviso {que} fallo: {e}")
 
             # Escalones de bajada: cada uno suena una vez, colgando del aviso
             # original del par. Solo para pares de los que ya se aviso.
             viva = self._alertas.get(symbol)
+            # Hitos hacia arriba: llegar a la meta y superar +4.2% sobre el
+            # entry de la PRIMERA señal del episodio.
+            if viva is not None and viva.hitos_nuevos:
+                hitos = list(viva.hitos_nuevos)
+                viva.hitos_nuevos.clear()
+                if self._tg.activo and self._tg.tiene_mensaje(symbol):
+                    for h in hitos:
+                        try:
+                            await self._tg.responder(
+                                symbol, texto_hito(symbol, viva.to_dict(), h))
+                            logger.info(f"[{symbol}] AVISO hito {h} enviado")
+                        except Exception as e:
+                            logger.warning(f"[{symbol}] aviso hito fallo: {e}")
             if viva is not None and viva.bajadas_nuevas:
                 niveles = list(viva.bajadas_nuevas)
                 viva.bajadas_nuevas.clear()
@@ -802,6 +819,16 @@ class StateEngine:
                 # se guarda con el valor viejo y senal_n queda siempre en 0.
                 st.senal_n += 1
                 snap["senal_n"] = st.senal_n
+                # Primera señal del EPISODIO: si el par lleva mas de una ventana
+                # sin dar señales, lo de antes ya no es el mismo movimiento.
+                entry_actual = (st.trade_levels or {}).get("entry")
+                if entry_actual:
+                    caducada = (now_ms - st.primer_entry_ts
+                                >= s.seguimiento_horas * 3600_000)
+                    if st.primer_entry is None or caducada:
+                        st.primer_entry = float(entry_actual)
+                    st.primer_entry_ts = now_ms
+                snap["primer_entry"] = st.primer_entry
                 sig_id = abrir_senal(symbol, snap, self._db)
                 if sig_id is not None and self._outcomes is not None:
                     try:

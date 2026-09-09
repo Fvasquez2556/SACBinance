@@ -154,6 +154,10 @@ export interface AlertaActiva {
   prob_meta_n: number;
   /** El par cumple ahora mismo el patron validado. */
   viene_de_caida: boolean;
+  /** Entry de la PRIMERA señal del episodio: el "superado" se mide desde ahí. */
+  entry_primera: number | null;
+  delta_primera_pct: number | null;
+  senal_n: number;
   minutos_en_estado: number | null;
   /** display_state del par ahora; si sale de los estados validos, la alerta decae */
   estado_actual?: string;

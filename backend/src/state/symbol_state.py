@@ -185,6 +185,13 @@ class SymbolState:
         # La enesima señal de este par. La 1a llega el 58.8% y la 5a o mas el
         # 49.0% (research/contexto_limpio.py).
         self.senal_n: int = 0
+        # Entry de la PRIMERA señal del episodio actual. Felix pidio medir el
+        # "superado" desde ahi y no desde la señal en curso: si la quinta entra
+        # mas abajo y sube 4.2% desde su propio entry, puede seguir por debajo
+        # del precio de la primera. Medido desde la primera, no engaña.
+        # Se reinicia cuando el par lleva mas de una ventana sin señales.
+        self.primer_entry: float | None = None
+        self.primer_entry_ts: int = 0
         self.alerta: dict = {}
 
         # Niveles de trading, consolidacion y soporte/resistencia
@@ -413,6 +420,7 @@ class SymbolState:
             "retroceso": dict(self.retroceso),
             "rango_1h_pct": self.rango_1h_pct,
             "senal_n": self.senal_n,
+            "primer_entry": self.primer_entry,
             "alerta": dict(self.alerta),
             "trade_levels": dict(self.trade_levels),
             "consolidation": dict(self.consolidation_info),

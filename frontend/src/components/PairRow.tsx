@@ -160,11 +160,33 @@ export default function PairRow({ pair, onClick, selected }: Props) {
             </span>
           </div>
         )}
+        {/* Numero de señal del par: la 1a cumple su TP el 43.1% y la 7a o
+            posterior el 28.9%, asi que conviene verlo siempre. */}
+        {!!pair.senal_n && pair.senal_n > 0 && (
+          <div style={{ fontSize: 9, marginTop: 2, whiteSpace: "nowrap" }}
+               title="Número de señal de este par. Medido sobre 1393 señales: la 1ª toca su TP el 43.1% y su SL el 33.8%; de la 7ª en adelante es 28.9% contra 65.4%.">
+            <span
+              style={{
+                color: pair.senal_n <= 2 ? "#5a8a9a" : pair.senal_n >= 7 ? "#8a5a5a" : "#66707a",
+                fontWeight: pair.senal_n <= 2 ? 700 : 400,
+              }}
+            >
+              {pair.senal_n === 1 ? "① 1ª señal" : `${pair.senal_n}ª señal`}
+            </span>
+            {alerta?.delta_primera_pct != null &&
+              alerta.entry_primera !== alerta.entry && (
+                <span style={{ color: "#556", marginLeft: 4 }}>
+                  · {alerta.delta_primera_pct >= 0 ? "+" : ""}
+                  {alerta.delta_primera_pct.toFixed(2)}% desde la 1ª
+                </span>
+              )}
+          </div>
+        )}
         {calidad && (
           <div style={{ fontSize: 9, marginTop: 2, whiteSpace: "nowrap" }}
                title={`Señal nº${pair.senal_n} de este par, fuera de la franja 12-18h. En los datos del 4-8 sep esa combinación llegó a la meta el 61.3% de las veces contra 52.4% de base (n=292). EN SOMBRA: se marca, no decide nada.`}>
             <span style={{ color: "#5a8a9a", letterSpacing: "0.04em" }}>
-              ◇ calidad · {pair.senal_n}ª del par
+              ◇ calidad
             </span>
           </div>
         )}
