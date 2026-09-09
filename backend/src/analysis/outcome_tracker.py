@@ -259,6 +259,25 @@ class OutcomeTracker:
             )
         return n
 
+    def _siguiente_id_sombra(self):
+        """
+        El siguiente id negativo libre, garantizado.
+
+        La invariante vive aqui y no en `cargar()` a proposito: antes el
+        contador solo se recuperaba si alguien llamaba a cargar() ANTES de la
+        primera sombra, y si no, arrancaba en 0, chocaba con un id ya usado y
+        la fila desaparecia sin ruido (INSERT OR IGNORE). Una invariante que
+        depende del orden de las llamadas se rompe sola tarde o temprano.
+        """
+        if self._sombra_id >= 0:
+            try:
+                self._sombra_id = min(0, self._db.min_signal_id())
+            except Exception as e:
+                logger.warning(f"No se pudo leer el minimo signal_id: {e}")
+                return None
+        self._sombra_id -= 1
+        return self._sombra_id
+
     def abrir_sombra(self, symbol: str, ts_open: int, snapshot: dict,
                      trade_levels: dict, score_estimado: int,
                      motivo: str = "GATE_MACRO",
@@ -286,7 +305,9 @@ class OutcomeTracker:
         """
         if self._db is None or symbol in self._sombra_activa:
             return
-        self._sombra_id -= 1
+        sid = self._siguiente_id_sombra()
+        if sid is None:
+            return
         snap = dict(snapshot)
         snap["score"] = score_estimado          # el score SIN el gate
         # En los vetos el tier real importa —KAT llego a FUERTE antes de que la
@@ -294,9 +315,9 @@ class OutcomeTracker:
         # conservar: el gate ya lo dejo en NINGUNO.
         if not conservar_tier:
             snap["tier"] = "SOMBRA"
-        self.abrir(self._sombra_id, symbol, ts_open, snap, trade_levels,
+        self.abrir(sid, symbol, ts_open, snap, trade_levels,
                    sombra=True, sombra_motivo=motivo)
-        if self._sombra_id in self._abiertos:
+        if sid in self._abiertos:
             self._sombra_activa.add(symbol)
 
     def abrir(self, signal_id: int, symbol: str, ts_open: int,
