@@ -240,6 +240,13 @@ class Settings(BaseSettings):
     # (retroceso_dinamico.py) y no aporta nada sobre el numero fijo.
     retroceso_entrada_pct: float = Field(default=1.8)
 
+    # --- Avisos de BAJADA ---
+    # Escalones bajo el entry congelado que disparan aviso, una vez cada uno.
+    # De 1391 senales cerradas, 217 subieron >=2.2% y despues cayeron al SL:
+    # saber que una alerta viva se esta dando la vuelta importa tanto como
+    # saber que nacio. El SL propio de la senal avisa aparte.
+    aviso_bajada_pct: str = Field(default="0.4,0.9,1.8")
+
     # --- Avisos por Telegram ---
     # El token y el chat_id NO van aqui: se ponen en backend/.env, que no esta
     # en git. Un token en el codigo es un token publicado.

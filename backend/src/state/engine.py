@@ -25,7 +25,8 @@ from src.analysis.impulse import medir_impulso
 from src.analysis.outcome_tracker import OutcomeTracker
 from src.analysis.signal_tracker import abrir_senal, evaluar_senales
 from src.analysis.retroceso import detectar_retroceso
-from src.notify.telegram import Telegram, texto_alerta
+from src.notify.telegram import (Telegram, texto_alerta, texto_bajada,
+                                 texto_stop)
 from src.analysis.trade_levels import calcular_niveles
 from src.config.settings import get_settings
 from src.indicators.calculator import indicators_from_candles
@@ -40,7 +41,7 @@ from src.state.state_machine import (
     evaluate,
     provisional_state,
 )
-from src.state.active_alert import AlertManager
+from src.state.active_alert import MOTIVO_SL, AlertManager
 from src.state.symbol_state import (
     DISPLAY_BREAKOUT,
     DISPLAY_CAYENDO,
@@ -753,6 +754,30 @@ class StateEngine:
                             symbol, cambio.to_dict(), st.retroceso, st.sr_levels))
                     except Exception as e:
                         logger.debug(f"[{symbol}] editar aviso: {e}")
+                    # El SL sale como mensaje aparte, no como edicion: una
+                    # edicion no hace sonar el telefono y esto hay que verlo.
+                    if cambio.motivo_cierre == MOTIVO_SL:
+                        try:
+                            await self._tg.responder(
+                                symbol, texto_stop(symbol, cambio.to_dict()))
+                            logger.info(f"[{symbol}] AVISO stop enviado")
+                        except Exception as e:
+                            logger.warning(f"[{symbol}] aviso stop fallo: {e}")
+
+            # Escalones de bajada: cada uno suena una vez, colgando del aviso
+            # original del par. Solo para pares de los que ya se aviso.
+            viva = self._alertas.get(symbol)
+            if viva is not None and viva.bajadas_nuevas:
+                niveles = list(viva.bajadas_nuevas)
+                viva.bajadas_nuevas.clear()
+                if self._tg.activo and self._tg.tiene_mensaje(symbol):
+                    for niv in niveles:
+                        try:
+                            await self._tg.responder(
+                                symbol, texto_bajada(symbol, viva.to_dict(), niv))
+                            logger.info(f"[{symbol}] AVISO bajada -{niv}% enviado")
+                        except Exception as e:
+                            logger.warning(f"[{symbol}] aviso bajada fallo: {e}")
             st.alerta = (
                 a.to_dict() if (a := self._alertas.get(symbol)) is not None else {}
             )

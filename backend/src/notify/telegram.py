@@ -209,4 +209,60 @@ def texto_alerta(symbol: str, alerta: dict, retroceso: dict,
     tier = alerta.get("tier_emision")
     if tier and tier != "NINGUNO":
         lineas.append(f"<i>{tier} · score {alerta.get('score_emision')}</i>")
+    lineas.append("")
+    lineas.append(_enlace(symbol))
     return "\n".join(lineas)
+
+
+def _enlace(symbol: str) -> str:
+    """Enlace al grafico del par en Binance, para comprobarlo de un toque."""
+    par = symbol.replace("USDT", "")
+    return (f'<a href="https://www.binance.com/es/trade/{par}_USDT?type=spot">'
+            f"ver {par} en Binance</a>")
+
+
+def texto_bajada(symbol: str, alerta: dict, nivel: float) -> str:
+    """
+    Aviso de que una alerta viva se esta dando la vuelta.
+
+    Importa porque de 1391 senales cerradas, 217 subieron >=2.2% y despues
+    cayeron al SL. Saber que una señal se tuerce vale tanto como saber que
+    nacio, y el tablero solo lo enseña si alguien lo esta mirando.
+    """
+    par = symbol.replace("USDT", "")
+    lineas = [
+        f"🔻 <b>{par}</b>  ·  baja {nivel}% desde la entrada",
+        "",
+        f"entrada <code>{alerta.get('entry')}</code>   "
+        f"ahora <code>{alerta.get('precio_actual')}</code>",
+        f"delta {_fmt(alerta.get('delta_pct'), 2, '%')}   "
+        f"minimo {_fmt(alerta.get('mae_pct'), 2, '%')}",
+    ]
+    sl = alerta.get("stop_loss")
+    if sl:
+        lineas.append(f"SL del sistema <code>{sl}</code> "
+                      f"({_fmt(alerta.get('sl_pct'), 2, '%')})")
+    d = alerta.get("dist_meta_pct")
+    if d is not None and d > 0:
+        lineas.append(f"faltan {d:.2f}% para +3.2%  ·  "
+                      f"{alerta.get('prob_meta', 0):.0f}% medido")
+    lineas += ["", "Comprueba el grafico antes de decidir.", _enlace(symbol)]
+    return "\n".join(lineas)
+
+
+def texto_stop(symbol: str, alerta: dict) -> str:
+    """El SL que fijo el sistema se ha tocado."""
+    par = symbol.replace("USDT", "")
+    return "\n".join([
+        f"🔴 <b>{par}</b>  ·  TOCO EL SL",
+        "",
+        f"entrada <code>{alerta.get('entry')}</code>   "
+        f"SL <code>{alerta.get('stop_loss')}</code> "
+        f"({_fmt(alerta.get('sl_pct'), 2, '%')})",
+        f"minimo {_fmt(alerta.get('mae_pct'), 2, '%')}   "
+        f"maximo {_fmt(alerta.get('mfe_pct'), 2, '%')}",
+        "",
+        "Sigue en seguimiento: de las que tocaron el SL, el 37% llego",
+        "despues a +3.2%. Tocar el stop no cierra la historia.",
+        _enlace(symbol),
+    ])

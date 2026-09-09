@@ -111,6 +111,23 @@ MARCA_MORADO_PCT = 4.2     # objetivo holgado
 MARCA_AMARILLO_PCT = -1.2  # SL medio observado en las señales que se torcieron
 
 
+def _escalones_bajada() -> List[float]:
+    """Escalones configurados, de menor a mayor, ya validados."""
+    crudo = get_settings().aviso_bajada_pct or ""
+    out = []
+    for trozo in crudo.split(","):
+        trozo = trozo.strip()
+        if not trozo:
+            continue
+        try:
+            v = abs(float(trozo))
+        except ValueError:
+            continue
+        if v > 0:
+            out.append(v)
+    return sorted(out)
+
+
 @dataclass
 class AlertaActiva:
     symbol: str
@@ -154,6 +171,11 @@ class AlertaActiva:
     prob_meta: float = 0.0                    # frecuencia observada a esa distancia
     prob_meta_n: int = 0                      # tamaño de muestra de esa banda
     viene_de_caida: bool = False              # el patron validado, del par ahora
+    # Escalones de bajada ya avisados, para que cada uno suene UNA vez. Si no,
+    # un precio oscilando alrededor de -0.4% dispararia el aviso sin parar.
+    bajadas_avisadas: set = field(default_factory=set)
+    # Escalones cruzados en la ultima vela; el engine los lee y los limpia.
+    bajadas_nuevas: List[float] = field(default_factory=list)
 
     @property
     def meta(self) -> float:
@@ -447,6 +469,17 @@ class AlertManager:
         a.mfe_pct = max(a.mfe_pct, (high - a.entry) / a.entry * 100.0)
         a.mae_pct = min(a.mae_pct, (low - a.entry) / a.entry * 100.0)
         a.viene_de_caida = viene_de_caida
+
+        # --- Escalones de bajada ---
+        # Se miran contra el MINIMO de la vela, no contra el cierre: si el
+        # precio pincho -1.9% y rebotó dentro del mismo minuto, el aviso tiene
+        # que salir igual. Se compara contra el entry CONGELADO.
+        if a.entry > 0:
+            caida = (low - a.entry) / a.entry * 100.0
+            for niv in _escalones_bajada():
+                if caida <= -niv and niv not in a.bajadas_avisadas:
+                    a.bajadas_avisadas.add(niv)
+                    a.bajadas_nuevas.append(niv)
 
         # Distancia a la meta y su probabilidad OBSERVADA a esa distancia
         a.dist_meta_pct = round((a.meta / close - 1) * 100.0, 2) if close > 0 else None
