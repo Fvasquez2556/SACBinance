@@ -8,6 +8,7 @@ from typing import Dict, Optional
 import aiohttp
 
 from src.config.settings import get_settings
+from src.persistence.db import get_db
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -102,6 +103,7 @@ class Telegram:
         })
         if r and "message_id" in r:
             self._mensajes[symbol] = r["message_id"]
+            self._recordar(symbol, r["message_id"])
 
     async def actualizar(self, symbol: str, texto: str) -> bool:
         """\nEdita el aviso que ya se mando para ese par. Devuelve False si no habia\nninguno, para que el llamante decida si manda uno nuevo o lo deja.\n"""
@@ -151,6 +153,51 @@ class Telegram:
 
     def olvidar(self, symbol: str) -> None:
         self._mensajes.pop(symbol, None)
+        try:
+            get_db().borrar_hilo_telegram(symbol)
+        except Exception as e:
+            logger.debug(f"[{symbol}] borrar hilo: {e}")
+
+    # --- Persistencia del hilo -------------------------------------------
+    #
+    # Sin esto, cada reinicio dejaba mudas a todas las alertas ya anunciadas:
+    # seguian vivas en el tablero, pero como su message_id vivia solo en
+    # memoria, `tiene_mensaje` devolvia False y los avisos de bajada, stop, TP
+    # e hito se descartaban en silencio. Una alerta de las 03:00 se quedaba sin
+    # seguimiento por un reinicio a las 04:00.
+    #
+    # Ninguno de los dos metodos puede tumbar un envio: si la base falla, se
+    # pierde la continuidad del hilo, no el aviso.
+
+    def _recordar(self, symbol: str, message_id: int) -> None:
+        try:
+            get_db().guardar_hilo_telegram(
+                symbol, message_id, int(time.time() * 1000))
+        except Exception as e:
+            logger.debug(f"[{symbol}] guardar hilo: {e}")
+
+    def cargar_hilos(self) -> int:
+        """
+        Recupera los hilos vigentes tras un reinicio. Se llama desde main.
+
+        Solo valen los de las ultimas `seguimiento_horas` — pasada la ventana
+        la alerta ya se archivo y responder a su mensaje no tendria sentido.
+        """
+        if not self.activo:
+            return 0
+        horas = get_settings().seguimiento_horas + 1   # margen de una hora
+        desde = int(time.time() * 1000) - horas * 3600_000
+        try:
+            self._mensajes = get_db().get_hilos_telegram(desde)
+        except Exception as e:
+            logger.warning(f"No se pudieron recuperar los hilos de Telegram: {e}")
+            return 0
+        if self._mensajes:
+            logger.info(
+                f"Hilos de Telegram recuperados: {len(self._mensajes)} pares "
+                f"siguen recibiendo avisos de seguimiento"
+            )
+        return len(self._mensajes)
 
     def tiene_mensaje(self, symbol: str) -> bool:
         return symbol in self._mensajes

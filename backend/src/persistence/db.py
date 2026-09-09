@@ -107,6 +107,14 @@ CREATE INDEX IF NOT EXISTS idx_out_cerrado ON outcomes (cerrado, ts_open DESC);
 CREATE INDEX IF NOT EXISTS idx_out_symbol  ON outcomes (symbol, ts_open DESC);
 """
 
+_CREATE_TELEGRAM_HILOS = """
+CREATE TABLE IF NOT EXISTS telegram_hilos (
+    symbol     TEXT    PRIMARY KEY,
+    message_id INTEGER NOT NULL,
+    ts_ms      INTEGER NOT NULL
+);
+"""
+
 _CREATE_META = """
 CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
@@ -241,6 +249,7 @@ class Database:
         for ddl in (
             _CREATE_SYMBOL_STATES, _CREATE_ANALYSIS_LOG, _CREATE_PAIR_META,
             _CREATE_SIGNALS, _CREATE_KLINES, _CREATE_META, _CREATE_OUTCOMES,
+            _CREATE_TELEGRAM_HILOS,
         ):
             self._conn.executescript(ddl)
         self._conn.commit()
@@ -654,6 +663,40 @@ class Database:
                 "hoyo_c3": r.get("hoyo_c3"),
             })
         return out
+
+    # --- Hilos de Telegram ---------------------------------------------------
+    #
+    # Los avisos de seguimiento — bajadas, stop, TP, hitos — cuelgan del mensaje
+    # original de su par via `reply_to_message_id`. Ese identificador vivia solo
+    # en memoria, asi que cada reinicio dejaba mudas a todas las alertas
+    # anunciadas antes: seguian en el tablero, pero su telefono ya no sonaba.
+    # Guardarlo aqui hace que el hilo sobreviva al reinicio.
+
+    def guardar_hilo_telegram(self, symbol: str, message_id: int,
+                              ts_ms: int) -> None:
+        self._conn.execute(
+            "INSERT OR REPLACE INTO telegram_hilos (symbol, message_id, ts_ms) "
+            "VALUES (?, ?, ?)",
+            (symbol, int(message_id), int(ts_ms)),
+        )
+        self._dirty = True
+
+    def borrar_hilo_telegram(self, symbol: str) -> None:
+        self._conn.execute("DELETE FROM telegram_hilos WHERE symbol = ?", (symbol,))
+        self._dirty = True
+
+    def get_hilos_telegram(self, desde_ms: int) -> dict:
+        """
+        Los hilos aun vigentes, y de paso borra los caducados.
+
+        Un hilo mas viejo que la ventana de seguimiento no sirve para nada: su
+        alerta ya se archivo. Sin la limpieza la tabla creceria un registro por
+        par y aviso, para siempre.
+        """
+        self._conn.execute("DELETE FROM telegram_hilos WHERE ts_ms < ?", (desde_ms,))
+        self._dirty = True
+        cur = self._conn.execute("SELECT symbol, message_id FROM telegram_hilos")
+        return {row[0]: row[1] for row in cur.fetchall()}
 
     # --- Klines (checkpoint de velas OHLCV) ----------------------------------
 

@@ -130,6 +130,9 @@ async def startup():
     # primer aviso a las 3 de la manana.
     if engine._tg.activo:
         await engine._tg.probar()
+        # Los hilos ya anunciados: sin esto, un reinicio dejaba a las alertas
+        # vivas sin avisos de bajada, stop ni hitos hasta que caducaban.
+        engine._tg.cargar_hilos()
 
     # 6. WebSockets Binance
     ws_mgr = WSManager(symbols, engine)

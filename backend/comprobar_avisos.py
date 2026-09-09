@@ -106,6 +106,47 @@ def main() -> int:
         else:
             print(f"  {nombre:<20} ok ({len(t)} caracteres)")
 
+    # --- 4. El hilo sobrevive a un reinicio ---
+    # Se prueba contra una copia de la base, nunca contra la real.
+    import shutil, tempfile, os, time as _t
+    from src.config.settings import get_settings
+    print()
+    origen = get_settings().db_path
+    tmp = pathlib.Path(tempfile.mkdtemp()) / "copia.db"
+    try:
+        if pathlib.Path(origen).exists():
+            for suf in ("", "-wal", "-shm"):
+                if os.path.exists(origen + suf):
+                    shutil.copy(origen + suf, str(tmp) + suf)
+        import src.persistence.db as dbmod
+        get_settings().db_path = str(tmp)
+        dbmod._db = None
+        db = dbmod.get_db()
+        ahora = int(_t.time() * 1000)
+        db.guardar_hilo_telegram("PRUEBAUSDT", 424242, ahora)
+        db.guardar_hilo_telegram("CADUCADAUSDT", 1, ahora - 72 * 3600_000)
+        vivos = db.get_hilos_telegram(ahora - 25 * 3600_000)
+        if vivos.get("PRUEBAUSDT") != 424242:
+            fallos.append("el hilo no se recupera tras guardarlo")
+            print("  hilo guardado -> NO se recupera")
+        elif "CADUCADAUSDT" in vivos:
+            fallos.append("los hilos caducados no se limpian")
+            print("  hilo caducado -> NO se limpia")
+        else:
+            print(f"  hilo guardado y recuperado ok, caducados limpiados "
+                  f"({len(vivos)} vigentes)")
+        db.borrar_hilo_telegram("PRUEBAUSDT")
+        if "PRUEBAUSDT" in db.get_hilos_telegram(0):
+            fallos.append("borrar_hilo_telegram no borra")
+    except Exception as e:
+        fallos.append(f"la prueba del hilo persistido lanza {type(e).__name__}: {e}")
+        print(f"  prueba del hilo FALLA — {type(e).__name__}: {e}")
+    finally:
+        get_settings().db_path = origen
+        import src.persistence.db as dbmod
+        dbmod._db = None
+        shutil.rmtree(tmp.parent, ignore_errors=True)
+
     print()
     if fallos:
         print("FALLOS:")
