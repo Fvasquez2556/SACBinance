@@ -586,6 +586,75 @@ class Database:
         cols = [d[0] for d in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
+    def get_historial(self, limit: int = 200,
+                      symbol: Optional[str] = None) -> List[dict]:
+        """
+        El historial de señales para el tablero, con su desenlace.
+
+        Sale de `outcomes` y no de `signals` porque es la tabla que sabe lo que
+        paso DESPUES: `signals` cierra la señal al tocar TP o SL y no vuelve a
+        mirar, mientras que outcomes sigue las 24h enteras. Sin eso el
+        historial no podria decir que una señal parada acabo llegando igual al
+        objetivo, que es el caso mas frecuente de todos (42% de las paradas).
+
+        Se excluyen las de sombra: no se avisaron, no son historial de nada
+        que Felix pudiera haber operado.
+        """
+        cond = "WHERE sombra = 0"
+        args: list = []
+        if symbol:
+            cond += " AND symbol = ?"
+            args.append(symbol.upper())
+        args.append(limit)
+        cur = self._conn.execute(
+            f"SELECT * FROM outcomes {cond} ORDER BY ts_open DESC LIMIT ?",
+            tuple(args),
+        )
+        cols = [d[0] for d in cur.description]
+        out = []
+        for row in cur.fetchall():
+            r = dict(zip(cols, row))
+            tp, sl = r.get("ms_tp"), r.get("ms_sl")
+            if tp is not None and (sl is None or tp < sl):
+                desenlace, ms = "TP", tp
+            elif sl is not None:
+                desenlace, ms = "SL", sl
+            elif r.get("cerrado"):
+                desenlace, ms = "NADA", None
+            else:
+                desenlace, ms = "ABIERTA", None
+            out.append({
+                "signal_id": r["signal_id"],
+                "symbol": r["symbol"],
+                "ts_open": r["ts_open"],
+                "senal_n": r.get("senal_n"),
+                "tier": r.get("tier"),
+                "score": r.get("score"),
+                "display_state": r.get("display_state"),
+                "entry": r.get("entry"),
+                "take_profit": r.get("take_profit"),
+                "stop_loss": r.get("stop_loss"),
+                "tp_pct": r.get("tp_pct"),
+                "sl_pct": r.get("sl_pct"),
+                "desenlace": desenlace,
+                "ms_resuelto": ms,
+                "mfe_pct": r.get("mfe_pct"),
+                "mae_pct": r.get("mae_pct"),
+                # Los dos que de verdad importan: la meta del operador y el
+                # objetivo holgado. Van aparte del desenlace a proposito —
+                # una señal puede tocar su stop Y llegar a +3.2% despues.
+                "llego_meta": r.get("ms_up_32") is not None,
+                "supero": r.get("ms_up_42") is not None,
+                "ms_meta": r.get("ms_up_32"),
+                "cerrado": r.get("cerrado"),
+                # Medicion en sombra de la entrada en el hoyo (v8). None en
+                # las filas anteriores al 9-sep.
+                "hoyo_ms": r.get("ms_hoyo"),
+                "hoyo_celda": r.get("hoyo_celda"),
+                "hoyo_c3": r.get("hoyo_c3"),
+            })
+        return out
+
     # --- Klines (checkpoint de velas OHLCV) ----------------------------------
 
     def save_kline(self, symbol: str, tf: str, candle) -> None:

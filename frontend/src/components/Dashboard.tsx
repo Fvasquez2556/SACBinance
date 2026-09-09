@@ -4,6 +4,7 @@ import PairDetail from "./PairDetail";
 import PairRow from "./PairRow";
 import Calculadora from "./Calculadora";
 import SignalStats from "./SignalStats";
+import Historial from "./Historial";
 
 const INTERESTING_STATES: DisplayState[] = ["TOCÓ_FONDO", "CONSOLIDANDO", "SUBIENDO", "BREAKOUT_INCIPIENTE"];
 
@@ -146,6 +147,7 @@ export default function Dashboard({
 
         {/* Tabla */}
         <Calculadora />
+        <Historial onSelect={setSelectedSymbol} />
 
         <div style={{ flex: 1, overflowY: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>

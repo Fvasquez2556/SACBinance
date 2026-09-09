@@ -94,6 +94,21 @@ async def get_signals(limit: int = Query(default=50, ge=1, le=200)):
     return {"signals": db.get_recent_signals(limit=limit)}
 
 
+@router.get("/historial")
+async def get_historial(
+    limit: int = Query(default=200, ge=1, le=1000),
+    symbol: Optional[str] = Query(default=None),
+):
+    """
+    Historial de señales con su desenlace, para el panel del tablero.
+
+    Sale de `outcomes`, que sigue las 24h enteras, y no de `signals`, que deja
+    de mirar en cuanto toca TP o SL.
+    """
+    db = get_db()
+    return {"historial": db.get_historial(limit=limit, symbol=symbol)}
+
+
 @router.get("/status")
 async def get_status():
     """Estado del sistema: pares activos, distribucion de estados."""
