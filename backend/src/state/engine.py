@@ -773,6 +773,10 @@ class StateEngine:
 
                 # Auto-evaluacion: registrar la señal para medir su resultado
                 snap = self._con_liquidez(symbol, st, snap)
+                # El contador sube ANTES de abrir el outcome: si no, la fila
+                # se guarda con el valor viejo y senal_n queda siempre en 0.
+                st.senal_n += 1
+                snap["senal_n"] = st.senal_n
                 sig_id = abrir_senal(symbol, snap, self._db)
                 if sig_id is not None and self._outcomes is not None:
                     try:
@@ -781,8 +785,6 @@ class StateEngine:
                         logger.debug(f"[{symbol}] abrir outcome error: {e}")
 
                 tl = st.trade_levels
-                st.senal_n += 1
-                snap["senal_n"] = st.senal_n
                 if s.alerta_congelada_enabled:
                     alerta = self._alertas.emitir(
                         symbol, sig_id, now_ms, snap, tl, impulso
