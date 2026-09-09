@@ -254,15 +254,27 @@ class OutcomeTracker:
         return n
 
     def abrir_sombra(self, symbol: str, ts_open: int, snapshot: dict,
-                     trade_levels: dict, score_estimado: int) -> None:
+                     trade_levels: dict, score_estimado: int,
+                     motivo: str = "GATE_MACRO",
+                     conservar_tier: bool = False) -> None:
         """
-        Sigue una señal que el gate macro SUPRIMIO, sin alertarla.
+        Sigue una señal que el sistema NO llego a emitir, sin alertarla.
 
-        Sin esto el sistema tiene un punto ciego: lo que el gate suprime nunca
-        llega a ser señal, asi que no hay outcome que diga si suprimirlo fue
-        acertado. El 4-sep, SUBIENDO con macro BAJISTA dio 0 de 82 por encima
-        del umbral, y ese mismo dia TUTUSDT (+12%) y MITOUSDT (+8.4%) cayeron
-        en esa categoria — sin datos para saber si el muro protegia o costaba.
+        Dos casos, y los dos eran puntos ciegos:
+
+        GATE_MACRO — el gate multiplica el score y lo deja bajo el umbral. El
+            4-sep, SUBIENDO con macro BAJISTA dio 0 de 82 por encima del
+            umbral, y ese mismo dia TUTUSDT (+12%) y MITOUSDT (+8.4%) cayeron
+            ahi, sin datos para saber si el muro protegia o costaba.
+
+        VETO — los filtros de alerta la rechazan. Es el caso mas grave porque
+            es el mas frecuente: el 9-sep KATUSDT subio 29.79% con 46 vetos y
+            CERO filas en outcomes, y IOSTUSDT hizo +169.8% con 169 vetos y
+            ninguna señal. Todo el analisis de esa semana se hizo sobre las
+            señales emitidas, es decir, sobre la mitad de la pelicula.
+
+        Una sombra por par a la vez: si no, un par vetado cuarenta veces en un
+        dia mete cuarenta filas del mismo momento.
 
         Los ids de sombra son negativos para no chocar con los de signals.
         """
@@ -271,13 +283,19 @@ class OutcomeTracker:
         self._sombra_id -= 1
         snap = dict(snapshot)
         snap["score"] = score_estimado          # el score SIN el gate
-        snap["tier"] = "SOMBRA"
-        self.abrir(self._sombra_id, symbol, ts_open, snap, trade_levels, sombra=True)
+        # En los vetos el tier real importa —KAT llego a FUERTE antes de que la
+        # vetaran— asi que se conserva. En el gate macro no hay tier que
+        # conservar: el gate ya lo dejo en NINGUNO.
+        if not conservar_tier:
+            snap["tier"] = "SOMBRA"
+        self.abrir(self._sombra_id, symbol, ts_open, snap, trade_levels,
+                   sombra=True, sombra_motivo=motivo)
         if self._sombra_id in self._abiertos:
             self._sombra_activa.add(symbol)
 
     def abrir(self, signal_id: int, symbol: str, ts_open: int,
-              snapshot: dict, trade_levels: dict, sombra: bool = False) -> None:
+              snapshot: dict, trade_levels: dict, sombra: bool = False,
+              sombra_motivo: Optional[str] = None) -> None:
         """Empieza a seguir una señal recien emitida."""
         if self._db is None or signal_id in self._abiertos:
             return
@@ -309,6 +327,9 @@ class OutcomeTracker:
             "n_velas": 0,
             "cerrado": 0,
             "sombra": 1 if sombra else 0,
+            # Por que no se emitio: GATE_MACRO, o el texto del veto. NULL en
+            # las señales reales.
+            "sombra_motivo": (sombra_motivo or None) if sombra else None,
             "vol_24h": snapshot.get("vol_24h"),
             "vol_1m_medio": snapshot.get("vol_1m_medio"),
         }

@@ -133,7 +133,11 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 #   5 -> 6: umbrales 1.2% y 4.2% (marcadores amarillo y morado del tablero).
 #   6 -> 7: 31 columnas de contexto de la señal (antes se tiraban).
 #   7 -> 8: medicion en sombra de "entrar en el hoyo" (ver analysis/hoyo.py).
-SCHEMA_VERSION = 8
+#   8 -> 9: outcomes.sombra_motivo — por que esa fila es sombra. Sin esto no
+#           se pueden separar las que suprimio el gate macro de las que
+#           vetaron los filtros de alerta, que son la mayoria y las que mas
+#           informacion tienen.
+SCHEMA_VERSION = 9
 
 # --- Contexto de la senal: lo que el engine ya calcula y hasta ahora se tiraba
 #
@@ -367,6 +371,23 @@ class Database:
                 logger.info(
                     f"Migracion v7->8: {len(nuevas)} columnas de la sombra del "
                     f"hoyo añadidas a outcomes"
+                )
+
+        if version < 9:
+            # Hasta aqui, `sombra=1` mezclaba dos cosas distintas: lo que el
+            # gate macro suprimio y —desde ahora— lo que vetaron los filtros de
+            # alerta. Saber cual es cual es justo el dato: el 9-sep KATUSDT
+            # subio 29.79% con 46 vetos y CERO filas en outcomes, y IOSTUSDT
+            # hizo +169.8% con 169 vetos y ninguna señal.
+            cols = [r[1] for r in self._conn.execute("PRAGMA table_info(outcomes)")]
+            if "sombra_motivo" not in cols:
+                self._conn.execute(
+                    "ALTER TABLE outcomes ADD COLUMN sombra_motivo TEXT")
+                self._conn.execute(
+                    "UPDATE outcomes SET sombra_motivo='GATE_MACRO' WHERE sombra=1")
+                logger.info(
+                    "Migracion v8->9: outcomes.sombra_motivo añadida; las filas "
+                    "de sombra anteriores quedan marcadas GATE_MACRO"
                 )
 
         self._conn.execute(

@@ -153,6 +153,11 @@ def _tier_order(tier: str) -> int:
     return {"NINGUNO": 0, "VIGILANCIA": 1, "MODERADA": 2, "FUERTE": 3, "EXTRA-FUERTE": 4}.get(tier, 0)
 
 
+# Vetos que no juzgan la señal: dicen que el par ya tiene una alerta viva o
+# que acaba de tener una. Medirlos en sombra duplicaria lo que ya se mide.
+_VETOS_CONTABLES = ("ya hay una alerta viva", "cooldown")
+
+
 def _merece_aviso(snap: dict, retro: dict, s) -> tuple:
     """
     ¿Este par justifica sonar el telefono? Devuelve (bool, motivo).
@@ -808,6 +813,7 @@ class StateEngine:
                 if not emitir:
                     logger.debug(f"[{symbol}] alerta no emitida: {motivo}")
                     self._log_db(symbol, "VETO_ALERTA", f"{display} score={val} — {motivo}")
+                    self._sombra_de_veto(symbol, st, val, motivo, now_ms)
 
             if emitir:
                 self._last_tier[symbol] = tier
@@ -957,6 +963,43 @@ class StateEngine:
         if st is None:
             return
         st.flow.add_trade(t, price, qty, is_buyer_maker)
+
+    def _sombra_de_veto(self, symbol: str, st, score: int, motivo: str,
+                        now_ms: int) -> None:
+        """
+        Mide la señal que el veto acaba de suprimir, sin alertarla.
+
+        Hasta el 9-sep, una alerta vetada no dejaba rastro medible: el tablero
+        enseñaba su entrada, su TP y su SL, pero no se guardaba nada. Todo el
+        analisis salia de las señales emitidas, o sea de la mitad de la
+        pelicula — y justo la mitad que falta es la de los pares que mas se
+        mueven, porque el veto castiga el movimiento. KATUSDT subio 29.79% ese
+        dia con 46 vetos y cero filas; IOSTUSDT hizo +169.8% con 169.
+
+        No entran los vetos de contabilidad: "ya hay una alerta viva" y
+        "en cooldown" no juzgan la señal, dicen que el par ya tiene una. Medir
+        esos seria duplicar la alerta que ya se esta midiendo. Son el 65% de
+        los vetos.
+
+        Esto NO alerta, NO puntua y NO cambia ninguna decision. Solo mide.
+        """
+        if self._outcomes is None:
+            return
+        if any(x in motivo for x in _VETOS_CONTABLES):
+            return
+        tl = st.trade_levels or {}
+        if not tl.get("valid"):
+            return
+        try:
+            self._outcomes.abrir_sombra(
+                symbol, now_ms,
+                self._con_liquidez(symbol, st, st.snapshot()),
+                tl, score,
+                motivo=f"VETO: {motivo}"[:120],
+                conservar_tier=True,
+            )
+        except Exception as e:
+            logger.debug(f"[{symbol}] sombra de veto: {e}")
 
     async def _quiza_avisar(self, symbol: str, st, snap: dict,
                             now_ms: int) -> None:
