@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-"Maximos planos con cuerpos encogiendo": el unico veto que se gana su sitio.
+"Maximos planos con cuerpos encogiendo": tampoco protege. Era el control.
 
-De los seis motivos por los que el sistema se niega a alertar, cinco no
-distinguen nada de un instante al azar de la misma moneda. Este si: -10.2
-puntos de acierto, con el intervalo entero por debajo de cero con los tres
-anchos de stop. Aqui se le aprieta para ver si aguanta.
+Parecia el unico veto que se ganaba su sitio: -10.2 puntos de acierto contra
+el azar, con el intervalo entero por debajo de cero. Pero ese control sorteaba
+UN solo minuto por veto, y con una sola muestra la mitad de la varianza del
+resultado es del control, no del veto.
+
+Con veinte sorteos promediados se queda en **-2.9 [-8.2, +2.2]** y cruza el
+cero. Aguanta nueve variantes del experimento y solo se separa de cero en una
+—el horizonte de 12h—, que es justo lo que se espera por azar con nueve
+pruebas.
+
+Conclusion: NINGUNO de los seis motivos de veto distingue nada. El script se
+deja entero porque la forma de apretar un resultado es lo util.
 
 Cuatro formas de intentar tumbarlo
 ----------------------------------
@@ -216,10 +224,9 @@ def main():
     print(f"  momentos distintos (dedup 30 min)  : {len(base)}  ({len(base)/dias:.0f}/dia)")
     print(f"  señales que el sistema SI emitio   : {senales}  ({senales/dias:.0f}/dia)")
     print(f"\n  Si se quitara el veto, el sistema emitiria hasta un "
-          f"{100*len(base)/max(senales,1):.0f}% mas de señales,")
-    print(f"  y esas señales rinden {abs(resumen.__doc__ or ''):.0s}"
-          if False else
-          f"  y esas serian peores que un instante al azar del mismo par.")
+          f"{100*len(base)/max(senales,1):.0f}% mas de señales.")
+    print(f"  Y segun la medida de arriba, esas señales NO serian peores que")
+    print(f"  un instante al azar de la misma moneda: el veto no discrimina.")
 
 
 if __name__ == "__main__":
