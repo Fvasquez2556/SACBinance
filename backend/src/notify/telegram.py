@@ -117,6 +117,38 @@ class Telegram:
         })
         return r is not None
 
+    async def responder(self, symbol: str, texto: str) -> None:
+        """
+        Cuelga un mensaje del aviso original de ese par.
+
+        Los avisos de seguimiento — las bajadas, el stop, el TP y los hitos —
+        tienen que SONAR, y una edicion no hace sonar el telefono. Por eso van
+        como mensaje nuevo, pero con `reply_to_message_id` para que Telegram
+        los agrupe bajo la alerta a la que pertenecen: el hilo del par cuenta
+        la historia entera sin llenar el chat de mensajes sueltos.
+
+        `allow_sending_without_reply` evita el fallo silencioso mas probable:
+        si el mensaje original se borro, Telegram rechazaria la respuesta y el
+        aviso se perderia. Perder el hilo es peor que perder el hilo Y el
+        aviso, asi que en ese caso sale suelto.
+        """
+        payload = {
+            "chat_id": self.chat_id,
+            "text": texto,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        }
+        mid = self._mensajes.get(symbol)
+        if mid is not None:
+            r = await self._pedir("sendMessage", dict(
+                payload,
+                reply_to_message_id=mid,
+                allow_sending_without_reply=True,
+            ))
+            if r is not None:
+                return
+        await self._pedir("sendMessage", payload)
+
     def olvidar(self, symbol: str) -> None:
         self._mensajes.pop(symbol, None)
 
