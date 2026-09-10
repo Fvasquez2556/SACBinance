@@ -1,0 +1,471 @@
+{
+  "reference_candles": 225474,
+  "request_count": 245,
+  "cohorts": [
+    {
+      "cohort": "24 predefined symbols; excludes named examples",
+      "strategy": "Esperar SL+0.5%, SL -2%",
+      "opportunities": 171,
+      "filled": 134,
+      "symbols": 18,
+      "mean_gross_pct": -0.1819380205141791,
+      "mean_net02_pct": -0.38193802051417913,
+      "tp": 49,
+      "sl": 69,
+      "expired": 16,
+      "net02_symbol_bootstrap95": [
+        -0.7763973350719968,
+        0.09363238770180433
+      ]
+    },
+    {
+      "cohort": "24 predefined symbols; excludes named examples",
+      "strategy": "Esperar SL+0.5%, SL -3%",
+      "opportunities": 171,
+      "filled": 134,
+      "symbols": 18,
+      "mean_gross_pct": -0.1925128498761194,
+      "mean_net02_pct": -0.39251284987611945,
+      "tp": 56,
+      "sl": 45,
+      "expired": 33,
+      "net02_symbol_bootstrap95": [
+        -0.9531305913993585,
+        0.26075111592585676
+      ]
+    },
+    {
+      "cohort": "24 predefined symbols; excludes named examples",
+      "strategy": "Esperar SL+0.5%, SL original",
+      "opportunities": 171,
+      "filled": 134,
+      "symbols": 18,
+      "mean_gross_pct": 0.034693192043283486,
+      "mean_net02_pct": -0.16530680795671654,
+      "tp": 20,
+      "sl": 111,
+      "expired": 3,
+      "net02_symbol_bootstrap95": [
+        -0.49705481843787747,
+        0.32882500058297487
+      ]
+    },
+    {
+      "cohort": "24 predefined symbols; excludes named examples",
+      "strategy": "Meta fija +3.2%, SL original",
+      "opportunities": 171,
+      "filled": 171,
+      "symbols": 22,
+      "mean_gross_pct": -0.19963833444561402,
+      "mean_net02_pct": -0.39963833444561403,
+      "tp": 33,
+      "sl": 120,
+      "expired": 18,
+      "net02_symbol_bootstrap95": [
+        -0.7327597196606784,
+        -0.06012429087743773
+      ]
+    },
+    {
+      "cohort": "24 predefined symbols; excludes named examples",
+      "strategy": "Original 12h",
+      "opportunities": 171,
+      "filled": 171,
+      "symbols": 22,
+      "mean_gross_pct": -0.015082159212280642,
+      "mean_net02_pct": -0.21508215921228066,
+      "tp": 40,
+      "sl": 103,
+      "expired": 28,
+      "net02_symbol_bootstrap95": [
+        -0.5168256378266065,
+        0.11582851688105558
+      ]
+    },
+    {
+      "cohort": "24 predefined symbols; excludes named examples",
+      "strategy": "Original 24h",
+      "opportunities": 171,
+      "filled": 171,
+      "symbols": 22,
+      "mean_gross_pct": -0.12147596167953212,
+      "mean_net02_pct": -0.32147596167953213,
+      "tp": 43,
+      "sl": 111,
+      "expired": 17,
+      "net02_symbol_bootstrap95": [
+        -0.6338621924241861,
+        0.010455379366938633
+      ]
+    },
+    {
+      "cohort": "4 user examples",
+      "strategy": "Esperar SL+0.5%, SL -2%",
+      "opportunities": 47,
+      "filled": 34,
+      "symbols": 4,
+      "mean_gross_pct": 0.7452049291205883,
+      "mean_net02_pct": 0.5452049291205883,
+      "tp": 14,
+      "sl": 20,
+      "expired": 0
+    },
+    {
+      "cohort": "4 user examples",
+      "strategy": "Esperar SL+0.5%, SL -3%",
+      "opportunities": 47,
+      "filled": 34,
+      "symbols": 4,
+      "mean_gross_pct": 0.6888543004852942,
+      "mean_net02_pct": 0.48885430048529416,
+      "tp": 15,
+      "sl": 16,
+      "expired": 3
+    },
+    {
+      "cohort": "4 user examples",
+      "strategy": "Esperar SL+0.5%, SL original",
+      "opportunities": 47,
+      "filled": 34,
+      "symbols": 4,
+      "mean_gross_pct": 0.12406172297352937,
+      "mean_net02_pct": -0.07593827702647064,
+      "tp": 8,
+      "sl": 26,
+      "expired": 0
+    },
+    {
+      "cohort": "4 user examples",
+      "strategy": "Meta fija +3.2%, SL original",
+      "opportunities": 47,
+      "filled": 47,
+      "symbols": 4,
+      "mean_gross_pct": 0.4897956344468085,
+      "mean_net02_pct": 0.2897956344468085,
+      "tp": 24,
+      "sl": 22,
+      "expired": 1
+    },
+    {
+      "cohort": "4 user examples",
+      "strategy": "Original 12h",
+      "opportunities": 47,
+      "filled": 47,
+      "symbols": 4,
+      "mean_gross_pct": -0.04955418230000011,
+      "mean_net02_pct": -0.24955418230000012,
+      "tp": 18,
+      "sl": 24,
+      "expired": 5
+    },
+    {
+      "cohort": "4 user examples",
+      "strategy": "Original 24h",
+      "opportunities": 47,
+      "filled": 47,
+      "symbols": 4,
+      "mean_gross_pct": -0.08410543424680852,
+      "mean_net02_pct": -0.28410543424680856,
+      "tp": 20,
+      "sl": 26,
+      "expired": 1
+    }
+  ],
+  "sample_day_original12": [
+    {
+      "day": "2026-09-05",
+      "opportunities": 28,
+      "filled": 28,
+      "symbols": 13,
+      "mean_gross_pct": 1.7884840310964287,
+      "mean_net02_pct": 1.5884840310964288,
+      "tp": 14,
+      "sl": 6,
+      "expired": 8,
+      "net02_symbol_bootstrap95": [
+        0.3149432328619163,
+        2.947571178466305
+      ]
+    },
+    {
+      "day": "2026-09-06",
+      "opportunities": 32,
+      "filled": 32,
+      "symbols": 11,
+      "mean_gross_pct": -0.13606249465937503,
+      "mean_net02_pct": -0.33606249465937504,
+      "tp": 7,
+      "sl": 18,
+      "expired": 7,
+      "net02_symbol_bootstrap95": [
+        -0.8118949279658559,
+        0.14373582533703147
+      ]
+    },
+    {
+      "day": "2026-09-07",
+      "opportunities": 43,
+      "filled": 43,
+      "symbols": 16,
+      "mean_gross_pct": -0.40483772516976746,
+      "mean_net02_pct": -0.6048377251697674,
+      "tp": 6,
+      "sl": 31,
+      "expired": 6,
+      "net02_symbol_bootstrap95": [
+        -1.153773126667296,
+        -0.07002319736769966
+      ]
+    },
+    {
+      "day": "2026-09-08",
+      "opportunities": 31,
+      "filled": 31,
+      "symbols": 13,
+      "mean_gross_pct": -0.5788474742741936,
+      "mean_net02_pct": -0.7788474742741935,
+      "tp": 6,
+      "sl": 22,
+      "expired": 3,
+      "net02_symbol_bootstrap95": [
+        -1.321669676934432,
+        -0.32191891815670004
+      ]
+    },
+    {
+      "day": "2026-09-09",
+      "opportunities": 37,
+      "filled": 37,
+      "symbols": 16,
+      "mean_gross_pct": -0.3500083346513514,
+      "mean_net02_pct": -0.5500083346513513,
+      "tp": 7,
+      "sl": 26,
+      "expired": 4,
+      "net02_symbol_bootstrap95": [
+        -1.0875116346084508,
+        0.08596882517264588
+      ]
+    }
+  ],
+  "signal_reconciliation": {
+    "n": 218,
+    "same_status": 214,
+    "cross_status": [
+      {
+        "status_db": "EXPIRED",
+        "status_replay": "EXPIRED",
+        "n": 31
+      },
+      {
+        "status_db": "EXPIRED",
+        "status_replay": "TP",
+        "n": 1
+      },
+      {
+        "status_db": "OPEN",
+        "status_replay": "EXPIRED",
+        "n": 1
+      },
+      {
+        "status_db": "SL",
+        "status_replay": "SL",
+        "n": 126
+      },
+      {
+        "status_db": "STALE",
+        "status_replay": "EXPIRED",
+        "n": 1
+      },
+      {
+        "status_db": "TP",
+        "status_replay": "SL",
+        "n": 1
+      },
+      {
+        "status_db": "TP",
+        "status_replay": "TP",
+        "n": 57
+      }
+    ],
+    "paired_n": 216,
+    "mean_recorded_pct": 0.15167129629629628,
+    "mean_replay_same_rows_pct": -0.02905106228842591
+  },
+  "candle_value_reconciliation": {
+    "matching_keys": 82935,
+    "different_ohlc_rows": 0
+  },
+  "case_replayed12": [
+    {
+      "symbol": "MARSCOINUSDT",
+      "opportunities": 9,
+      "filled": 9,
+      "symbols": 1,
+      "mean_gross_pct": -3.167447565488889,
+      "mean_net02_pct": -3.3674475654888893,
+      "tp": 1,
+      "sl": 8,
+      "expired": 0
+    },
+    {
+      "symbol": "ETHFIUSDT",
+      "opportunities": 19,
+      "filled": 19,
+      "symbols": 1,
+      "mean_gross_pct": 0.5052322422421053,
+      "mean_net02_pct": 0.30523224224210527,
+      "tp": 9,
+      "sl": 9,
+      "expired": 1
+    },
+    {
+      "symbol": "RAYUSDT",
+      "opportunities": 11,
+      "filled": 11,
+      "symbols": 1,
+      "mean_gross_pct": 1.3081988621454543,
+      "mean_net02_pct": 1.1081988621454544,
+      "tp": 5,
+      "sl": 3,
+      "expired": 3
+    },
+    {
+      "symbol": "IOUSDT",
+      "opportunities": 8,
+      "filled": 8,
+      "symbols": 1,
+      "mean_gross_pct": 0.2735476793875,
+      "mean_net02_pct": 0.07354767938750001,
+      "tp": 3,
+      "sl": 4,
+      "expired": 1
+    }
+  ],
+  "mars_1871": {
+    "entry": 0.139,
+    "stop_loss": 0.132539,
+    "take_profit": 0.151921,
+    "signal_utc": "2026-09-09T07:52:00.330000+00:00",
+    "first_sl": {
+      "bar_open_utc": "2026-09-09T08:25:00+00:00",
+      "minutes_from_signal": 32.9945,
+      "o": 0.1354,
+      "h": 0.1355,
+      "l": 0.1319,
+      "c": 0.1323
+    },
+    "first_tp": {
+      "bar_open_utc": "2026-09-09T09:13:00+00:00",
+      "minutes_from_signal": 80.9945,
+      "o": 0.143,
+      "h": 0.152,
+      "l": 0.1421,
+      "c": 0.1465
+    },
+    "first_32": {
+      "bar_open_utc": "2026-09-09T09:12:00+00:00",
+      "minutes_from_signal": 79.9945,
+      "o": 0.1339,
+      "h": 0.1445,
+      "l": 0.1339,
+      "c": 0.143
+    },
+    "minimum": 0.0979,
+    "maximum": 0.152,
+    "alternatives": [
+      {
+        "strategy": "Original 12h",
+        "signal_id": 1871,
+        "symbol": "MARSCOINUSDT",
+        "ts_open": 1788940320330,
+        "coverage": 1,
+        "exact": true,
+        "filled": true,
+        "status": "SL",
+        "result_pct": -4.6482014388,
+        "exit": 1788942300000.0,
+        "fill_idx": 0.0,
+        "ambiguous_fill_tp": 0.0
+      },
+      {
+        "strategy": "Original 24h",
+        "signal_id": 1871,
+        "symbol": "MARSCOINUSDT",
+        "ts_open": 1788940320330,
+        "coverage": 1,
+        "exact": true,
+        "filled": true,
+        "status": "SL",
+        "result_pct": -4.6482014388,
+        "exit": 1788942300000.0,
+        "fill_idx": 0.0,
+        "ambiguous_fill_tp": 0.0
+      },
+      {
+        "strategy": "Esperar SL+0.5%, SL original",
+        "signal_id": 1871,
+        "symbol": "MARSCOINUSDT",
+        "ts_open": 1788940320330,
+        "coverage": 1,
+        "exact": true,
+        "filled": true,
+        "status": "SL",
+        "result_pct": -0.49751243780000004,
+        "exit": 1788942300000.0,
+        "fill_idx": 32.0,
+        "ambiguous_fill_tp": 0.0
+      },
+      {
+        "strategy": "Esperar SL+0.5%, SL -2%",
+        "signal_id": 1871,
+        "symbol": "MARSCOINUSDT",
+        "ts_open": 1788940320330,
+        "coverage": 1,
+        "exact": true,
+        "filled": true,
+        "status": "TP",
+        "result_pct": 14.0533534502,
+        "exit": 1788945180000.0,
+        "fill_idx": 32.0,
+        "ambiguous_fill_tp": 0.0
+      },
+      {
+        "strategy": "Esperar SL+0.5%, SL -3%",
+        "signal_id": 1871,
+        "symbol": "MARSCOINUSDT",
+        "ts_open": 1788940320330,
+        "coverage": 1,
+        "exact": true,
+        "filled": true,
+        "status": "TP",
+        "result_pct": 14.0533534502,
+        "exit": 1788945180000.0,
+        "fill_idx": 32.0,
+        "ambiguous_fill_tp": 0.0
+      },
+      {
+        "strategy": "Meta fija +3.2%, SL original",
+        "signal_id": 1871,
+        "symbol": "MARSCOINUSDT",
+        "ts_open": 1788940320330,
+        "coverage": 1,
+        "exact": true,
+        "filled": true,
+        "status": "SL",
+        "result_pct": -4.6482014388,
+        "exit": 1788942300000.0,
+        "fill_idx": 0.0,
+        "ambiguous_fill_tp": 0.0
+      }
+    ]
+  },
+  "intrabar_fill_tp_ambiguities": [],
+  "metadata_age": [
+    {
+      "n": 263,
+      "oldest_utc": "2026-07-27 20:44:45",
+      "newest_utc": "2026-09-10 05:48:59"
+    }
+  ]
+}

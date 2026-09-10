@@ -1,0 +1,24 @@
+# La auditoría del 10-sep dejó 171 MB de material. Se guarda el informe, los
+# scripts que lo produjeron y los JSON de conclusiones — que es lo que permite
+# releer el razonamiento o repetirlo. Se dejan fuera las copias de datos:
+# pesan, no aportan nada que no esté ya en el servidor o en git, y volcados de
+# filas crudas quedan obsoletos en horas.
+
+# Copias de la base (138 MB + 22 MB)
+*.db
+*.db-shm
+*.db-wal
+
+# Copia del repo en el momento de la auditoría — está en git por su commit
+production/
+production.tar
+
+# El visor del informe (app Vite). El contenido vive en AUDITORIA.md
+report/
+
+# Volcados de filas crudas: se regeneran con los scripts
+replay_rows.json
+coverage_rows.json
+reference_replay_rows.json
+reference_coverage_rows.json
+reference_provenance.json

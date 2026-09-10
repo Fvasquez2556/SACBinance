@@ -1,0 +1,1544 @@
+{
+  "queries": {
+    "date_ranges": {
+      "rows": [
+        {
+          "tabla": "signals",
+          "n": 2307,
+          "first_utc": "2026-09-05 03:56:00",
+          "last_utc": "2026-09-10 21:26:00"
+        },
+        {
+          "tabla": "outcomes",
+          "n": 2786,
+          "first_utc": "2026-09-05 03:56:00",
+          "last_utc": "2026-09-10 21:50:00"
+        },
+        {
+          "tabla": "logs",
+          "n": 83139,
+          "first_utc": "2026-09-05 03:56:00",
+          "last_utc": "2026-09-10 21:57:00"
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: date_ranges",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT 'signals' tabla,count(*) n,datetime(min(ts_open)/1000,'unixepoch') first_utc,datetime(max(ts_open)/1000,'unixepoch') last_utc FROM signals UNION ALL SELECT 'outcomes',count(*),datetime(min(ts_open)/1000,'unixepoch'),datetime(max(ts_open)/1000,'unixepoch') FROM outcomes UNION ALL SELECT 'logs',count(*),datetime(min(ts_ms)/1000,'unixepoch'),datetime(max(ts_ms)/1000,'unixepoch') FROM analysis_log",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "candles": {
+      "rows": [
+        {
+          "tf": "15m",
+          "n": 63087,
+          "symbols": 239,
+          "first_utc": "2026-09-07 22:00:00",
+          "last_utc": "2026-09-10 21:30:00",
+          "missing": 0,
+          "invalid": 0
+        },
+        {
+          "tf": "1d",
+          "n": 43710,
+          "symbols": 263,
+          "first_utc": "2026-03-10 00:00:00",
+          "last_utc": "2026-09-09 00:00:00",
+          "missing": 0,
+          "invalid": 0
+        },
+        {
+          "tf": "1h",
+          "n": 72956,
+          "symbols": 263,
+          "first_utc": "2026-08-28 16:00:00",
+          "last_utc": "2026-09-10 20:00:00",
+          "missing": 0,
+          "invalid": 0
+        },
+        {
+          "tf": "1m",
+          "n": 769382,
+          "symbols": 239,
+          "first_utc": "2026-09-07 21:50:00",
+          "last_utc": "2026-09-10 21:56:00",
+          "missing": 0,
+          "invalid": 0
+        },
+        {
+          "tf": "4h",
+          "n": 53367,
+          "symbols": 263,
+          "first_utc": "2026-08-06 04:00:00",
+          "last_utc": "2026-09-10 16:00:00",
+          "missing": 0,
+          "invalid": 0
+        },
+        {
+          "tf": "5m",
+          "n": 176334,
+          "symbols": 239,
+          "first_utc": "2026-09-07 21:50:00",
+          "last_utc": "2026-09-10 21:50:00",
+          "missing": 0,
+          "invalid": 0
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: candles",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT tf,count(*) n,count(distinct symbol) symbols,datetime(min(open_time)/1000,'unixepoch') first_utc,datetime(max(open_time)/1000,'unixepoch') last_utc,sum(o is null or h is null or l is null or c is null or v is null) missing,sum(o<=0 or l<=0 or c<=0 or h<l or h<o or h<c or l>o or l>c or v<0) invalid FROM klines GROUP BY tf",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "status": {
+      "rows": [
+        {
+          "status": "EXPIRED",
+          "n": 409,
+          "avg_gross_pct": 0.353,
+          "avg_tp_pct": 7.269,
+          "avg_sl_pct": -3.634
+        },
+        {
+          "status": "OPEN",
+          "n": 49,
+          "avg_gross_pct": null,
+          "avg_tp_pct": 4.067,
+          "avg_sl_pct": -2.034
+        },
+        {
+          "status": "SL",
+          "n": 1293,
+          "avg_gross_pct": -1.4359,
+          "avg_tp_pct": 2.872,
+          "avg_sl_pct": -1.436
+        },
+        {
+          "status": "STALE",
+          "n": 20,
+          "avg_gross_pct": null,
+          "avg_tp_pct": 5.231,
+          "avg_sl_pct": -2.615
+        },
+        {
+          "status": "TP",
+          "n": 536,
+          "avg_gross_pct": 2.7482,
+          "avg_tp_pct": 2.748,
+          "avg_sl_pct": -1.374
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: status",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT status,count(*) n,round(avg(result_pct),4) avg_gross_pct,round(avg((take_profit/entry-1)*100),3) avg_tp_pct,round(avg((stop_loss/entry-1)*100),3) avg_sl_pct FROM signals GROUP BY status",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "by_day": {
+      "rows": [
+        {
+          "day": "2026-09-05",
+          "sombra": 0,
+          "cerrado": 0,
+          "n": 23,
+          "reached_32": 3,
+          "up32_before_sl": 3,
+          "mean_mfe": 1.623,
+          "mean_mae": -1.03,
+          "candles": 591.4
+        },
+        {
+          "day": "2026-09-05",
+          "sombra": 0,
+          "cerrado": 1,
+          "n": 388,
+          "reached_32": 241,
+          "up32_before_sl": 175,
+          "mean_mfe": 6.566,
+          "mean_mae": -2.034,
+          "candles": 1224.9
+        },
+        {
+          "day": "2026-09-05",
+          "sombra": 1,
+          "cerrado": 0,
+          "n": 4,
+          "reached_32": 0,
+          "up32_before_sl": 0,
+          "mean_mfe": 0.64,
+          "mean_mae": -2.155,
+          "candles": 717.0
+        },
+        {
+          "day": "2026-09-05",
+          "sombra": 1,
+          "cerrado": 1,
+          "n": 45,
+          "reached_32": 29,
+          "up32_before_sl": 21,
+          "mean_mfe": 5.583,
+          "mean_mae": -2.318,
+          "candles": 1258.8
+        },
+        {
+          "day": "2026-09-06",
+          "sombra": 0,
+          "cerrado": 0,
+          "n": 8,
+          "reached_32": 4,
+          "up32_before_sl": 2,
+          "mean_mfe": 3.243,
+          "mean_mae": -1.855,
+          "candles": 1200.0
+        },
+        {
+          "day": "2026-09-06",
+          "sombra": 0,
+          "cerrado": 1,
+          "n": 426,
+          "reached_32": 209,
+          "up32_before_sl": 127,
+          "mean_mfe": 5.054,
+          "mean_mae": -3.428,
+          "candles": 1387.9
+        },
+        {
+          "day": "2026-09-06",
+          "sombra": 1,
+          "cerrado": 0,
+          "n": 1,
+          "reached_32": 1,
+          "up32_before_sl": 1,
+          "mean_mfe": 4.301,
+          "mean_mae": -1.001,
+          "candles": 1162.0
+        },
+        {
+          "day": "2026-09-06",
+          "sombra": 1,
+          "cerrado": 1,
+          "n": 36,
+          "reached_32": 15,
+          "up32_before_sl": 9,
+          "mean_mfe": 5.311,
+          "mean_mae": -4.343,
+          "candles": 1382.5
+        },
+        {
+          "day": "2026-09-07",
+          "sombra": 0,
+          "cerrado": 0,
+          "n": 18,
+          "reached_32": 3,
+          "up32_before_sl": 1,
+          "mean_mfe": 1.888,
+          "mean_mae": -2.671,
+          "candles": 503.8
+        },
+        {
+          "day": "2026-09-07",
+          "sombra": 0,
+          "cerrado": 1,
+          "n": 469,
+          "reached_32": 221,
+          "up32_before_sl": 121,
+          "mean_mfe": 4.856,
+          "mean_mae": -3.47,
+          "candles": 1340.4
+        },
+        {
+          "day": "2026-09-07",
+          "sombra": 1,
+          "cerrado": 0,
+          "n": 3,
+          "reached_32": 1,
+          "up32_before_sl": 0,
+          "mean_mfe": 3.326,
+          "mean_mae": -2.676,
+          "candles": 709.7
+        },
+        {
+          "day": "2026-09-07",
+          "sombra": 1,
+          "cerrado": 1,
+          "n": 58,
+          "reached_32": 23,
+          "up32_before_sl": 13,
+          "mean_mfe": 4.829,
+          "mean_mae": -3.35,
+          "candles": 1291.5
+        },
+        {
+          "day": "2026-09-08",
+          "sombra": 0,
+          "cerrado": 0,
+          "n": 30,
+          "reached_32": 4,
+          "up32_before_sl": 4,
+          "mean_mfe": 1.768,
+          "mean_mae": -2.833,
+          "candles": 972.0
+        },
+        {
+          "day": "2026-09-08",
+          "sombra": 0,
+          "cerrado": 1,
+          "n": 350,
+          "reached_32": 132,
+          "up32_before_sl": 72,
+          "mean_mfe": 3.455,
+          "mean_mae": -3.404,
+          "candles": 1318.9
+        },
+        {
+          "day": "2026-09-08",
+          "sombra": 1,
+          "cerrado": 0,
+          "n": 7,
+          "reached_32": 2,
+          "up32_before_sl": 1,
+          "mean_mfe": 2.379,
+          "mean_mae": -1.797,
+          "candles": 840.4
+        },
+        {
+          "day": "2026-09-08",
+          "sombra": 1,
+          "cerrado": 1,
+          "n": 61,
+          "reached_32": 25,
+          "up32_before_sl": 16,
+          "mean_mfe": 4.043,
+          "mean_mae": -3.908,
+          "candles": 1315.6
+        },
+        {
+          "day": "2026-09-09",
+          "sombra": 0,
+          "cerrado": 0,
+          "n": 78,
+          "reached_32": 11,
+          "up32_before_sl": 10,
+          "mean_mfe": 1.619,
+          "mean_mae": -3.723,
+          "candles": 694.8
+        },
+        {
+          "day": "2026-09-09",
+          "sombra": 0,
+          "cerrado": 1,
+          "n": 386,
+          "reached_32": 112,
+          "up32_before_sl": 71,
+          "mean_mfe": 3.336,
+          "mean_mae": -7.892,
+          "candles": 1366.6
+        },
+        {
+          "day": "2026-09-09",
+          "sombra": 1,
+          "cerrado": 0,
+          "n": 24,
+          "reached_32": 5,
+          "up32_before_sl": 5,
+          "mean_mfe": 3.314,
+          "mean_mae": -3.333,
+          "candles": 872.0
+        },
+        {
+          "day": "2026-09-09",
+          "sombra": 1,
+          "cerrado": 1,
+          "n": 92,
+          "reached_32": 19,
+          "up32_before_sl": 13,
+          "mean_mfe": 2.201,
+          "mean_mae": -7.999,
+          "candles": 1356.5
+        },
+        {
+          "day": "2026-09-10",
+          "sombra": 0,
+          "cerrado": 0,
+          "n": 131,
+          "reached_32": 27,
+          "up32_before_sl": 21,
+          "mean_mfe": 2.551,
+          "mean_mae": -3.398,
+          "candles": 673.7
+        },
+        {
+          "day": "2026-09-10",
+          "sombra": 1,
+          "cerrado": 0,
+          "n": 148,
+          "reached_32": 25,
+          "up32_before_sl": 20,
+          "mean_mfe": 2.215,
+          "mean_mae": -3.355,
+          "candles": 746.6
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: by_day",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT date(ts_open/1000,'unixepoch') day,sombra,cerrado,count(*) n,sum(ms_up_32 is not null) reached_32,sum(ms_up_32 is not null and (ms_sl is null or ms_up_32<ms_sl)) up32_before_sl,round(avg(mfe_pct),3) mean_mfe,round(avg(mae_pct),3) mean_mae,round(avg(n_velas),1) candles FROM outcomes GROUP BY day,sombra,cerrado ORDER BY day,sombra,cerrado",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "by_state": {
+      "rows": [
+        {
+          "display_state": "BREAKOUT_INCIPIENTE",
+          "sombra": 0,
+          "n": 57,
+          "reached_32": 28,
+          "up32_before_sl": 15,
+          "tp_first": 16,
+          "tp_pct": 2.487,
+          "sl_pct": -1.241
+        },
+        {
+          "display_state": "CONSOLIDANDO",
+          "sombra": 0,
+          "n": 138,
+          "reached_32": 47,
+          "up32_before_sl": 32,
+          "tp_first": 55,
+          "tp_pct": 2.572,
+          "sl_pct": -1.29
+        },
+        {
+          "display_state": "CONSOLIDANDO",
+          "sombra": 1,
+          "n": 1,
+          "reached_32": 1,
+          "up32_before_sl": 0,
+          "tp_first": 0,
+          "tp_pct": 3.553,
+          "sl_pct": -1.777
+        },
+        {
+          "display_state": "SUBIENDO",
+          "sombra": 0,
+          "n": 1632,
+          "reached_32": 751,
+          "up32_before_sl": 465,
+          "tp_first": 460,
+          "tp_pct": 3.84,
+          "sl_pct": -1.92
+        },
+        {
+          "display_state": "SUBIENDO",
+          "sombra": 1,
+          "n": 161,
+          "reached_32": 57,
+          "up32_before_sl": 39,
+          "tp_first": 40,
+          "tp_pct": 3.45,
+          "sl_pct": -1.725
+        },
+        {
+          "display_state": "TOC\u00d3_FONDO",
+          "sombra": 0,
+          "n": 192,
+          "reached_32": 89,
+          "up32_before_sl": 54,
+          "tp_first": 54,
+          "tp_pct": 3.722,
+          "sl_pct": -1.86
+        },
+        {
+          "display_state": "TOC\u00d3_FONDO",
+          "sombra": 1,
+          "n": 130,
+          "reached_32": 53,
+          "up32_before_sl": 33,
+          "tp_first": 34,
+          "tp_pct": 3.526,
+          "sl_pct": -1.764
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: by_state",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT display_state,sombra,count(*) n,sum(ms_up_32 is not null) reached_32,sum(ms_up_32 is not null and (ms_sl is null or ms_up_32<ms_sl)) up32_before_sl,sum(ms_tp is not null and (ms_sl is null or ms_tp<ms_sl)) tp_first,round(avg(tp_pct),3) tp_pct,round(avg(sl_pct),3) sl_pct FROM outcomes WHERE cerrado=1 GROUP BY display_state,sombra",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "by_score": {
+      "rows": [
+        {
+          "score_band": "60-69",
+          "n": 475,
+          "reached_32": 174,
+          "up32_before_sl": 102
+        },
+        {
+          "score_band": "70-79",
+          "n": 853,
+          "reached_32": 376,
+          "up32_before_sl": 226
+        },
+        {
+          "score_band": "80-89",
+          "n": 634,
+          "reached_32": 332,
+          "up32_before_sl": 214
+        },
+        {
+          "score_band": "90+",
+          "n": 57,
+          "reached_32": 33,
+          "up32_before_sl": 24
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: by_score",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT case when score<60 then '<60' when score<70 then '60-69' when score<80 then '70-79' when score<90 then '80-89' else '90+' end score_band,count(*) n,sum(ms_up_32 is not null) reached_32,sum(ms_up_32 is not null and (ms_sl is null or ms_up_32<ms_sl)) up32_before_sl FROM outcomes WHERE cerrado=1 AND sombra=0 GROUP BY score_band",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "coverage": {
+      "rows": [
+        {
+          "sombra": 0,
+          "cerrado": 0,
+          "n": 288,
+          "min_candles": 9,
+          "mean_candles": 707.91,
+          "max_candles": 1385,
+          "under_1400": 288,
+          "over_1441": 0,
+          "max_hours": 23.97
+        },
+        {
+          "sombra": 0,
+          "cerrado": 1,
+          "n": 2019,
+          "min_candles": 12,
+          "mean_candles": 1329.52,
+          "max_candles": 1409,
+          "under_1400": 1981,
+          "over_1441": 0,
+          "max_hours": 117.92
+        },
+        {
+          "sombra": 1,
+          "cerrado": 0,
+          "n": 187,
+          "min_candles": 7,
+          "mean_candles": 767.19,
+          "max_candles": 1381,
+          "under_1400": 187,
+          "over_1441": 0,
+          "max_hours": 23.98
+        },
+        {
+          "sombra": 1,
+          "cerrado": 1,
+          "n": 292,
+          "min_candles": 19,
+          "mean_candles": 1323.19,
+          "max_candles": 1409,
+          "under_1400": 287,
+          "over_1441": 0,
+          "max_hours": 99.4
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: coverage",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT sombra,cerrado,count(*) n,min(n_velas) min_candles,round(avg(n_velas),2) mean_candles,max(n_velas) max_candles,sum(n_velas<1400) under_1400,sum(n_velas>1441) over_1441,round(max((ts_last-ts_open)/3600000.0),2) max_hours FROM outcomes GROUP BY sombra,cerrado",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "integrity": {
+      "rows": [
+        {
+          "signals_without_outcomes": 0,
+          "real_outcomes_without_signals": 0,
+          "wrong_id_sign": 0,
+          "invalid_levels": 0,
+          "negative_event_times": 23,
+          "events_past_24h": 33,
+          "open_signals": 49
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: integrity",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT (SELECT count(*) FROM signals s LEFT JOIN outcomes o ON s.id=o.signal_id WHERE o.signal_id IS NULL) signals_without_outcomes,(SELECT count(*) FROM outcomes o LEFT JOIN signals s ON o.signal_id=s.id WHERE o.sombra=0 AND s.id IS NULL) real_outcomes_without_signals,(SELECT count(*) FROM outcomes WHERE (sombra=0 AND signal_id<0) OR (sombra=1 AND signal_id>0)) wrong_id_sign,(SELECT count(*) FROM signals WHERE entry<=0 OR stop_loss>=entry OR take_profit<=entry OR stop_loss IS NULL OR take_profit IS NULL) invalid_levels,(SELECT count(*) FROM outcomes WHERE ms_up_32<0 OR ms_sl<0 OR ms_tp<0 OR ms_dn_1<0) negative_event_times,(SELECT count(*) FROM outcomes WHERE ms_up_32>86400000 OR ms_sl>86400000 OR ms_tp>86400000) events_past_24h,(SELECT count(*) FROM signals WHERE status='OPEN') open_signals",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "signal_daily": {
+      "rows": [
+        {
+          "day": "2026-09-05",
+          "n": 411,
+          "tp": 141,
+          "sl": 123,
+          "expired": 126,
+          "open": 6,
+          "avg_gross": 0.9304
+        },
+        {
+          "day": "2026-09-06",
+          "n": 434,
+          "tp": 113,
+          "sl": 218,
+          "expired": 103,
+          "open": 0,
+          "avg_gross": -0.1071
+        },
+        {
+          "day": "2026-09-07",
+          "n": 487,
+          "tp": 116,
+          "sl": 280,
+          "expired": 85,
+          "open": 3,
+          "avg_gross": -0.1308
+        },
+        {
+          "day": "2026-09-08",
+          "n": 380,
+          "tp": 66,
+          "sl": 262,
+          "expired": 50,
+          "open": 1,
+          "avg_gross": -0.4496
+        },
+        {
+          "day": "2026-09-09",
+          "n": 464,
+          "tp": 86,
+          "sl": 322,
+          "expired": 37,
+          "open": 18,
+          "avg_gross": -0.5934
+        },
+        {
+          "day": "2026-09-10",
+          "n": 131,
+          "tp": 14,
+          "sl": 88,
+          "expired": 8,
+          "open": 21,
+          "avg_gross": -0.534
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: signal_daily",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT date(ts_open/1000,'unixepoch') day,count(*) n,sum(status='TP') tp,sum(status='SL') sl,sum(status='EXPIRED') expired,sum(status='OPEN') open,round(avg(result_pct),4) avg_gross FROM signals GROUP BY day",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "targets": {
+      "rows": [
+        {
+          "n": 2019,
+          "tp_below32": 1247,
+          "tp_below34": 1300,
+          "hit32": 915,
+          "hit32_after_stop": 349,
+          "both_same_candle": 0,
+          "target_stop_tie": 0
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: targets",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT count(*) n,sum(tp_pct<3.2) tp_below32,sum(tp_pct<3.4) tp_below34,sum(ms_up_32 is not null) hit32,sum(ms_sl is not null AND ms_up_32 is not null AND ms_sl<=ms_up_32) hit32_after_stop,sum(ms_sl=ms_tp) both_same_candle,sum(ms_sl=ms_up_32) target_stop_tie FROM outcomes WHERE cerrado=1 AND sombra=0",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "symbols_names": {
+      "rows": [
+        {
+          "symbol": "ETHFIUSDT"
+        },
+        {
+          "symbol": "IOUSDT"
+        },
+        {
+          "symbol": "MARSCOINUSDT"
+        },
+        {
+          "symbol": "RAYUSDT"
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: symbols_names",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT DISTINCT symbol FROM klines WHERE symbol LIKE '%MARS%' OR symbol LIKE '%ETHFI%' OR symbol IN ('RAYUSDT','IOUSDT')",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "log_levels": {
+      "rows": [
+        {
+          "level": "ALERT",
+          "n": 5532
+        },
+        {
+          "level": "BASE",
+          "n": 1539
+        },
+        {
+          "level": "FAKEOUT",
+          "n": 139
+        },
+        {
+          "level": "IGNICION",
+          "n": 125
+        },
+        {
+          "level": "SIGNAL",
+          "n": 4565
+        },
+        {
+          "level": "STATE",
+          "n": 54352
+        },
+        {
+          "level": "TENDENCIA",
+          "n": 2279
+        },
+        {
+          "level": "VETO",
+          "n": 1699
+        },
+        {
+          "level": "VETO_ALERTA",
+          "n": 12909
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: log_levels",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT level,count(*) n FROM analysis_log GROUP BY level",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "shadows": {
+      "rows": [
+        {
+          "sombra_motivo": "GATE_MACRO",
+          "cerrado": 0,
+          "n": 131,
+          "up32": 21,
+          "first32": 17
+        },
+        {
+          "sombra_motivo": "GATE_MACRO",
+          "cerrado": 1,
+          "n": 292,
+          "up32": 111,
+          "first32": 72
+        },
+        {
+          "sombra_motivo": "VETO: impulso AGOTADA \u2014 15.92% ya recorrido desde el minimo",
+          "cerrado": 0,
+          "n": 1,
+          "up32": 0,
+          "first32": 0
+        },
+        {
+          "sombra_motivo": "VETO: impulso AGOTADA \u2014 maximos planos en 2 TFs con cuerpos encogiendo",
+          "cerrado": 0,
+          "n": 1,
+          "up32": 0,
+          "first32": 0
+        },
+        {
+          "sombra_motivo": "VETO: impulso AGOTADA \u2014 maximos planos en 3 TFs con cuerpos encogiendo",
+          "cerrado": 0,
+          "n": 2,
+          "up32": 0,
+          "first32": 0
+        },
+        {
+          "sombra_motivo": "VETO: impulso AGOTADA \u2014 precio bajo la EMA7 en 2 TFs",
+          "cerrado": 0,
+          "n": 1,
+          "up32": 1,
+          "first32": 1
+        },
+        {
+          "sombra_motivo": "VETO: impulso AGOTADA \u2014 precio bajo la EMA7 en 3 TFs",
+          "cerrado": 0,
+          "n": 7,
+          "up32": 2,
+          "first32": 1
+        },
+        {
+          "sombra_motivo": "VETO: impulso DESACELERANDO \u2014 aceleracion -0.43 | volumen 0.62x",
+          "cerrado": 0,
+          "n": 1,
+          "up32": 0,
+          "first32": 0
+        },
+        {
+          "sombra_motivo": "VETO: la caida sigue acelerando (cuchillo cayendo)",
+          "cerrado": 0,
+          "n": 43,
+          "up32": 10,
+          "first32": 8
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: shadows",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT sombra_motivo,cerrado,count(*) n,sum(ms_up_32 is not null) up32,sum(ms_up_32 is not null AND (ms_sl is null OR ms_up_32<ms_sl)) first32 FROM outcomes WHERE sombra=1 GROUP BY sombra_motivo,cerrado",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "features_dates": {
+      "rows": [
+        {
+          "day": "2026-09-05",
+          "n": 460,
+          "liquidity": 460,
+          "retro": 0,
+          "hoyo": 0,
+          "reason": 49
+        },
+        {
+          "day": "2026-09-06",
+          "n": 471,
+          "liquidity": 471,
+          "retro": 0,
+          "hoyo": 0,
+          "reason": 37
+        },
+        {
+          "day": "2026-09-07",
+          "n": 548,
+          "liquidity": 548,
+          "retro": 0,
+          "hoyo": 0,
+          "reason": 61
+        },
+        {
+          "day": "2026-09-08",
+          "n": 448,
+          "liquidity": 448,
+          "retro": 0,
+          "hoyo": 0,
+          "reason": 68
+        },
+        {
+          "day": "2026-09-09",
+          "n": 580,
+          "liquidity": 580,
+          "retro": 393,
+          "hoyo": 126,
+          "reason": 116
+        },
+        {
+          "day": "2026-09-10",
+          "n": 279,
+          "liquidity": 279,
+          "retro": 279,
+          "hoyo": 279,
+          "reason": 148
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: features_dates",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT date(ts_open/1000,'unixepoch') day,count(*) n,sum(vol_24h is not null) liquidity,sum(retro_caida_pct is not null) retro,sum(hoyo_disparo is not null) hoyo,sum(sombra_motivo is not null) reason FROM outcomes GROUP BY day",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "hoyo": {
+      "rows": [
+        {
+          "hoyo_a": null,
+          "hoyo_c2": null,
+          "hoyo_c3": null,
+          "n": 3
+        },
+        {
+          "hoyo_a": null,
+          "hoyo_c2": "SL",
+          "hoyo_c3": "SL",
+          "n": 1
+        },
+        {
+          "hoyo_a": "SL",
+          "hoyo_c2": "SL",
+          "hoyo_c3": null,
+          "n": 2
+        },
+        {
+          "hoyo_a": "SL",
+          "hoyo_c2": "SL",
+          "hoyo_c3": "SL",
+          "n": 49
+        },
+        {
+          "hoyo_a": "TP",
+          "hoyo_c2": "TP",
+          "hoyo_c3": "TP",
+          "n": 1
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: hoyo",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "SELECT hoyo_a,hoyo_c2,hoyo_c3,count(*) n FROM outcomes WHERE cerrado=1 AND sombra=0 AND hoyo_disparo is not null GROUP BY hoyo_a,hoyo_c2,hoyo_c3",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    },
+    "nulls": {
+      "rows": [
+        {
+          "column": "signal_id",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "symbol",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "ts_open",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "ts_last",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "entry",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "take_profit",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "stop_loss",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "tp_pct",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "sl_pct",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "display_state",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "tier",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "score",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "macro",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "taxonomia",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "mfe_pct",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "mae_pct",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "ms_mfe",
+          "n": 2786,
+          "missing": 48
+        },
+        {
+          "column": "ms_mae",
+          "n": 2786,
+          "missing": 29
+        },
+        {
+          "column": "ms_up_1",
+          "n": 2786,
+          "missing": 742
+        },
+        {
+          "column": "ms_up_2",
+          "n": 2786,
+          "missing": 1240
+        },
+        {
+          "column": "ms_up_32",
+          "n": 2786,
+          "missing": 1674
+        },
+        {
+          "column": "ms_up_5",
+          "n": 2786,
+          "missing": 2076
+        },
+        {
+          "column": "ms_up_10",
+          "n": 2786,
+          "missing": 2525
+        },
+        {
+          "column": "ms_dn_1",
+          "n": 2786,
+          "missing": 497
+        },
+        {
+          "column": "ms_dn_2",
+          "n": 2786,
+          "missing": 960
+        },
+        {
+          "column": "ms_dn_32",
+          "n": 2786,
+          "missing": 1510
+        },
+        {
+          "column": "ms_dn_5",
+          "n": 2786,
+          "missing": 2037
+        },
+        {
+          "column": "ms_dn_10",
+          "n": 2786,
+          "missing": 2596
+        },
+        {
+          "column": "ms_tp",
+          "n": 2786,
+          "missing": 1564
+        },
+        {
+          "column": "ms_sl",
+          "n": 2786,
+          "missing": 755
+        },
+        {
+          "column": "dip_antes_obj",
+          "n": 2786,
+          "missing": 1674
+        },
+        {
+          "column": "forma",
+          "n": 2786,
+          "missing": 475
+        },
+        {
+          "column": "n_velas",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "cerrado",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "sombra",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "vol_24h",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "vol_1m_medio",
+          "n": 2786,
+          "missing": 0
+        },
+        {
+          "column": "ms_up_12",
+          "n": 2786,
+          "missing": 860
+        },
+        {
+          "column": "ms_up_42",
+          "n": 2786,
+          "missing": 1926
+        },
+        {
+          "column": "ms_dn_12",
+          "n": 2786,
+          "missing": 601
+        },
+        {
+          "column": "ms_dn_42",
+          "n": 2786,
+          "missing": 1825
+        },
+        {
+          "column": "pos_en_rango",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "dist_soporte_pct",
+          "n": 2786,
+          "missing": 2177
+        },
+        {
+          "column": "dist_resistencia_pct",
+          "n": 2786,
+          "missing": 2196
+        },
+        {
+          "column": "z_drop",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "z_rise",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "velocity",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "ret_1m_pct",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "drawdown_pct",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "rango_1h_pct",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "sigma_pct",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "atr_pct",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "ruido_1m_pct",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "atr_percentile",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "vol_ratio",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "buy_ratio_30s",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "flow_trades_30s",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "rsi5",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "rsi14",
+          "n": 2786,
+          "missing": 2786
+        },
+        {
+          "column": "macd_hist",
+          "n": 2786,
+          "missing": 2786
+        },
+        {
+          "column": "bb_position",
+          "n": 2786,
+          "missing": 2786
+        },
+        {
+          "column": "fase_impulso",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "fuerza_impulso",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "consumido_pct",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "retro_caida_pct",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "retro_rebote_pct",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "retro_confirmado",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "btc_regime",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "macro_gate_mult",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "score_trend",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "es_fakeout",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "senal_n",
+          "n": 2786,
+          "missing": 2114
+        },
+        {
+          "column": "hoyo_disparo",
+          "n": 2786,
+          "missing": 2381
+        },
+        {
+          "column": "hoyo_fill",
+          "n": 2786,
+          "missing": 2455
+        },
+        {
+          "column": "hoyo_mfe_pct",
+          "n": 2786,
+          "missing": 2455
+        },
+        {
+          "column": "hoyo_mae_pct",
+          "n": 2786,
+          "missing": 2455
+        },
+        {
+          "column": "precio_ultimo",
+          "n": 2786,
+          "missing": 2381
+        },
+        {
+          "column": "ms_hoyo",
+          "n": 2786,
+          "missing": 2455
+        },
+        {
+          "column": "ms_hoyo_mfe",
+          "n": 2786,
+          "missing": 2463
+        },
+        {
+          "column": "ms_hoyo_mae",
+          "n": 2786,
+          "missing": 2455
+        },
+        {
+          "column": "ms_hoyo_a",
+          "n": 2786,
+          "missing": 2512
+        },
+        {
+          "column": "ms_hoyo_c2",
+          "n": 2786,
+          "missing": 2525
+        },
+        {
+          "column": "ms_hoyo_c3",
+          "n": 2786,
+          "missing": 2570
+        },
+        {
+          "column": "hoyo_celda",
+          "n": 2786,
+          "missing": 2455
+        },
+        {
+          "column": "hoyo_a",
+          "n": 2786,
+          "missing": 2512
+        },
+        {
+          "column": "hoyo_c2",
+          "n": 2786,
+          "missing": 2525
+        },
+        {
+          "column": "hoyo_c3",
+          "n": 2786,
+          "missing": 2570
+        },
+        {
+          "column": "sombra_motivo",
+          "n": 2786,
+          "missing": 2307
+        }
+      ],
+      "source": {
+        "name": "SQLite de producci\u00f3n: nulls",
+        "type": "file",
+        "provider": "SQLite",
+        "files": [
+          "snapshot.db"
+        ],
+        "tables": [],
+        "sql": "",
+        "description": "Copia consistente y de solo lectura. Commit fbed25ca651a0050222ce57d64a4cf2a4fed831e. M\u00e9tricas descriptivas; no son operaciones ejecutadas.",
+        "timeRange": {
+          "start": "2026-09-05T03:56:00Z",
+          "end": "2026-09-10T21:57:00Z"
+        },
+        "caveats": [
+          "Ventanas de outcomes con huecos y defectos temporales; se\u00f1ales simuladas, sin fills reales."
+        ]
+      }
+    }
+  }
+}

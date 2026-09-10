@@ -1,0 +1,359 @@
+{
+  "mars": [
+    {
+      "id": 104,
+      "utc": "2026-09-05 05:49:00",
+      "entry": 0.1789,
+      "stop_loss": 0.169005,
+      "take_profit": 0.19869,
+      "status": "TP",
+      "sl_min": null,
+      "tp_min": 174.9947,
+      "up32_min": 81.9947,
+      "mfe_pct": 49.525
+    },
+    {
+      "id": 468,
+      "utc": "2026-09-06 04:58:00",
+      "entry": 0.2282,
+      "stop_loss": 0.215049,
+      "take_profit": 0.254502,
+      "status": "SL",
+      "sl_min": 67.99531666666667,
+      "tp_min": null,
+      "up32_min": null,
+      "mfe_pct": 1.227
+    },
+    {
+      "id": 574,
+      "utc": "2026-09-06 09:19:00",
+      "entry": 0.2127,
+      "stop_loss": 0.200393,
+      "take_profit": 0.237314,
+      "status": "SL",
+      "sl_min": 65.99473333333333,
+      "tp_min": null,
+      "up32_min": null,
+      "mfe_pct": 3.103
+    },
+    {
+      "id": 688,
+      "utc": "2026-09-06 15:43:00",
+      "entry": 0.1828,
+      "stop_loss": 0.175205,
+      "take_profit": 0.19799,
+      "status": "SL",
+      "sl_min": 530.9949333333333,
+      "tp_min": null,
+      "up32_min": 25.994933333333332,
+      "mfe_pct": 7.713
+    },
+    {
+      "id": 922,
+      "utc": "2026-09-07 02:43:00",
+      "entry": 0.1642,
+      "stop_loss": 0.154348,
+      "take_profit": 0.183904,
+      "status": "SL",
+      "sl_min": 294.99261666666666,
+      "tp_min": null,
+      "up32_min": 92.99261666666666,
+      "mfe_pct": 6.09
+    },
+    {
+      "id": 1058,
+      "utc": "2026-09-07 10:03:00",
+      "entry": 0.1696,
+      "stop_loss": 0.159424,
+      "take_profit": 0.189952,
+      "status": "SL",
+      "sl_min": 301.99471666666665,
+      "tp_min": null,
+      "up32_min": null,
+      "mfe_pct": 2.712
+    },
+    {
+      "id": 1174,
+      "utc": "2026-09-07 15:24:00",
+      "entry": 0.1592,
+      "stop_loss": 0.155124,
+      "take_profit": 0.167353,
+      "status": "SL",
+      "sl_min": 6.993733333333333,
+      "tp_min": null,
+      "up32_min": null,
+      "mfe_pct": 0.063
+    },
+    {
+      "id": 1213,
+      "utc": "2026-09-07 19:08:00",
+      "entry": 0.1512,
+      "stop_loss": 0.144159,
+      "take_profit": 0.165283,
+      "status": "SL",
+      "sl_min": 519.99425,
+      "tp_min": null,
+      "up32_min": 130.99425,
+      "mfe_pct": 4.96
+    },
+    {
+      "id": 1871,
+      "utc": "2026-09-09 07:52:00",
+      "entry": 0.139,
+      "stop_loss": 0.132539,
+      "take_profit": 0.151921,
+      "status": "SL",
+      "sl_min": 32.9945,
+      "tp_min": 80.9945,
+      "up32_min": 79.9945,
+      "mfe_pct": 9.353
+    }
+  ],
+  "time_issues": [
+    {
+      "signal_id": 35,
+      "symbol": "MINAUSDT",
+      "opened": "2026-09-05 04:20:00",
+      "ms_tp": 216119370,
+      "ms_sl": null,
+      "ms_up_32": 216119370,
+      "duration_h": 60.03315833333333
+    },
+    {
+      "signal_id": 59,
+      "symbol": "RUNEUSDT",
+      "opened": "2026-09-05 04:56:00",
+      "ms_tp": 213959564,
+      "ms_sl": 479564,
+      "ms_up_32": null,
+      "duration_h": 59.433212222222224
+    },
+    {
+      "signal_id": 66,
+      "symbol": "CBRSBUSDT",
+      "opened": "2026-09-05 05:05:00",
+      "ms_tp": null,
+      "ms_sl": 390419452,
+      "ms_up_32": null,
+      "duration_h": 108.44984777777778
+    },
+    {
+      "signal_id": 67,
+      "symbol": "SPYBUSDT",
+      "opened": "2026-09-05 05:05:00",
+      "ms_tp": null,
+      "ms_sl": 390419352,
+      "ms_up_32": null,
+      "duration_h": 108.44982
+    },
+    {
+      "signal_id": 76,
+      "symbol": "SOXSBUSDT",
+      "opened": "2026-09-05 05:16:00",
+      "ms_tp": null,
+      "ms_sl": 424499805,
+      "ms_up_32": null,
+      "duration_h": 117.9166125
+    },
+    {
+      "signal_id": -23,
+      "symbol": "ADXUSDT",
+      "opened": "2026-09-05 05:37:00",
+      "ms_tp": 5819611,
+      "ms_sl": -389,
+      "ms_up_32": null,
+      "duration_h": 24.016558611111112
+    },
+    {
+      "signal_id": 101,
+      "symbol": "NVDABUSDT",
+      "opened": "2026-09-05 05:44:00",
+      "ms_tp": 4319562,
+      "ms_sl": 352079562,
+      "ms_up_32": null,
+      "duration_h": 97.79987833333334
+    },
+    {
+      "signal_id": 125,
+      "symbol": "AXSUSDT",
+      "opened": "2026-09-05 06:05:00",
+      "ms_tp": 209819584,
+      "ms_sl": null,
+      "ms_up_32": null,
+      "duration_h": 58.28321777777778
+    },
+    {
+      "signal_id": 163,
+      "symbol": "TRUMPUSDT",
+      "opened": "2026-09-05 07:39:00",
+      "ms_tp": null,
+      "ms_sl": -607,
+      "ms_up_32": null,
+      "duration_h": 24.016498055555555
+    },
+    {
+      "signal_id": 207,
+      "symbol": "MOVRUSDT",
+      "opened": "2026-09-05 10:09:00",
+      "ms_tp": 336179292,
+      "ms_sl": null,
+      "ms_up_32": 336179292,
+      "duration_h": 93.38313666666667
+    },
+    {
+      "signal_id": 248,
+      "symbol": "VETUSDT",
+      "opened": "2026-09-05 12:57:00",
+      "ms_tp": 185099054,
+      "ms_sl": 2459054,
+      "ms_up_32": null,
+      "duration_h": 51.41640388888889
+    },
+    {
+      "signal_id": 252,
+      "symbol": "MIRAUSDT",
+      "opened": "2026-09-05 13:11:00",
+      "ms_tp": 325259625,
+      "ms_sl": null,
+      "ms_up_32": 325259625,
+      "duration_h": 90.34989583333333
+    }
+  ],
+  "target_all": [
+    {
+      "n": 2307,
+      "below32": 1420,
+      "realised_gross32": 169
+    }
+  ],
+  "context": [
+    {
+      "n": 672,
+      "no_flow": 623,
+      "zero_senal": 188,
+      "confirmed_without_drop": 0,
+      "stop_inside_noise": 93
+    }
+  ],
+  "log_signal_link": [
+    {
+      "alerts": 5532,
+      "valid_level_alerts": 5002,
+      "with_levels_without_new_signal": 2695
+    }
+  ],
+  "duplicates": [
+    {
+      "repeated_symbol_timestamp_groups": 0
+    }
+  ],
+  "metadata_age": [
+    {
+      "n": 263,
+      "oldest_utc": "1970-01-21 15:53:05",
+      "newest_utc": "1970-01-21 16:56:59"
+    }
+  ],
+  "shadow_hoyo_mature": [
+    {
+      "sombra": 0,
+      "cerrado": 0,
+      "n": 160,
+      "filled": 125,
+      "a_tp": 5,
+      "c2_tp": 7,
+      "c3_tp": 9
+    },
+    {
+      "sombra": 0,
+      "cerrado": 1,
+      "n": 56,
+      "filled": 53,
+      "a_tp": 1,
+      "c2_tp": 1,
+      "c3_tp": 1
+    },
+    {
+      "sombra": 1,
+      "cerrado": 0,
+      "n": 162,
+      "filled": 129,
+      "a_tp": 9,
+      "c2_tp": 10,
+      "c3_tp": 16
+    },
+    {
+      "sombra": 1,
+      "cerrado": 1,
+      "n": 27,
+      "filled": 24,
+      "a_tp": 0,
+      "c2_tp": 0,
+      "c3_tp": 0
+    }
+  ],
+  "legacy_vs_current": [
+    {
+      "cohort": "context_saved",
+      "n": 672,
+      "closed": 319
+    },
+    {
+      "cohort": "legacy",
+      "n": 2114,
+      "closed": 1992
+    }
+  ],
+  "veto_reason_counts": [
+    {
+      "reason": "active_alert",
+      "n": 3751
+    },
+    {
+      "reason": "consumed",
+      "n": 1158
+    },
+    {
+      "reason": "cooldown",
+      "n": 4168
+    },
+    {
+      "reason": "decelerating",
+      "n": 139
+    },
+    {
+      "reason": "exhausted",
+      "n": 1635
+    },
+    {
+      "reason": "falling_knife",
+      "n": 2058
+    }
+  ],
+  "current_exclusion_review": {
+    "retrieved_utc": "2026-09-10T22:06:54.385917+00:00",
+    "source": "https://api.binance.com/api/v3/exchangeInfo",
+    "active_usdt_spot": 490,
+    "excluded_as_leveraged": [
+      "SUPERUSDT",
+      "JUPUSDT",
+      "SYRUPUSDT"
+    ],
+    "excluded_as_stable_or_fiat_or_gold": [
+      "TUSDUSDT",
+      "USDCUSDT",
+      "EURUSDT",
+      "PAXGUSDT",
+      "USDPUSDT",
+      "FDUSDUSDT",
+      "EURIUSDT",
+      "XUSDUSDT",
+      "USD1USDT",
+      "BFUSDUSDT",
+      "USDEUSDT",
+      "RLUSDUSDT",
+      "XAUTUSDT",
+      "USDSUSDT"
+    ]
+  }
+}

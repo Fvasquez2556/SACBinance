@@ -1,0 +1,42 @@
+[
+  {
+    "defect": "outcome accepts candles before emission",
+    "actual_ms_tp": -1000,
+    "expected": "ignore pre-entry candle; timestamp event at close or exact event time"
+  },
+  {
+    "defect": "outcome records hits after 24h before closing",
+    "observed": "late candle accepted; closed after updating MFE/MAE and hits"
+  },
+  {
+    "defect": "outcome processing is not idempotent",
+    "n_velas_after_same_candle_twice": 2
+  },
+  {
+    "defect": "indicator snapshot schema mismatch",
+    "actual": {
+      "rsi14": null,
+      "macd_hist": null,
+      "bb_position": null
+    }
+  },
+  {
+    "defect": "hoyo assumes TP after intrabar limit fill",
+    "candle_possible_path": "open 104 -> high 106 -> low 99 -> close 100; buy limit 100 fills after high; no subsequent TP",
+    "actual": {
+      "hoyo_fill": 100,
+      "hoyo_a": "TP",
+      "hoyo_c2": "TP",
+      "hoyo_c3": "TP"
+    }
+  },
+  {
+    "defect": "leveraged substring filter excludes ordinary ticker names",
+    "examples": {
+      "JUP": true,
+      "SUPER": true,
+      "JUPITER": true,
+      "BTC": false
+    }
+  }
+]

@@ -1,0 +1,32 @@
+"""Reproducible, read-only quality checks and descriptive signal statistics."""
+import json, pathlib, sqlite3
+ROOT=pathlib.Path(__file__).resolve().parent
+db=sqlite3.connect((ROOT/'snapshot.db').as_uri()+'?mode=ro',uri=True)
+db.row_factory=sqlite3.Row
+Q={
+'date_ranges': "SELECT 'signals' tabla,count(*) n,datetime(min(ts_open)/1000,'unixepoch') first_utc,datetime(max(ts_open)/1000,'unixepoch') last_utc FROM signals UNION ALL SELECT 'outcomes',count(*),datetime(min(ts_open)/1000,'unixepoch'),datetime(max(ts_open)/1000,'unixepoch') FROM outcomes UNION ALL SELECT 'logs',count(*),datetime(min(ts_ms)/1000,'unixepoch'),datetime(max(ts_ms)/1000,'unixepoch') FROM analysis_log",
+'candles': "SELECT tf,count(*) n,count(distinct symbol) symbols,datetime(min(open_time)/1000,'unixepoch') first_utc,datetime(max(open_time)/1000,'unixepoch') last_utc,sum(o is null or h is null or l is null or c is null or v is null) missing,sum(o<=0 or l<=0 or c<=0 or h<l or h<o or h<c or l>o or l>c or v<0) invalid FROM klines GROUP BY tf",
+'status': "SELECT status,count(*) n,round(avg(result_pct),4) avg_gross_pct,round(avg((take_profit/entry-1)*100),3) avg_tp_pct,round(avg((stop_loss/entry-1)*100),3) avg_sl_pct FROM signals GROUP BY status",
+'by_day': "SELECT date(ts_open/1000,'unixepoch') day,sombra,cerrado,count(*) n,sum(ms_up_32 is not null) reached_32,sum(ms_up_32 is not null and (ms_sl is null or ms_up_32<ms_sl)) up32_before_sl,round(avg(mfe_pct),3) mean_mfe,round(avg(mae_pct),3) mean_mae,round(avg(n_velas),1) candles FROM outcomes GROUP BY day,sombra,cerrado ORDER BY day,sombra,cerrado",
+'by_state': "SELECT display_state,sombra,count(*) n,sum(ms_up_32 is not null) reached_32,sum(ms_up_32 is not null and (ms_sl is null or ms_up_32<ms_sl)) up32_before_sl,sum(ms_tp is not null and (ms_sl is null or ms_tp<ms_sl)) tp_first,round(avg(tp_pct),3) tp_pct,round(avg(sl_pct),3) sl_pct FROM outcomes WHERE cerrado=1 GROUP BY display_state,sombra",
+'by_score': "SELECT case when score<60 then '<60' when score<70 then '60-69' when score<80 then '70-79' when score<90 then '80-89' else '90+' end score_band,count(*) n,sum(ms_up_32 is not null) reached_32,sum(ms_up_32 is not null and (ms_sl is null or ms_up_32<ms_sl)) up32_before_sl FROM outcomes WHERE cerrado=1 AND sombra=0 GROUP BY score_band",
+'coverage': "SELECT sombra,cerrado,count(*) n,min(n_velas) min_candles,round(avg(n_velas),2) mean_candles,max(n_velas) max_candles,sum(n_velas<1400) under_1400,sum(n_velas>1441) over_1441,round(max((ts_last-ts_open)/3600000.0),2) max_hours FROM outcomes GROUP BY sombra,cerrado",
+'integrity': "SELECT (SELECT count(*) FROM signals s LEFT JOIN outcomes o ON s.id=o.signal_id WHERE o.signal_id IS NULL) signals_without_outcomes,(SELECT count(*) FROM outcomes o LEFT JOIN signals s ON o.signal_id=s.id WHERE o.sombra=0 AND s.id IS NULL) real_outcomes_without_signals,(SELECT count(*) FROM outcomes WHERE (sombra=0 AND signal_id<0) OR (sombra=1 AND signal_id>0)) wrong_id_sign,(SELECT count(*) FROM signals WHERE entry<=0 OR stop_loss>=entry OR take_profit<=entry OR stop_loss IS NULL OR take_profit IS NULL) invalid_levels,(SELECT count(*) FROM outcomes WHERE ms_up_32<0 OR ms_sl<0 OR ms_tp<0 OR ms_dn_1<0) negative_event_times,(SELECT count(*) FROM outcomes WHERE ms_up_32>86400000 OR ms_sl>86400000 OR ms_tp>86400000) events_past_24h,(SELECT count(*) FROM signals WHERE status='OPEN') open_signals",
+'signal_daily': "SELECT date(ts_open/1000,'unixepoch') day,count(*) n,sum(status='TP') tp,sum(status='SL') sl,sum(status='EXPIRED') expired,sum(status='OPEN') open,round(avg(result_pct),4) avg_gross FROM signals GROUP BY day",
+'targets': "SELECT count(*) n,sum(tp_pct<3.2) tp_below32,sum(tp_pct<3.4) tp_below34,sum(ms_up_32 is not null) hit32,sum(ms_sl is not null AND ms_up_32 is not null AND ms_sl<=ms_up_32) hit32_after_stop,sum(ms_sl=ms_tp) both_same_candle,sum(ms_sl=ms_up_32) target_stop_tie FROM outcomes WHERE cerrado=1 AND sombra=0",
+'cases': "SELECT signal_id,symbol,datetime(ts_open/1000,'unixepoch') open_utc,cerrado,sombra,sombra_motivo,display_state,tier,score,tp_pct,sl_pct,mfe_pct,mae_pct,ms_up_32/60000.0 minutes_up32,ms_sl/60000.0 minutes_sl,n_velas,hoyo_a,hoyo_c2,hoyo_c3 FROM outcomes WHERE symbol IN ('MARSUSDT','MARSCOINUSDT','ETHFIUSDT','RAYUSDT','IOUSDT') ORDER BY symbol,ts_open",
+'symbols_names': "SELECT DISTINCT symbol FROM klines WHERE symbol LIKE '%MARS%' OR symbol LIKE '%ETHFI%' OR symbol IN ('RAYUSDT','IOUSDT')",
+'log_levels': "SELECT level,count(*) n FROM analysis_log GROUP BY level",
+'shadows': "SELECT sombra_motivo,cerrado,count(*) n,sum(ms_up_32 is not null) up32,sum(ms_up_32 is not null AND (ms_sl is null OR ms_up_32<ms_sl)) first32 FROM outcomes WHERE sombra=1 GROUP BY sombra_motivo,cerrado",
+'features_dates': "SELECT date(ts_open/1000,'unixepoch') day,count(*) n,sum(vol_24h is not null) liquidity,sum(retro_caida_pct is not null) retro,sum(hoyo_disparo is not null) hoyo,sum(sombra_motivo is not null) reason FROM outcomes GROUP BY day",
+'hoyo': "SELECT hoyo_a,hoyo_c2,hoyo_c3,count(*) n FROM outcomes WHERE cerrado=1 AND sombra=0 AND hoyo_disparo is not null GROUP BY hoyo_a,hoyo_c2,hoyo_c3",
+}
+results={k:[dict(r) for r in db.execute(sql)] for k,sql in Q.items()}
+cols=[r['name'] for r in db.execute('pragma table_info(outcomes)')]
+results['nulls']=[{'column':c,**dict(db.execute('SELECT count(*) n, sum("'+c+'" IS NULL) missing FROM outcomes').fetchone())} for c in cols]
+results['foreign_keys']=[dict(r) for r in db.execute('pragma foreign_key_check')]
+(ROOT/'queries.json').write_text(json.dumps(Q,indent=2),encoding='utf-8')
+(ROOT/'profile.json').write_text(json.dumps(results,indent=2),encoding='utf-8')
+for k,v in results.items():
+    if k not in ('cases','nulls','hoyo'): print(k,json.dumps(v,ensure_ascii=True))
+print('constant_null_columns',[x['column'] for x in results['nulls'] if x['missing']==x['n']])

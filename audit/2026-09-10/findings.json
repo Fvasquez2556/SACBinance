@@ -1,0 +1,142 @@
+[
+  {
+    "id": "F01",
+    "priority": "P1",
+    "title": "Faltan velas para medir las operaciones",
+    "evidence": "239/239 pares con velas 1m presentan huecos internos: faltan al menos 47,049 minutos-par entre su primera y última vela. De 1,297 señales reales maduras con alguna vela disponible, ninguna alcanza 98% de cobertura de 24h. Las 82,935 velas coincidentes con la referencia pública tienen OHLC idéntico.",
+    "impact": "Los precios guardados son correctos en la muestra, pero faltan trayectos que pueden cambiar qué ocurre primero: SL o TP. Los indicadores por número de velas también dejan de representar minutos reales.",
+    "fix": "Separar aggTrade del stream de velas o cambiar suscripciones sin reconectar las velas. Tras cualquier desconexión, reparar por REST desde el último cierre, deduplicar y comprobar continuidad antes de puntuar. Guardar cobertura y estado de calidad por ventana.",
+    "source": "backend/src/data_ingestion/ws_manager.py:199; backend/src/state/symbol_state.py:284; replay.py; reference_summary.py",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F02",
+    "priority": "P1",
+    "title": "Los outcomes aceptan datos fuera de su ventana",
+    "evidence": "33 filas tienen ms_tp, ms_sl o ms_up_32 posteriores a 24h; la mayor duración cerrada es 117.92h. Hay 156 outcomes vencidos sin cerrar. Se reprodujo un TP a las 72h dentro de una ventana nominal de 24h.",
+    "impact": "Las frecuencias de subida, MFE y MAE pueden atribuir a una señal movimientos de días posteriores. La salida de un par del universo deja seguimientos colgados.",
+    "fix": "Aplicar el corte temporal antes de actualizar métricas; finalizar por un reloj independiente de nuevas velas; reparar huecos o marcar INCOMPLETE. Mantener seguimiento de posiciones aunque el par salga del universo.",
+    "source": "backend/src/analysis/outcome_tracker.py:404; backend/src/analysis/outcome_tracker.py:456; reproduce_defects.py",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F03",
+    "priority": "P1",
+    "title": "Entrada, TP y objetivo del operador no están alineados",
+    "evidence": "1,420 de 2,307 señales (61.6%) ofrecen TP bruto inferior a 3.2%. En los 2,019 outcomes reales cerrados, son 1,247 (61.8%). objetivo_alcanzable se calcula, pero no bloquea la emisión ni se muestra en los componentes consultados.",
+    "impact": "Cumplir el TP ofrecido frecuentemente no cumple tu meta. Un R:R de 2 tampoco equivale a 3.2% de beneficio ni a probabilidad de éxito.",
+    "fix": "Evaluar recompensa neta desde la entrada realmente propuesta y ejecutada. Si no cabe 3.2% con costes y resistencia, clasificar como observación o esperar una entrada mejor. No ensanchar el SL únicamente para fabricar un TP mayor.",
+    "source": "backend/src/analysis/trade_levels.py:185; backend/src/analysis/trade_levels.py:200; backend/src/analysis/signal_tracker.py:29",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F04",
+    "priority": "P1",
+    "title": "Hay alertas con niveles que no tienen su propia señal medible",
+    "evidence": "El log registra 5,002 alertas con entry/TP/SL; 2,695 no tienen una nueva fila signals para el mismo par a ±2 segundos. abrir_senal impide una segunda OPEN, mientras AlertManager puede emitir otra con signal_id=None.",
+    "impact": "El operador puede recibir niveles nuevos mientras las estadísticas continúan evaluando una entrada anterior. La auditoría de signals no es una auditoría de lo recibido por Telegram.",
+    "fix": "Crear una identidad de candidato, señal, plan y episodio; toda alerta operable debe referenciar un plan persistido. Decidir explícitamente si reemplaza uno anterior. Registrar enviados, rechazados, editados y errores de Telegram por signal_id.",
+    "source": "backend/src/state/engine.py:807; backend/src/state/engine.py:838; backend/src/state/active_alert.py:481; backend/src/analysis/signal_tracker.py:35",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F05",
+    "priority": "P1",
+    "title": "Comprar en el hoyo tiene una ambigüedad de ejecución",
+    "evidence": "La reproducción determinista abre una compra en 100 y asigna TP=105 con una vela que pudo recorrer 104 → 106 → 99 → 100. En ese recorrido el máximo ocurrió antes del fill. No se observó ese caso concreto en las 218 ventanas completas recuperadas.",
+    "impact": "El tracker puede conceder ganancias intravela imposibles de confirmar. El simulador histórico y el tracker vivo también difieren en el precio de fill cuando hay un hueco.",
+    "fix": "No asignar TP en la vela de entrada por límite salvo orden verificable con trades o apertura ya ejecutable. Marcar ambigüedad y dar cotas; conservar fills, caducidad de la orden y costes. Unificar el simulador y el seguimiento vivo.",
+    "source": "backend/src/analysis/hoyo.py:133; research/entrada_en_el_hoyo.py:121; reproduce_defects.py",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F06",
+    "priority": "P1",
+    "title": "La probabilidad mostrada responde a otra pregunta",
+    "evidence": "prob_meta es una tabla fija por distancia y edad, ajustada con mínimos acumulados. Estima tocar la meta en 6h. La tabla se construye con muestras repetidas cada 5 minutos, incluye outcomes sombra y no exige ganar antes del SL.",
+    "impact": "Su n cuenta observaciones correlacionadas, no operaciones independientes. Una lectura de 80% no significa 80% de probabilidad de obtener 3.2% neto con ese plan.",
+    "fix": "Renombrarla como frecuencia histórica de tocar meta, mostrar horizonte y versión; posteriormente calibrar P(TP neto antes del SL | entrada ejecutada, setup, régimen) en datos cronológicamente separados. Reportar episodios únicos e incertidumbre.",
+    "source": "backend/src/analysis/retroceso.py:152; backend/src/analysis/retroceso.py:183; research/tabla_meta.py:98; frontend/src/components/PairRow.tsx:368",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F07",
+    "priority": "P2",
+    "title": "Tres indicadores nunca llegan a la base",
+    "evidence": "rsi14, macd_hist y bb_position están NULL en 2,786/2,786 outcomes, incluso en las 672 filas recientes con contexto. _contexto busca claves distintas del snapshot: rsi14_1m y el diccionario por TF ind_htf.",
+    "impact": "No se puede evaluar si esos indicadores mejoran la selección. Mezclar 1m y 15m bajo un nombre genérico produciría otra distorsión.",
+    "fix": "Guardar nombres explícitos por TF, incluyendo si la vela está abierta y su timestamp. Añadir un contrato de snapshot y validar cobertura por versión. No rellenar retrospectivamente con indicadores actuales.",
+    "source": "backend/src/analysis/outcome_tracker.py:116; backend/src/state/symbol_state.py:386; reproduce_defects.py",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F08",
+    "priority": "P2",
+    "title": "No disponer de flujo se mezcla con tener flujo neutro",
+    "evidence": "623 de 672 outcomes recientes (92.7%) tienen flow_trades_30s=0. aggTrade solo cubre una shortlist; además el score se limita cuando falta confirmación de flujo.",
+    "impact": "La ausencia de suscripción o de datos puede perjudicar el score como si fuera ausencia real de compradores. Es un problema de cobertura, no una prueba de presión vendedora.",
+    "fix": "Guardar flow_available, subscribed, ventana, edad y número de trades. Separar estado desconocido de señal negativa. Medir el efecto del flujo solo en oportunidades con cobertura comparable.",
+    "source": "backend/src/analysis/scoring.py:103; backend/src/analysis/scoring.py:124; backend/main.py:194",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F09",
+    "priority": "P2",
+    "title": "El universo y su volumen quedan fijados al arranque",
+    "evidence": "universe_refresh_seconds está declarado pero no se utiliza. El volumen más reciente de pair_metadata es del 10-sep 05:48:59 UTC, unas 16h antes del corte. Había 200 pares activos y 39 pares con velas históricas sin actualización reciente.",
+    "impact": "Un par que entra en volumen, se lista o cambia de liquidez puede no entrar al escáner. Retirar cobertura deja señales antiguas abiertas; 29 señales OPEN ya superaban 12h.",
+    "fix": "Actualizar el universo y la liquidez periódicamente; registrar altas, bajas y motivos con fecha. Mantener una suscripción separada para las operaciones en seguimiento.",
+    "source": "backend/main.py:77; backend/src/config/settings.py:26; backend/src/persistence/db.py:475",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F10",
+    "priority": "P2",
+    "title": "El filtro de apalancados excluye monedas normales",
+    "evidence": "La regla any(m in base) marca SUPER, JUP y SYRUP por contener UP. exchangeInfo confirmó sus pares USDT spot activos. El filtro de stablecoins/fiat/oro es una capa separada.",
+    "impact": "Reduce el universo por coincidencias de texto y puede ocultar oportunidades sin ninguna justificación de mercado.",
+    "fix": "Usar clasificación explícita del instrumento y una lista exacta de tokens apalancados; mantener pruebas para SUPERUSDT, JUPUSDT y SYRUPUSDT. Versionar la política de exclusión de stablecoins.",
+    "source": "backend/src/data_ingestion/universe.py:19; backend/src/data_ingestion/universe.py:49; deep_checks.py",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F11",
+    "priority": "P2",
+    "title": "Los eventos no tienen una convención temporal única",
+    "evidence": "23 outcomes tienen alguno de ms_up_32, ms_sl, ms_tp o ms_dn_1 negativo. Las muestras observadas rondan fracciones de segundo: se resta la hora de emisión de la apertura de la vela. Procesar dos veces una misma vela incrementa n_velas dos veces.",
+    "impact": "Los tiempos dejan de representar duraciones válidas y un replay puede volver a procesar eventos. Los negativos observados, por sí solos, no prueban conocimiento del futuro.",
+    "fix": "Distinguir candle_open_time, candle_close_time, decision_time y received_at. Rechazar velas totalmente anteriores a la decisión; hacer idempotente la actualización por (símbolo, TF, apertura) y conservar la ambigüedad de la vela parcial.",
+    "source": "backend/src/data_ingestion/ws_manager.py:135; backend/src/analysis/outcome_tracker.py:404; backend/src/state/symbol_state.py:284",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F12",
+    "priority": "P2",
+    "title": "Se borran las velas antes que la evidencia que deben explicar",
+    "evidence": "Las señales abarcan 5-sep a 10-sep, pero las velas 1m retenidas empiezan el 7-sep. prune_klines elimina 1m/5m/15m a los tres días. 2,114 outcomes carecen del contexto agregado posteriormente y no hay strategy_version/config_hash en la tabla.",
+    "impact": "No se puede reconstruir la historia ni separar con precisión qué variante produjo cada resultado. Los cambios de parámetros y condiciones de mercado se mezclan.",
+    "fix": "Archivar las velas y features que sustentan cada experimento, fuera del cache operativo. Guardar hash de configuración, commit, versión de etiqueta, instante de features y procedencia live/replay.",
+    "source": "backend/src/persistence/db.py:785; backend/src/persistence/db.py:48; provenance.json",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F13",
+    "priority": "P2",
+    "title": "Algunas rutas evitan el ciclo normal de seguimiento",
+    "evidence": "El veto blow-off retorna antes de actualizar AlertManager. Los perfiles de tendencia, ignición y base se emiten por un circuito separado sin abrir su outcome. Los vetos nuevos con motivo VETO todavía tienen cero ventanas cerradas.",
+    "impact": "Puede retrasarse el cierre visual de una alerta justo cuando hay agotamiento. Tampoco existe una base comparable para determinar cuál detector agrega valor o qué oportunidades bloquea cada veto.",
+    "fix": "Actualizar siempre posiciones y alertas antes de cualquier return de detección. Registrar todos los candidatos de los detectores y los vetos con el mismo contrato y horizonte.",
+    "source": "backend/src/state/engine.py:445; backend/src/state/engine.py:741; backend/src/state/engine.py:874",
+    "confidence": "Alta"
+  },
+  {
+    "id": "F14",
+    "priority": "P2",
+    "title": "Las métricas de éxito y los costes necesitan nombres precisos",
+    "evidence": "La API llama win_rate a TP/(TP+SL+EXPIRED): 23.9%. Los EXPIRED positivos cuentan como no TP, y el resultado medio es bruto. No existen fills, spread, tickSize ni comisiones de cuenta en signals.",
+    "impact": "La tasa de tocar TP, la tasa de ganar dinero y la tasa de ganar al menos 3.2% neto son métricas diferentes. El redondeo decimal por precio tampoco garantiza un nivel válido para Binance.",
+    "fix": "Publicar por separado tasa de fill, TP antes de SL, retorno neto medio/mediano, P(net≥3.2%), vencidos, incompletos y cobertura. Añadir tickSize/stepSize, spread, tamaño ejecutable y costes al plan.",
+    "source": "backend/src/persistence/db.py:601; backend/src/analysis/trade_levels.py:67; backend/src/analysis/signal_tracker.py:116",
+    "confidence": "Alta"
+  }
+]
