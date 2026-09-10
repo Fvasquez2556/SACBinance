@@ -27,7 +27,8 @@ from src.api.ws_server import broadcast, broadcast_loop, set_engine as ws_set_en
 from src.config.settings import get_settings
 from src.data_ingestion.hydrator import hydrate_all
 from src.data_ingestion.rest_periodic import start_rest_periodic
-from src.data_ingestion.universe import get_usdt_pairs
+from src.data_ingestion.universe import (fetch_universe, get_last_volumes,
+                                          get_usdt_pairs)
 from src.data_ingestion.ws_manager import WSManager
 from src.persistence.db import init_db
 from src.state.engine import StateEngine
@@ -84,7 +85,6 @@ async def startup():
     logger.info(f"{len(symbols)} pares activos")
 
     # Guardar metadata en DB (con volumen 24h real)
-    from src.data_ingestion.universe import get_last_volumes
     volumes = get_last_volumes()
     for sym in symbols:
         db.upsert_pair_meta(sym, volumes.get(sym, 0.0))
@@ -162,6 +162,7 @@ async def startup():
 
     # 11. Purga periodica de la base de datos (rolling)
     asyncio.create_task(_prune_loop(db))
+    asyncio.create_task(_universe_loop(engine, ws_mgr, db))
 
     logger.info("=" * 60)
     logger.info(f"SACBinance v3 ACTIVO | {len(symbols)} pares | API: :{s.api_port}")
@@ -227,6 +228,45 @@ async def _shortlist_loop(engine, ws_mgr) -> None:
                 engine.set_shortlist(top)
         except Exception as e:
             logger.debug(f"shortlist_loop error: {e}")
+
+
+async def _universe_loop(engine, ws_mgr, db) -> None:
+    """
+    Refresca el universo y la liquidez cada `universe_refresh_seconds`.
+
+    El ajuste llevaba declarado desde el principio sin que nadie lo usara: el
+    universo quedaba congelado en el arranque y el volumen de pair_metadata se
+    quedaba con horas de antiguedad. Un par que entraba en volumen o se listaba
+    no llegaba nunca al escaner.
+
+    Tres cosas, en este orden:
+      1. Refrescar el volumen 24h de todos, que es barato y no reconecta nada.
+      2. Hidratar los pares nuevos ANTES de suscribirlos: un par sin historia
+         no puede puntuarse, y arrancaria dando estados provisionales.
+      3. Reconectar, conservando los pares con seguimiento vivo aunque hayan
+         salido del universo.
+    """
+    s = get_settings()
+    while True:
+        await asyncio.sleep(s.universe_refresh_seconds)
+        try:
+            simbolos = await fetch_universe()
+            if not simbolos:
+                logger.warning("Refresco de universo: sin respuesta, lo dejo como esta")
+                continue
+            volumes = get_last_volumes()
+            for sym in simbolos:
+                db.upsert_pair_meta(sym, volumes.get(sym, 0.0))
+
+            nuevos = [x for x in simbolos if engine.get_symbol(x) is None]
+            if nuevos:
+                logger.info(f"Refresco de universo: hidratando {len(nuevos)} pares nuevos")
+                await hydrate_all(nuevos, engine, db)
+
+            fijados = engine.simbolos_en_seguimiento()
+            await ws_mgr.update_symbols(simbolos, fijados=fijados)
+        except Exception as e:
+            logger.warning(f"universe_loop error: {e}")
 
 
 async def _db_flush_loop(db, engine=None) -> None:

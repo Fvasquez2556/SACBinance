@@ -263,6 +263,26 @@ class StateEngine:
         self._outcomes.cargar()
 
 
+    def simbolos_en_seguimiento(self) -> set:
+        """
+        Pares con una operacion viva: outcome abierto o alerta en el tablero.
+
+        Se usa para no cortarles el stream cuando salen del universo. Si se les
+        corta, su ventana acaba cerrandose por reloj sin haber medido el tramo
+        final — que suele ser justo donde se resuelve.
+        """
+        vivos = set()
+        try:
+            if self._outcomes is not None:
+                vivos |= set(self._outcomes._por_symbol.keys())
+        except Exception:
+            pass
+        try:
+            vivos |= set(self._alertas._activas.keys())
+        except Exception:
+            pass
+        return vivos
+
     def set_shortlist(self, symbols) -> None:
         """
         Los pares suscritos a aggTrade en este momento.

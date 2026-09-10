@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     min_volume_24h: float = Field(default=1_000_000)
     max_pairs_to_scan: int = Field(default=250)
     universe_refresh_seconds: int = Field(default=3600)
+    # Cuanto tiene que cambiar el universo para que compense reconectar los dos
+    # WebSockets. Por debajo de esto solo se refresca el volumen en la base.
+    universe_min_churn: float = Field(default=0.05)
 
     # --- Hidratacion historica ---
     history_days: int = Field(default=5)

@@ -98,14 +98,28 @@ class WSManager:
         self.symbols = symbols
         self.engine = engine
         self._shortlist: Set[str] = set()
+        # Pares que ya no estan en el universo pero tienen una operacion en
+        # seguimiento. Siguen recibiendo velas hasta que su ventana cierre: si
+        # se les corta el stream, el outcome queda colgado y el cierre acaba
+        # llegando por reloj sin haber medido nada del tramo final.
+        self._fijados: Set[str] = set()
         self._ws_a: Optional[_WSConnection] = None
         self._ws_b: Optional[_WSConnection] = None
         self._task_a: Optional[asyncio.Task] = None
         self._task_b: Optional[asyncio.Task] = None
 
+    def _todos(self) -> List[str]:
+        """Universo actual mas los pares con seguimiento vivo, sin repetir."""
+        vistos, out = set(), []
+        for sym in list(self.symbols) + sorted(self._fijados):
+            if sym not in vistos:
+                vistos.add(sym)
+                out.append(sym)
+        return out
+
     def _build_streams_a(self) -> List[str]:
         streams = []
-        for sym in self.symbols:
+        for sym in self._todos():
             streams.append(_kline_stream(sym, "1m"))
             streams.append(_kline_stream(sym, "5m"))
         for sym in self._shortlist:
@@ -114,7 +128,7 @@ class WSManager:
 
     def _build_streams_b(self) -> List[str]:
         streams = []
-        for sym in self.symbols:
+        for sym in self._todos():
             streams.append(_kline_stream(sym, "15m"))
             streams.append(_kline_stream(sym, "1h"))
         return streams
@@ -227,6 +241,62 @@ class WSManager:
             except (asyncio.CancelledError, Exception):
                 pass
         self._start_ws_a()
+
+    async def update_symbols(self, symbols: List[str], fijados=None) -> bool:
+        """
+        Cambia el universo suscrito. Devuelve True si hubo reconexion.
+
+        `universe_refresh_seconds` llevaba declarado desde el principio sin que
+        nadie lo usara: el universo y su volumen quedaban congelados en el
+        arranque. Un par que entraba en volumen o se listaba no llegaba nunca
+        al escaner, y el volumen de pair_metadata se quedaba con 16 horas de
+        antiguedad.
+
+        Reconectar los dos WS es caro, asi que solo se hace si el cambio pasa
+        del umbral de churn, igual que la shortlist.
+        """
+        s = get_settings()
+        nuevos = list(symbols or ())
+        if not nuevos:
+            return False
+        self._fijados = set(fijados or ())
+        actual = set(self.symbols)
+        entran = set(nuevos) - actual
+        salen = actual - set(nuevos) - self._fijados
+        if not entran and not salen:
+            return False
+        churn = len(entran | salen) / max(len(actual), 1)
+        if churn < s.universe_min_churn:
+            logger.debug(f"Universo: churn {churn:.0%} < umbral, no reconecto")
+            self.symbols = nuevos          # el orden se actualiza igual
+            return False
+
+        self.symbols = nuevos
+        logger.info(
+            f"Universo actualizado: {len(nuevos)} pares "
+            f"(+{len(entran)} / -{len(salen)}) — reconectando los dos WS"
+        )
+        if entran:
+            logger.info(f"   entran: {', '.join(sorted(entran)[:12])}"
+                        + (" ..." if len(entran) > 12 else ""))
+        if salen:
+            logger.info(f"   salen : {', '.join(sorted(salen)[:12])}"
+                        + (" ..." if len(salen) > 12 else ""))
+        if self._fijados:
+            logger.info(f"   se mantienen por seguimiento vivo: {len(self._fijados)}")
+
+        for ws, task in ((self._ws_a, self._task_a), (self._ws_b, self._task_b)):
+            if ws:
+                ws.stop()
+            if task and not task.done():
+                task.cancel()
+                try:
+                    await task
+                except (asyncio.CancelledError, Exception):
+                    pass
+        self._start_ws_a()
+        self._start_ws_b()
+        return True
 
     def _start_ws_a(self) -> None:
         streams = self._build_streams_a()

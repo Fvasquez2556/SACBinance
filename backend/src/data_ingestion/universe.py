@@ -15,7 +15,27 @@ _EXCLUDED_BASES: Set[str] = {
     "TRY", "JPY", "ARS", "AUD", "RUB", "ZAR", "MXN", "PLN",
     "XAUT", "PAXG",  # oro tokenizado — no es trading de cripto
 }
-_LEVERAGED_MARKERS = ("UP", "DOWN", "BEAR", "BULL", "3L", "3S", "5L", "5S")
+# Tokens apalancados: son SUFIJOS sobre un subyacente (BTCUP, ETHDOWN, ADABULL,
+# BTC3L...). Antes se buscaba el marcador como SUBCADENA en cualquier posicion,
+# y "UP" esta dentro de SUPER, JUP y SYRUP: tres monedas normales, con par USDT
+# spot activo, quedaban fuera del escaner sin ninguna razon de mercado.
+_LEVERAGED_SUFIJOS = ("UP", "DOWN", "BEAR", "BULL", "3L", "3S", "5L", "5S")
+
+# El sufijo solo no basta: SYRUP acaba en "UP" con un prefijo de 3 letras, igual
+# que BTCUP. No hay forma de distinguirlos por la forma del nombre, asi que las
+# excepciones van explicitas. Si aparece otra moneda legitima con esta forma, se
+# añade aqui y se le pone su prueba en comprobar_universo.py.
+_NO_APALANCADOS: Set[str] = {
+    "SYRUP",   # Maple Finance
+    "JUP",     # Jupiter
+    "SUPER",   # SuperVerse — ya se salvaba por el sufijo, va por seguridad
+    "PUMP",    # Pump.fun
+    "BUP",
+}
+
+# Prefijo minimo para que el sufijo cuente como apalancamiento. Con 2, "JUP"
+# (prefijo "J") queda descartado por si acaso alguien lo saca de la lista.
+_PREFIJO_MIN = 2
 
 
 def _is_stablecoin(base: str) -> bool:
@@ -40,7 +60,19 @@ def get_last_volumes() -> dict:
 
 
 def _is_leveraged(base: str) -> bool:
-    return any(m in base for m in _LEVERAGED_MARKERS)
+    """
+    True si el nombre corresponde a un token apalancado.
+
+    Se exige que el marcador este AL FINAL y que quede delante un subyacente
+    plausible. La version anterior usaba `m in base`, que excluia SUPER, JUP y
+    SYRUP por llevar "UP" en medio.
+    """
+    if base in _NO_APALANCADOS:
+        return False
+    for suf in _LEVERAGED_SUFIJOS:
+        if base.endswith(suf) and len(base) - len(suf) >= _PREFIJO_MIN:
+            return True
+    return False
 
 
 async def fetch_universe() -> List[str]:
@@ -66,6 +98,7 @@ async def fetch_universe() -> List[str]:
     spot_usdt: Set[str] = set()
     excluded_stable = 0
     excluded_lev = 0
+    bases_lev: Set[str] = set()
     for m in info.get("symbols", []):
         if m.get("quoteAsset") != "USDT":
             continue
@@ -79,6 +112,7 @@ async def fetch_universe() -> List[str]:
             continue
         if _is_leveraged(base_asset):
             excluded_lev += 1
+            bases_lev.add(base_asset)
             continue
         spot_usdt.add(m["symbol"])
 
@@ -105,6 +139,11 @@ async def fetch_universe() -> List[str]:
         f"Universo: {len(symbols)} pares activos (vol>={s.min_volume_24h:,.0f} USDT). "
         f"Excluidos: {excluded_stable} stablecoins, {excluded_lev} apalancados"
     )
+    if bases_lev:
+        # A nivel INFO a proposito: un filtro que descarta monedas en silencio
+        # es un filtro que nadie revisa. Asi salio que SUPER, JUP y SYRUP
+        # llevaban dias fuera del escaner.
+        logger.info(f"   apalancados descartados: {', '.join(sorted(bases_lev))}")
     return symbols
 
 
