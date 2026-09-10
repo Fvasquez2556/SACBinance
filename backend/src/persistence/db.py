@@ -128,6 +128,45 @@ COLS_MEDICION = (
     "rsi14_15m", "macd_hist_15m", "bb_position_15m",
 ) + COLS_MEDICION_INT + COLS_MEDICION_TEXTO
 
+# --- Toda alerta con niveles deja rastro (v11, F04) -------------------------
+#
+# `abrir_senal` se niega a abrir una segunda señal OPEN para el mismo par, pero
+# AlertManager si emite otra alerta —con entrada, TP y SL nuevos— y esa es la
+# que ve el operador. Resultado: 2.695 de 5.002 alertas con niveles no tenian
+# fila propia en signals. Auditar `signals` no era auditar lo recibido.
+#
+# Aqui cae TODA alerta emitida, tenga o no señal detras, con el resultado de su
+# envio por Telegram. Es el registro de lo que el operador vio de verdad.
+_CREATE_ALERTAS_EMITIDAS = """
+CREATE TABLE IF NOT EXISTS alertas_emitidas (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts_ms         INTEGER NOT NULL,
+    symbol        TEXT    NOT NULL,
+    signal_id     INTEGER,          -- NULL si no hubo fila en signals
+    entry         REAL,
+    take_profit   REAL,
+    stop_loss     REAL,
+    tp_pct        REAL,
+    sl_pct        REAL,
+    reward_neto_pct REAL,
+    objetivo_alcanzable INTEGER,
+    tier          TEXT,
+    score         INTEGER,
+    display_state TEXT,
+    senal_n       INTEGER,
+    telegram      TEXT,             -- enviado / fallo / no_procede
+    telegram_detalle TEXT,
+    strategy_version TEXT,
+    config_hash   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_alertas_ts ON alertas_emitidas (ts_ms DESC);
+CREATE INDEX IF NOT EXISTS idx_alertas_sym ON alertas_emitidas (symbol, ts_ms DESC);
+"""
+
+# --- Columnas de la v11 en outcomes ----------------------------------------
+COLS_V11_INT = ("objetivo_alcanzable", "hoyo_ambiguo")
+COLS_V11 = ("reward_neto_pct", "cobertura_velas") + COLS_V11_INT
+
 _CREATE_TELEGRAM_HILOS = """
 CREATE TABLE IF NOT EXISTS telegram_hilos (
     symbol     TEXT    PRIMARY KEY,
@@ -164,7 +203,12 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 #           ausencia de flujo indistinguible de flujo neutro (92.8% con
 #           trades=0); y ninguna forma de saber que codigo y que configuracion
 #           produjeron cada fila.
-SCHEMA_VERSION = 10
+#  10 -> 11: el resto de la auditoria. Recompensa NETA y si el objetivo del
+#           operador cabe de verdad (F03); cobertura de velas por ventana, para
+#           poder excluir las incompletas (F01); ambiguedad intravela de la
+#           sombra del hoyo (F05); y la tabla alertas_emitidas, porque 2.695 de
+#           5.002 alertas con niveles no tenian fila propia en signals (F04).
+SCHEMA_VERSION = 11
 
 # --- Contexto de la senal: lo que el engine ya calcula y hasta ahora se tiraba
 #
@@ -280,7 +324,7 @@ class Database:
         for ddl in (
             _CREATE_SYMBOL_STATES, _CREATE_ANALYSIS_LOG, _CREATE_PAIR_META,
             _CREATE_SIGNALS, _CREATE_KLINES, _CREATE_META, _CREATE_OUTCOMES,
-            _CREATE_TELEGRAM_HILOS,
+            _CREATE_TELEGRAM_HILOS, _CREATE_ALERTAS_EMITIDAS,
         ):
             self._conn.executescript(ddl)
         self._conn.commit()
@@ -432,6 +476,19 @@ class Database:
                 logger.info(
                     f"Migracion v9->10: {len(nuevas)} columnas de medicion "
                     f"añadidas (indicadores por TF, cobertura de flujo, procedencia)"
+                )
+
+        if version < 11:
+            cols = [r[1] for r in self._conn.execute("PRAGMA table_info(outcomes)")]
+            nuevas = [c for c in COLS_V11 if c not in cols]
+            for col in nuevas:
+                tipo = "INTEGER" if col in COLS_V11_INT else "REAL"
+                self._conn.execute(f"ALTER TABLE outcomes ADD COLUMN {col} {tipo}")
+            self._conn.executescript(_CREATE_ALERTAS_EMITIDAS)
+            if nuevas:
+                logger.info(
+                    f"Migracion v10->11: {len(nuevas)} columnas nuevas en outcomes "
+                    f"y tabla alertas_emitidas"
                 )
 
         self._conn.execute(
@@ -769,6 +826,41 @@ class Database:
                 "hoyo_c3": r.get("hoyo_c3"),
             })
         return out
+
+    # --- Alertas emitidas (todo lo que el operador vio) ----------------------
+
+    def registrar_alerta(self, row: dict) -> int:
+        """Guarda una alerta emitida y devuelve su id."""
+        cols = ", ".join(row.keys())
+        marks = ", ".join("?" * len(row))
+        cur = self._conn.execute(
+            f"INSERT INTO alertas_emitidas ({cols}) VALUES ({marks})",
+            tuple(row.values()),
+        )
+        self._dirty = True
+        return int(cur.lastrowid)
+
+    def marcar_telegram(self, alerta_id: int, estado: str,
+                        detalle: str = "") -> None:
+        """Anota como fue el envio: enviado, fallo o no_procede."""
+        self._conn.execute(
+            "UPDATE alertas_emitidas SET telegram = ?, telegram_detalle = ? "
+            "WHERE id = ?", (estado, detalle[:200], alerta_id),
+        )
+        self._dirty = True
+
+    def get_alertas_emitidas(self, limit: int = 200,
+                             symbol: Optional[str] = None) -> List[dict]:
+        cond, args = "", []
+        if symbol:
+            cond = "WHERE symbol = ?"
+            args.append(symbol.upper())
+        args.append(limit)
+        cur = self._conn.execute(
+            f"SELECT * FROM alertas_emitidas {cond} ORDER BY ts_ms DESC LIMIT ?",
+            tuple(args))
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, r)) for r in cur.fetchall()]
 
     # --- Hilos de Telegram ---------------------------------------------------
     #

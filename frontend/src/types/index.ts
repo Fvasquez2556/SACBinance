@@ -33,6 +33,9 @@ export interface TradeLevels {
   ruido_1m_pct: number | null;
   /** ¿El TP ofrecido llega al objetivo del operador (+3.2%)? Solo medicion. */
   objetivo_alcanzable: boolean;
+  /** Beneficio del TP menos comision y deslizamiento. El TP del sistema es
+   *  bruto: el 61.6% de las señales no llegaba al objetivo tras costes. */
+  reward_neto_pct: number | null;
   nearest_resistance: number | null;
   tp_blocked_by_resistance: boolean;
   sl_basis: string;

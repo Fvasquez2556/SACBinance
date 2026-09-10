@@ -373,6 +373,11 @@ class OutcomeTracker:
             "sombra_motivo": (sombra_motivo or None) if sombra else None,
             "vol_24h": snapshot.get("vol_24h"),
             "vol_1m_medio": snapshot.get("vol_1m_medio"),
+            # Lo que queda del TP despues de costes, y si con eso llega al
+            # objetivo del operador. El bruto hacia pasar por alcanzables
+            # señales que no podian serlo.
+            "reward_neto_pct": trade_levels.get("reward_neto_pct"),
+            "objetivo_alcanzable": 1 if trade_levels.get("objetivo_alcanzable") else 0,
         }
         row.update(_contexto(snapshot, trade_levels))
         row["strategy_version"] = procedencia.version()
@@ -422,9 +427,11 @@ class OutcomeTracker:
             if now_ms - row["ts_open"] < ventana_ms:
                 continue
             row["forma"] = _clasificar_forma(row, dip_umbral)
+            row["cobertura_velas"] = _cobertura(row)
             row["cerrado"] = 1
             try:
-                self._db.guardar_outcome(sid, {"forma": row["forma"], "cerrado": 1})
+                self._db.guardar_outcome(sid, {"forma": row["forma"], "cerrado": 1,
+                                               "cobertura_velas": row["cobertura_velas"]})
             except Exception as e:
                 logger.debug(f"[{row['symbol']}] cerrar vencido: {e}")
             self._abiertos.pop(sid, None)
@@ -478,10 +485,12 @@ class OutcomeTracker:
             if transcurrido > ventana_ms:
                 if not row.get("cerrado"):
                     row["forma"] = _clasificar_forma(row, dip_umbral)
+                    row["cobertura_velas"] = _cobertura(row)
                     row["cerrado"] = 1
                     try:
                         self._db.guardar_outcome(
-                            sid, {"forma": row["forma"], "cerrado": 1})
+                            sid, {"forma": row["forma"], "cerrado": 1,
+                                  "cobertura_velas": row["cobertura_velas"]})
                     except Exception as e:
                         logger.debug(f"[{symbol}] cerrar fuera de ventana: {e}")
                     cerrados.append(dict(row))
@@ -538,6 +547,7 @@ class OutcomeTracker:
             # --- Fin de ventana ---
             if transcurrido >= ventana_ms:
                 row["forma"] = cambios["forma"] = _clasificar_forma(row, dip_umbral)
+                row["cobertura_velas"] = cambios["cobertura_velas"] = _cobertura(row)
                 row["cerrado"] = cambios["cerrado"] = 1
                 cerrados.append(dict(row))
                 self._abiertos.pop(sid, None)
@@ -562,6 +572,24 @@ class OutcomeTracker:
                    if row.get(f"ms_up_{_SUFIJO[OBJETIVO]}") is not None else "no alcanzado")
             )
         return cerrados
+
+
+def _cobertura(row: dict) -> float:
+    """
+    Que fraccion de los minutos de la ventana llego de verdad.
+
+    Los 239 pares con velas de 1m tenian huecos internos: 47.249 minutos-par
+    ausentes, y ninguna ventana alcanzaba el 98% de cobertura. Un hueco puede
+    cambiar QUE ocurre primero, si el stop o el objetivo, asi que una fila con
+    cobertura baja no se puede leer igual que una completa.
+
+    Se guarda al cerrar. No arregla el hueco — eso lo hace la reparacion por
+    REST — pero permite excluir del analisis lo que no se puede sostener.
+    """
+    esperados = get_settings().outcome_window_hours * 60
+    if esperados <= 0:
+        return 0.0
+    return round(min(1.0, (row.get("n_velas") or 0) / esperados), 4)
 
 
 def _clasificar_forma(row: dict, dip_umbral: float) -> str:

@@ -128,6 +128,27 @@ export default function PairDetail({ pair, onClose }: Props) {
                 ⚠ Resistencia en {pair.trade_levels.nearest_resistance} antes del TP
               </div>
             )}
+            {/* El TP que ofrece el sistema es BRUTO. Con 0.5% de costes, un TP
+                de +2.5% deja +2.0%, y el objetivo del operador son +3.2%: el
+                61.6% de las señales no podia darlo y nada lo decia. */}
+            {pair.trade_levels.reward_neto_pct != null && (
+              <div
+                style={{
+                  marginTop: 6,
+                  padding: "4px 6px",
+                  borderRadius: 3,
+                  fontSize: 10,
+                  background: pair.trade_levels.objetivo_alcanzable ? "#0d1a0d" : "#1a1000",
+                  border: `1px solid ${pair.trade_levels.objetivo_alcanzable ? "#2d7a2d66" : "#b8860b66"}`,
+                  color: pair.trade_levels.objetivo_alcanzable ? "#2d9c4a" : "#b8860b",
+                }}
+                title="Beneficio del TP menos comision y deslizamiento (0.5%), comparado con tu objetivo de +3.2%."
+              >
+                {pair.trade_levels.objetivo_alcanzable
+                  ? `neto +${pair.trade_levels.reward_neto_pct}% — llega a tu objetivo`
+                  : `neto +${pair.trade_levels.reward_neto_pct}% — NO llega a tu +3.2%`}
+              </div>
+            )}
             <div style={{ color: "#445", fontSize: 9, marginTop: 4 }}>{pair.trade_levels.reason}</div>
           </section>
         )}

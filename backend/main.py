@@ -163,6 +163,7 @@ async def startup():
     # 11. Purga periodica de la base de datos (rolling)
     asyncio.create_task(_prune_loop(db))
     asyncio.create_task(_universe_loop(engine, ws_mgr, db))
+    asyncio.create_task(_reparacion_velas_loop(engine, db))
 
     logger.info("=" * 60)
     logger.info(f"SACBinance v3 ACTIVO | {len(symbols)} pares | API: :{s.api_port}")
@@ -267,6 +268,45 @@ async def _universe_loop(engine, ws_mgr, db) -> None:
             await ws_mgr.update_symbols(simbolos, fijados=fijados)
         except Exception as e:
             logger.warning(f"universe_loop error: {e}")
+
+
+async def _reparacion_velas_loop(engine, db) -> None:
+    """
+    Rellena por REST las velas de 1m que el WebSocket no trajo.
+
+    Los 239 pares tenian huecos internos: 47.249 minutos-par ausentes entre su
+    primera y su ultima vela, y ninguna ventana de 24h llegaba al 98% de
+    cobertura. Un hueco no es solo ruido: cambia QUE ocurre primero, si el
+    stop o el objetivo, y los indicadores por numero de velas dejan de
+    representar minutos reales.
+
+    Se detecta por atraso — la ultima vela del par mas vieja que el umbral — y
+    se repara con el mismo hidratador del arranque, que ya descarga solo el
+    hueco desde la ultima vela guardada.
+    """
+    s = get_settings()
+    while True:
+        await asyncio.sleep(s.reparacion_velas_seconds)
+        try:
+            ahora = int(time.time() * 1000)
+            umbral = s.reparacion_velas_umbral_min * 60_000
+            atrasados = []
+            for sym, st in engine.states.items():
+                velas = st.candles
+                if not velas:
+                    atrasados.append(sym)
+                    continue
+                if ahora - velas[-1].t > umbral:
+                    atrasados.append(sym)
+            if not atrasados:
+                continue
+            logger.info(
+                f"Reparando velas: {len(atrasados)} pares con mas de "
+                f"{s.reparacion_velas_umbral_min} min sin vela"
+            )
+            await hydrate_all(atrasados, engine, db)
+        except Exception as e:
+            logger.warning(f"reparacion_velas_loop error: {e}")
 
 
 async def _db_flush_loop(db, engine=None) -> None:

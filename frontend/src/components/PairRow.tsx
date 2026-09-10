@@ -365,13 +365,18 @@ export default function PairRow({ pair, onClick, selected }: Props) {
             {alerta.dist_meta_pct != null && (
               <div
                 style={{ fontSize: 9, marginTop: 1, whiteSpace: "nowrap" }}
-                title={`Meta +3.2% = ${alerta.meta}. Probabilidad medida sobre ${alerta.prob_meta_n} casos con esta misma distancia Y esta misma edad (horizonte 6h). No es un modelo: es la frecuencia observada.`}
+                title={`FRECUENCIA HISTORICA de TOCAR +3.2% (= ${alerta.meta}) en las 6 horas siguientes, sobre ${alerta.prob_meta_n} observaciones con esta misma distancia y esta misma edad.
+
+NO es la probabilidad de ganar 3.2% neto con este plan. Tres razones: no exige llegar antes que el stop, las observaciones estan tomadas cada 5 minutos y por tanto correlacionadas (su n no son operaciones independientes), e incluye outcomes de sombra. Tabla fija, sin recalibrar.`}
               >
                 <span style={{ color: "#667" }}>
                   {alerta.dist_meta_pct <= 0
                     ? "meta hecha"
                     : `falta ${alerta.dist_meta_pct.toFixed(2)}%`}
                 </span>
+                {/* "hist" para que nadie lea este numero como una probabilidad
+                    de ganar: es cuantas veces el precio TOCO la meta en 6h. */}
+                <span style={{ marginLeft: 3, color: "#556", fontSize: 8 }}>hist</span>
                 <span
                   style={{
                     marginLeft: 4,

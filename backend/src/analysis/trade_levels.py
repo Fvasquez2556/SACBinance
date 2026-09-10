@@ -37,6 +37,7 @@ class TradeLevels:
     # riesgo × rr_target, asi que en pares tranquilos se queda corto: en la
     # muestra del 5-7 sep, el 57% ofrecia menos de +3.2%.
     objetivo_alcanzable: bool = False
+    reward_neto_pct: float = 0.0
     sl_basis: str = ""
     reason: str = ""
 
@@ -52,6 +53,7 @@ class TradeLevels:
             "atr_pct": self.atr_pct,
             "ruido_1m_pct": self.ruido_1m_pct,
             "objetivo_alcanzable": self.objetivo_alcanzable,
+            "reward_neto_pct": self.reward_neto_pct,
             "nearest_resistance": self.nearest_resistance,
             "tp_blocked_by_resistance": self.tp_blocked_by_resistance,
             "sl_basis": self.sl_basis,
@@ -197,13 +199,17 @@ def calcular_niveles(
     res.risk_pct = round(risk / entry * 100.0, 2)
     res.reward_pct = round((take_profit - entry) / entry * 100.0, 2)
     res.risk_reward = round(s.rr_target, 2)
-    res.objetivo_alcanzable = res.reward_pct >= s.objetivo_operador_pct
+    # NETO, no bruto. Cobrar un TP de +2.5% con 0.5% de costes deja +2.0%, y
+    # el objetivo del operador son +3.2%. Comparar el bruto con el objetivo
+    # hacia pasar por "alcanzable" a señales que no podian serlo.
+    res.reward_neto_pct = round(res.reward_pct - s.coste_operacion_pct, 2)
+    res.objetivo_alcanzable = res.reward_neto_pct >= s.objetivo_operador_pct
 
     aviso = " | OJO: resistencia antes del TP" if res.tp_blocked_by_resistance else ""
     res.reason = (
         f"SL: {res.sl_basis} | ATR15m={atr_pct:.2f}% | "
         + (f"ruido1m={res.ruido_1m_pct}% | " if res.ruido_1m_pct is not None else "") +
         f"riesgo={res.risk_pct}% beneficio={res.reward_pct}% "
-        f"R:R={res.risk_reward}{aviso}"
+        f"(neto {res.reward_neto_pct}%) R:R={res.risk_reward}{aviso}"
     )
     return res

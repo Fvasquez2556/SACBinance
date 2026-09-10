@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     # Cuanto tiene que cambiar el universo para que compense reconectar los dos
     # WebSockets. Por debajo de esto solo se refresca el volumen en la base.
     universe_min_churn: float = Field(default=0.05)
+    # --- Reparacion de huecos en las velas (F01) ---
+    # Los 239 pares tenian huecos internos: 47.249 minutos-par ausentes entre
+    # su primera y su ultima vela. Un hueco cambia que ocurre primero, si el
+    # SL o el TP, y ninguna ventana llegaba al 98% de cobertura.
+    reparacion_velas_seconds: int = Field(default=300)
+    reparacion_velas_umbral_min: int = Field(default=4)
 
     # --- Hidratacion historica ---
     history_days: int = Field(default=5)
@@ -156,6 +162,15 @@ class Settings(BaseSettings):
     sl_ruido_paso_1m: int = Field(default=10)       # cada cuantas velas se muestrea
     sl_ruido_mult: float = Field(default=1.0)       # margen sobre ese retroceso
     objetivo_operador_pct: float = Field(default=3.2)  # a donde apuntas tu, no el sistema
+    # Comision de ida y vuelta mas deslizamiento. El TP que ofrece el sistema
+    # es BRUTO: cobrarlo no es ganar esto. El 61.6% de las señales ofrecia
+    # menos de 3.2% ANTES de descontar nada.
+    coste_operacion_pct: float = Field(default=0.5)
+    # Si es True, una señal que no puede dar el objetivo NETO no se emite: se
+    # veta y se mide en sombra. En False solo se marca. Arranca en False
+    # porque activarlo recorta la produccion ~60% y eso es una decision, no un
+    # arreglo.
+    exigir_objetivo_operador: bool = Field(default=False)
 
     # --- Clasificacion de estado visible (filtro de contexto) ---
     # "TOCÓ FONDO" / "CONSOLIDANDO" solo si el precio esta en la zona baja del

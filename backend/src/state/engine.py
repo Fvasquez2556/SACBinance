@@ -25,6 +25,7 @@ from src.analysis.impulse import medir_impulso
 from src.analysis.outcome_tracker import OutcomeTracker
 from src.analysis.signal_tracker import abrir_senal, evaluar_senales
 from src.analysis.retroceso import detectar_retroceso
+from src.utils import procedencia
 from src.notify.telegram import (Telegram, texto_alerta, texto_bajada,
                                  texto_hito, texto_stop, texto_tp)
 from src.analysis.trade_levels import calcular_niveles
@@ -851,6 +852,20 @@ class StateEngine:
                     self._log_db(symbol, "VETO_ALERTA", f"{display} score={val} — {motivo}")
                     self._sombra_de_veto(symbol, st, val, motivo, now_ms)
 
+            # El objetivo del operador, NETO de costes. Una señal cuyo TP no
+            # llega ahi no es una señal para el: cumplirla no cumple su meta.
+            # El 61.6% de las emitidas estaba en ese caso. Va detras del resto
+            # de vetos para que se registre igual y se mida en sombra.
+            if emitir and s.exigir_objetivo_operador:
+                tl_prev = st.trade_levels or {}
+                if tl_prev.get("valid") and not tl_prev.get("objetivo_alcanzable"):
+                    emitir = False
+                    motivo = (f"el TP neto ({tl_prev.get('reward_neto_pct')}%) no "
+                              f"llega al objetivo de {s.objetivo_operador_pct}%")
+                    logger.debug(f"[{symbol}] alerta no emitida: {motivo}")
+                    self._log_db(symbol, "VETO_ALERTA", f"{display} score={val} — {motivo}")
+                    self._sombra_de_veto(symbol, st, val, motivo, now_ms)
+
             if emitir:
                 self._last_tier[symbol] = tier
                 snap = st.snapshot()
@@ -886,7 +901,10 @@ class StateEngine:
                     if alerta is not None:
                         st.alerta = alerta.to_dict()
                         snap = st.snapshot()
-                        await self._quiza_avisar(symbol, st, snap, now_ms)
+                        alerta_id = self._registrar_alerta(
+                            symbol, st, snap, tl, sig_id, now_ms)
+                        await self._quiza_avisar(symbol, st, snap, now_ms,
+                                                 alerta_id=alerta_id)
 
                 niveles_txt = ""
                 if tl.get("valid"):
@@ -1000,6 +1018,42 @@ class StateEngine:
             return
         st.flow.add_trade(t, price, qty, is_buyer_maker)
 
+    def _registrar_alerta(self, symbol: str, st, snap: dict, tl: dict,
+                          sig_id, now_ms: int):
+        """
+        Deja constancia de TODA alerta emitida, tenga fila en signals o no.
+
+        `abrir_senal` se niega a abrir una segunda señal OPEN para el mismo
+        par, pero AlertManager si emite otra alerta con niveles nuevos — y esa
+        es la que ve el operador. 2.695 de 5.002 alertas con niveles no tenian
+        fila propia, asi que auditar `signals` no era auditar lo recibido.
+        """
+        if self._db is None:
+            return None
+        try:
+            return self._db.registrar_alerta({
+                "ts_ms": now_ms,
+                "symbol": symbol,
+                "signal_id": sig_id,
+                "entry": tl.get("entry"),
+                "take_profit": tl.get("take_profit"),
+                "stop_loss": tl.get("stop_loss"),
+                "tp_pct": tl.get("reward_pct"),
+                "sl_pct": tl.get("risk_pct"),
+                "reward_neto_pct": tl.get("reward_neto_pct"),
+                "objetivo_alcanzable": 1 if tl.get("objetivo_alcanzable") else 0,
+                "tier": snap.get("tier"),
+                "score": snap.get("score"),
+                "display_state": snap.get("display_state"),
+                "senal_n": snap.get("senal_n"),
+                "telegram": "pendiente",
+                "strategy_version": procedencia.version(),
+                "config_hash": procedencia.config_hash(),
+            })
+        except Exception as e:
+            logger.debug(f"[{symbol}] registrar_alerta error: {e}")
+            return None
+
     def _sombra_de_veto(self, symbol: str, st, score: int, motivo: str,
                         now_ms: int) -> None:
         """
@@ -1038,7 +1092,7 @@ class StateEngine:
             logger.debug(f"[{symbol}] sombra de veto: {e}")
 
     async def _quiza_avisar(self, symbol: str, st, snap: dict,
-                            now_ms: int) -> None:
+                            now_ms: int, alerta_id=None) -> None:
         """Manda el aviso a Telegram si el par pasa el criterio y no repite."""
         if not self._tg.activo:
             return
@@ -1053,8 +1107,16 @@ class StateEngine:
                 snap["vol_24h"] = row.get("vol_24h") if row else None
             except Exception:
                 snap["vol_24h"] = None
+        def _anotar(estado, detalle=""):
+            if alerta_id and self._db is not None:
+                try:
+                    self._db.marcar_telegram(alerta_id, estado, detalle)
+                except Exception:
+                    pass
+
         ok, motivo = _merece_aviso(snap, st.retroceso or {}, s)
         if not ok:
+            _anotar("no_procede", motivo)
             # A nivel INFO a proposito: sin ver el motivo, un telefono callado
             # es indistinguible de un sistema roto, y la unica reaccion posible
             # es desconfiar de todo.
@@ -1063,6 +1125,7 @@ class StateEngine:
         ultimo = self._aviso_ultimo.get(symbol, 0)
         if now_ms - ultimo < s.aviso_cooldown_min * 60_000:
             logger.debug(f"[{symbol}] sin aviso: en cooldown")
+            _anotar("no_procede", "en cooldown")
             return
         self._aviso_ultimo[symbol] = now_ms
         self._tg.olvidar(symbol)     # aviso nuevo = hilo nuevo que editar
@@ -1070,8 +1133,10 @@ class StateEngine:
             await self._tg.avisar(symbol, texto_alerta(
                 symbol, st.alerta, st.retroceso, st.sr_levels))
             logger.info(f"[{symbol}] AVISO enviado a Telegram")
+            _anotar("enviado")
         except Exception as e:
             logger.warning(f"[{symbol}] aviso fallo: {e}")
+            _anotar("fallo", f"{type(e).__name__}: {e}")
 
     # --- Snapshot -------------------------------------------------------------
 

@@ -45,6 +45,10 @@ Supuestos, todos conservadores
   regalarse operaciones.
 - Si una vela contiene a la vez el stop y el take profit, se cuenta como
   parada, por lo mismo.
+- En la vela de ENTRADA no se concede el objetivo. Su maximo pudo ocurrir
+  ANTES de que la orden se llenara: una vela que recorre 104 -> 106 -> 99 ->
+  100 con la compra en 100 tiene su techo en un momento en que todavia no
+  habia posicion. Se marca `hoyo_ambiguo` y se espera a la siguiente vela.
 
 Esto NO decide nada. Ninguna alerta, ningun score, ningun veto lee estos
 campos. Solo escribe en `outcomes` para poder validarlo contra dias que
@@ -105,6 +109,7 @@ def campos_memoria() -> dict:
     """Las columnas que arrancan a None en la fila en memoria."""
     campos = {
         "ms_hoyo": None, "hoyo_fill": None, "hoyo_celda": None,
+        "hoyo_ambiguo": None,
         "hoyo_mfe_pct": None, "hoyo_mae_pct": None,
         "ms_hoyo_mfe": None, "ms_hoyo_mae": None,
         "precio_ultimo": None,
@@ -140,7 +145,22 @@ def actualizar(row: dict, cambios: dict, transcurrido: int,
             transcurrido, row.get("sl_pct"))
         row["hoyo_mfe_pct"] = cambios["hoyo_mfe_pct"] = 0.0
         row["hoyo_mae_pct"] = cambios["hoyo_mae_pct"] = 0.0
-        # No se hace return: la misma vela de entrada puede llevarse el stop.
+        # ¿Esta vela habria dado el objetivo? Si es que si, no se puede saber
+        # si el maximo llego antes o despues del fill. Se anota la ambiguedad
+        # y NO se concede.
+        tp0 = row.get("take_profit")
+        if tp0 and high >= tp0:
+            row["hoyo_ambiguo"] = cambios["hoyo_ambiguo"] = 1
+        else:
+            row["hoyo_ambiguo"] = cambios["hoyo_ambiguo"] = 0
+        # El stop SI se aplica en esta vela: es el supuesto pesimista.
+        fill0 = row["hoyo_fill"]
+        niveles0 = _stops(fill0, row.get("sl_pct"))
+        for regla0, stop0 in niveles0.items():
+            if low <= stop0:
+                row[f"hoyo_{regla0}"] = cambios[f"hoyo_{regla0}"] = RESUELTO_SL
+                row[f"ms_hoyo_{regla0}"] = cambios[f"ms_hoyo_{regla0}"] = transcurrido
+        return   # el objetivo espera a la siguiente vela
 
     fill = row.get("hoyo_fill")
     if not fill:
