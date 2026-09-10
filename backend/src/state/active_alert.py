@@ -131,6 +131,45 @@ def _escalones_bajada() -> List[float]:
     return sorted(out)
 
 
+def _marcar_ya_avisados(a) -> int:
+    """
+    Marca como ya avisados los escalones e hitos que la alerta cruzo ANTES del
+    reinicio. Devuelve cuantos se han silenciado.
+
+    Los conjuntos `bajadas_avisadas` y `hitos_avisados` viven solo en memoria,
+    asi que al rehidratar vuelven vacios y la alerta cree que nunca ha avisado
+    de nada: vuelve a disparar de golpe todos los niveles que ya habia cruzado.
+    El 10-sep, tras una parada de 1h55m, salieron quince mensajes en veinte
+    segundos avisando de bajadas de hacia cinco horas.
+
+    No hace falta guardar nada nuevo: el camino ya recorrido esta en el MFE y
+    el MAE que la propia fila de `outcomes` trae. Si el peor momento fue -2.5%,
+    los escalones de -0.4, -0.9 y -1.8 estan cruzados por definicion.
+
+    Se silencian tambien los que se cruzaron mientras el sistema estaba caido.
+    Es deliberado: avisar a las 03:12 de que una moneda "acaba de llegar" a
+    +3.2% cuando llego a la 01:41 es peor que no avisar, porque invita a actuar
+    sobre un precio que ya no existe. El hito sigue viendose en el tablero.
+    """
+    ya = 0
+    for niv in _escalones_bajada():
+        if a.mae_pct <= -niv and niv not in a.bajadas_avisadas:
+            a.bajadas_avisadas.add(niv)
+            ya += 1
+    # LLEGO se mide sobre el entry propio, y tras rehidratar `entry_primera`
+    # no existe, asi que SUPERA se mide sobre el mismo entry: el MFE cubre los
+    # dos casos.
+    if a.mfe_pct >= META_PCT and "LLEGO" not in a.hitos_avisados:
+        a.hitos_avisados.add("LLEGO")
+        ya += 1
+    if a.mfe_pct >= SUPERA_PCT and "SUPERO" not in a.hitos_avisados:
+        a.hitos_avisados.add("SUPERO")
+        ya += 1
+    a.bajadas_nuevas.clear()
+    a.hitos_nuevos.clear()
+    return ya
+
+
 @dataclass
 class AlertaActiva:
     symbol: str
@@ -327,6 +366,7 @@ class AlertManager:
 
         limite = s.seguimiento_horas * 3600_000
         n = 0
+        silenciados = 0
         for o in sorted(abiertos, key=lambda r: r.get("ts_open") or 0):
             ts = o.get("ts_open") or 0
             entry = o.get("entry")
@@ -361,11 +401,17 @@ class AlertManager:
             )
             a.estado = (ESTADO_CUMPLIDA if a.mfe_pct >= META_PCT
                         else ESTADO_RETROCESO)
+            silenciados += _marcar_ya_avisados(a)
             self._activas[sym] = a
             n += 1
         if n:
             logger.info(f"Alertas devueltas al tablero tras el reinicio: {n} "
                         f"(todas en seguimiento, no accionables)")
+        if silenciados:
+            logger.info(
+                f"Avisos NO repetidos tras el reinicio: {silenciados} escalones e "
+                f"hitos que ya se habian cruzado antes de la parada"
+            )
         return n
 
     # --- Consulta ---------------------------------------------------------
