@@ -89,6 +89,13 @@ async def startup():
     for sym in symbols:
         db.upsert_pair_meta(sym, volumes.get(sym, 0.0))
 
+    # 2b. Procedencia: que codigo y que configuracion producen las filas de hoy.
+    # Sin esto, un cambio de umbral y un cambio de mercado son indistinguibles
+    # al leer la tabla semanas despues.
+    from src.utils import procedencia
+    ver, chash = procedencia.inicializar(s)
+    logger.info(f"Version de estrategia: {ver} | hash de configuracion: {chash}")
+
     # 3. Engine
     engine = StateEngine(emit=broadcast)
     engine.set_db(db)
@@ -148,7 +155,7 @@ async def startup():
     asyncio.create_task(_shortlist_loop(engine, ws_mgr))
 
     # 9. Volcado periodico de la escritura diferida a SQLite
-    asyncio.create_task(_db_flush_loop(db))
+    asyncio.create_task(_db_flush_loop(db, engine))
 
     # 10. Broadcast periodico al frontend
     asyncio.create_task(broadcast_loop(engine, interval=2.0))
@@ -215,12 +222,23 @@ async def _shortlist_loop(engine, ws_mgr) -> None:
                 top.append(s.btc_symbol)
             if top:
                 await ws_mgr.update_shortlist(top)
+                # El engine necesita saber quien tiene flujo para poder
+                # distinguir "sin compradores" de "sin suscripcion".
+                engine.set_shortlist(top)
         except Exception as e:
             logger.debug(f"shortlist_loop error: {e}")
 
 
-async def _db_flush_loop(db) -> None:
-    """Volcado periodico de klines/estados encolados (escritura diferida)."""
+async def _db_flush_loop(db, engine=None) -> None:
+    """
+    Volcado periodico de klines/estados encolados, y cierre de los outcomes
+    cuya ventana caduco.
+
+    El cierre va aqui y no en el camino de la vela a proposito: antes dependia
+    de que llegara una vela del par, asi que un par que salia del universo
+    dejaba su seguimiento colgado — la duracion mas larga observada fue de
+    117.92h sobre una ventana de 24.
+    """
     s = get_settings()
     while True:
         await asyncio.sleep(s.db_flush_interval)
@@ -228,6 +246,11 @@ async def _db_flush_loop(db) -> None:
             db.flush()
         except Exception as e:
             logger.debug(f"db_flush_loop error: {e}")
+        try:
+            if engine is not None and engine._outcomes is not None:
+                engine._outcomes.cerrar_vencidos(int(time.time() * 1000))
+        except Exception as e:
+            logger.debug(f"cerrar_vencidos error: {e}")
 
 
 async def _prune_loop(db) -> None:

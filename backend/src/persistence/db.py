@@ -107,6 +107,27 @@ CREATE INDEX IF NOT EXISTS idx_out_cerrado ON outcomes (cerrado, ts_open DESC);
 CREATE INDEX IF NOT EXISTS idx_out_symbol  ON outcomes (symbol, ts_open DESC);
 """
 
+# --- Arreglos de medicion (v10, auditoria del 10-sep) -----------------------
+#
+# Indicadores: `_contexto` pedia snapshot["rsi14"], "macd_hist" y "bb_position",
+# y el snapshot no tiene esas claves. El de 1m se llama rsi14_1m y los de TF
+# superior viven dentro de ind_htf[tf]. Resultado: NULL en las 2.790 filas.
+# Ahora van con el TF en el nombre, porque mezclar 1m y 15m bajo un nombre
+# generico solo cambiaria un error por otro.
+#
+# Flujo: 627 de 676 filas con contexto tenian flow_trades_30s=0 y
+# buy_ratio_30s=0.5 exacto — el valor por defecto. aggTrade solo cubre la
+# shortlist, asi que "sin datos" y "sin compradores" eran el mismo numero.
+#
+# Procedencia: sin version ni hash de configuracion no se puede separar un
+# cambio de umbral de un cambio de mercado.
+COLS_MEDICION_TEXTO = ("strategy_version", "config_hash")
+COLS_MEDICION_INT = ("flow_disponible",)
+COLS_MEDICION = (
+    "rsi14_1m",          # indicador de 1m, con su TF en el nombre
+    "rsi14_15m", "macd_hist_15m", "bb_position_15m",
+) + COLS_MEDICION_INT + COLS_MEDICION_TEXTO
+
 _CREATE_TELEGRAM_HILOS = """
 CREATE TABLE IF NOT EXISTS telegram_hilos (
     symbol     TEXT    PRIMARY KEY,
@@ -137,7 +158,13 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 #           se pueden separar las que suprimio el gate macro de las que
 #           vetaron los filtros de alerta, que son la mayoria y las que mas
 #           informacion tienen.
-SCHEMA_VERSION = 9
+#   9 -> 10: arreglos de medicion de la auditoria del 10-sep. Tres indicadores
+#           que nunca llegaban a la base porque _contexto buscaba claves que no
+#           existen (rsi14/macd_hist/bb_position, NULL en 2.790 de 2.790);
+#           ausencia de flujo indistinguible de flujo neutro (92.8% con
+#           trades=0); y ninguna forma de saber que codigo y que configuracion
+#           produjeron cada fila.
+SCHEMA_VERSION = 10
 
 # --- Contexto de la senal: lo que el engine ya calcula y hasta ahora se tiraba
 #
@@ -390,6 +417,23 @@ class Database:
                     "de sombra anteriores quedan marcadas GATE_MACRO"
                 )
 
+        if version < 10:
+            cols = [r[1] for r in self._conn.execute("PRAGMA table_info(outcomes)")]
+            nuevas = [c for c in COLS_MEDICION if c not in cols]
+            for col in nuevas:
+                if col in COLS_MEDICION_TEXTO:
+                    tipo = "TEXT"
+                elif col in COLS_MEDICION_INT:
+                    tipo = "INTEGER"
+                else:
+                    tipo = "REAL"
+                self._conn.execute(f"ALTER TABLE outcomes ADD COLUMN {col} {tipo}")
+            if nuevas:
+                logger.info(
+                    f"Migracion v9->10: {len(nuevas)} columnas de medicion "
+                    f"añadidas (indicadores por TF, cobertura de flujo, procedencia)"
+                )
+
         self._conn.execute(
             "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('version', ?)",
             (str(SCHEMA_VERSION),),
@@ -609,7 +653,21 @@ class Database:
         expired = by_status.get("EXPIRED", {}).get("count", 0)
         open_n = by_status.get("OPEN", {}).get("count", 0)
         closed = tp + sl + expired
+        # `win_rate` es TP/(TP+SL+EXPIRED) y se ha estado leyendo como "cuantas
+        # ganan dinero". No lo es: 207 de las 409 EXPIRED acabaron en positivo
+        # y cuentan aqui como fallo. Se conserva el nombre para no romper el
+        # frontend, pero al lado van las dos metricas que responden de verdad.
         win_rate = (tp / closed * 100.0) if closed else 0.0
+        cur3 = self._conn.execute(
+            "SELECT COUNT(*) FROM signals WHERE status IN ('TP','SL','EXPIRED') "
+            "AND result_pct > 0"
+        )
+        en_positivo = cur3.fetchone()[0] or 0
+        cur4 = self._conn.execute(
+            "SELECT COUNT(*) FROM signals WHERE status IN ('TP','SL','EXPIRED') "
+            "AND result_pct >= 3.2"
+        )
+        sobre_meta = cur4.fetchone()[0] or 0
 
         cur2 = self._conn.execute(
             "SELECT AVG(result_pct) FROM signals WHERE status IN ('TP','SL','EXPIRED')"
@@ -623,8 +681,17 @@ class Database:
             "tp": tp,
             "sl": sl,
             "expired": expired,
+            # tasa de tocar el TP antes que el SL (lo que siempre fue)
             "win_rate": round(win_rate, 1),
+            # las dos que de verdad interesan, y no son la misma
+            "pct_en_positivo": round(100.0 * en_positivo / closed, 1) if closed else 0.0,
+            "pct_sobre_meta": round(100.0 * sobre_meta / closed, 1) if closed else 0.0,
+            "expired_en_positivo": self._conn.execute(
+                "SELECT COUNT(*) FROM signals WHERE status='EXPIRED' AND result_pct>0"
+            ).fetchone()[0] or 0,
             "avg_result_pct": round(avg_result, 2),
+            "nota": "win_rate = TP antes que SL, en BRUTO. No incluye comision "
+                    "ni deslizamiento, y las EXPIRED positivas cuentan como fallo.",
         }
 
     def get_recent_signals(self, limit: int = 50) -> List[dict]:

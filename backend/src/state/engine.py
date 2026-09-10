@@ -263,14 +263,30 @@ class StateEngine:
         self._outcomes.cargar()
 
 
+    def set_shortlist(self, symbols) -> None:
+        """
+        Los pares suscritos a aggTrade en este momento.
+
+        El flujo (buy_ratio_30s, flow_trades_30s) solo se alimenta para la
+        shortlist. Sin saber quien esta dentro, un cero de trades puede
+        significar "nadie compro" o "nunca miramos": el 92.8% de las filas con
+        contexto tenian trades=0 y buy_ratio=0.5 exacto, que es el valor
+        inicial de un flujo que jamas se actualizo.
+        """
+        self._shortlist = set(symbols or ())
+
     def _con_liquidez(self, symbol: str, st, snap: dict) -> dict:
         """
         Añade al snapshot la liquidez del par: volumen 24h y volumen medio por
         minuto de las ultimas velas. Las metricas de impulso son todas ratios,
         y un ratio no distingue "2x sobre 1.200 USDT/min" de "2x sobre 40.000".
         Guardarlo permite cruzar liquidez contra resultado en el informe.
+
+        Y marca si el par tenia flujo disponible, para poder separar el cero
+        real del cero por falta de suscripcion.
         """
         snap = dict(snap)
+        snap["flow_disponible"] = symbol in getattr(self, "_shortlist", ())
         try:
             if self._db is not None:
                 row = self._db.get_pair_meta(symbol)

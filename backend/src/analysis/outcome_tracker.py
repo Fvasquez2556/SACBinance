@@ -33,6 +33,7 @@ from typing import Dict, List, Optional
 
 from src.analysis import hoyo
 from src.config.settings import get_settings
+from src.utils import procedencia
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -93,6 +94,7 @@ def _contexto(snapshot: dict, trade_levels: dict) -> dict:
     sr = snapshot.get("sr_levels") or {}
     cons = snapshot.get("consolidation") or {}
     ind = snapshot.get("ind_htf") or {}
+    htf15 = (ind.get("15m") or {}) if isinstance(ind, dict) else {}
     return {
         "pos_en_rango": snapshot.get("pos_en_rango"),
         "dist_soporte_pct": sr.get("dist_soporte_pct"),
@@ -110,10 +112,22 @@ def _contexto(snapshot: dict, trade_levels: dict) -> dict:
         "vol_ratio": snapshot.get("vol_ratio"),
         "buy_ratio_30s": snapshot.get("buy_ratio_30s"),
         "flow_trades_30s": snapshot.get("flow_trades_30s"),
+        # 1 si el par estaba suscrito a aggTrade, 0 si no. Sin esto, "no habia
+        # compradores" y "no habia datos" son el mismo 0: el 92.8% de las filas
+        # con contexto tenian trades=0 y buy_ratio=0.5 exacto, que es el valor
+        # por defecto de un flujo que nunca se actualizo.
+        "flow_disponible": 1 if snapshot.get("flow_disponible") else 0,
         "rsi5": snapshot.get("rsi5"),
-        "rsi14": snapshot.get("rsi14") or ind.get("rsi14"),
-        "macd_hist": snapshot.get("macd_hist"),
-        "bb_position": snapshot.get("bb_position"),
+        # Con el TF en el nombre. Antes se pedia snapshot["rsi14"],
+        # snapshot["macd_hist"] y snapshot["bb_position"], y el snapshot no
+        # tiene esas claves: el de 1m se llama rsi14_1m y los de TF superior
+        # viven en ind_htf[tf]. Las tres columnas salieron NULL en las 2.790
+        # filas, y con ellas se fue la posibilidad de saber si esos
+        # indicadores ayudan a elegir.
+        "rsi14_1m": snapshot.get("rsi14_1m"),
+        "rsi14_15m": htf15.get("rsi14"),
+        "macd_hist_15m": htf15.get("macd_hist"),
+        "bb_position_15m": htf15.get("bb_position"),
         "fase_impulso": imp.get("fase"),
         "fuerza_impulso": imp.get("fuerza"),
         "consumido_pct": imp.get("consumido_pct"),
@@ -361,6 +375,8 @@ class OutcomeTracker:
             "vol_1m_medio": snapshot.get("vol_1m_medio"),
         }
         row.update(_contexto(snapshot, trade_levels))
+        row["strategy_version"] = procedencia.version()
+        row["config_hash"] = procedencia.config_hash()
         row.update(hoyo.inicial(sl))
         try:
             if not self._db.abrir_outcome(row):
@@ -386,6 +402,44 @@ class OutcomeTracker:
         row.update(hoyo.campos_memoria())
         self._registrar_memoria(row)
 
+    def cerrar_vencidos(self, now_ms: int) -> int:
+        """
+        Cierra los outcomes cuya ventana caduco, aunque no lleguen mas velas.
+
+        Antes el cierre dependia de que llegara una vela del par. Si el par
+        salia del universo o se cortaba su stream, el seguimiento quedaba
+        colgado indefinidamente: la duracion mas larga observada fue de 117.92
+        horas sobre una ventana nominal de 24. Ahora manda el reloj.
+
+        Se llama desde el bucle de volcado, no desde el camino de la vela.
+        """
+        if self._db is None:
+            return 0
+        ventana_ms = get_settings().outcome_window_hours * 3600_000
+        dip_umbral = get_settings().forma_dip_umbral
+        n = 0
+        for sid, row in list(self._abiertos.items()):
+            if now_ms - row["ts_open"] < ventana_ms:
+                continue
+            row["forma"] = _clasificar_forma(row, dip_umbral)
+            row["cerrado"] = 1
+            try:
+                self._db.guardar_outcome(sid, {"forma": row["forma"], "cerrado": 1})
+            except Exception as e:
+                logger.debug(f"[{row['symbol']}] cerrar vencido: {e}")
+            self._abiertos.pop(sid, None)
+            ids = self._por_symbol.get(row["symbol"])
+            if ids and sid in ids:
+                ids.remove(sid)
+                if not ids:
+                    self._por_symbol.pop(row["symbol"], None)
+            if sid < 0:
+                self._sombra_activa.discard(row["symbol"])
+            n += 1
+        if n:
+            logger.info(f"Outcomes cerrados por fin de ventana sin velas: {n}")
+        return n
+
     # --- Actualizacion por vela -----------------------------------------
 
     def on_candle(self, symbol: str, ts: int, high: float, low: float,
@@ -410,6 +464,34 @@ class OutcomeTracker:
 
             entry = row["entry"]
             transcurrido = ts - row["ts_open"]
+
+            # Una vela que abrio ANTES de la emision no es parte del camino de
+            # esta señal: su maximo y su minimo son de un precio que el sistema
+            # todavia no habia propuesto. Contarla producia tiempos negativos
+            # —97 filas los tenian— y metia en el MFE/MAE movimiento previo.
+            if transcurrido < 0:
+                continue
+
+            # Y una posterior al cierre de la ventana tampoco. Habia 33 filas
+            # con eventos mas alla de las 24h y una de 117.92h: movimiento de
+            # dias despues atribuido a la señal.
+            if transcurrido > ventana_ms:
+                if not row.get("cerrado"):
+                    row["forma"] = _clasificar_forma(row, dip_umbral)
+                    row["cerrado"] = 1
+                    try:
+                        self._db.guardar_outcome(
+                            sid, {"forma": row["forma"], "cerrado": 1})
+                    except Exception as e:
+                        logger.debug(f"[{symbol}] cerrar fuera de ventana: {e}")
+                    cerrados.append(dict(row))
+                self._abiertos.pop(sid, None)
+                if sid in ids:
+                    ids.remove(sid)
+                if sid < 0:
+                    self._sombra_activa.discard(symbol)
+                continue
+
             cambios: dict = {"ts_last": ts, "n_velas": row["n_velas"] + 1}
             row["n_velas"] += 1
             row["ts_last"] = ts
