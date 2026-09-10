@@ -27,6 +27,10 @@ _PREFIJOS_DECISION = (
     "sl_", "tp_", "min_risk", "max_risk", "objetivo_", "retroceso_", "retro_",
     "sr_", "impulso_", "consumido", "fakeout_", "shortlist_", "min_volume",
     "seguimiento_", "hoyo_", "outcome_window", "forma_dip",
+    # El universo decide QUE pares pueden dar señal, asi que es una decision
+    # como cualquier otra. Se añadio al descubrir que el hash no cambiaba
+    # despues de arreglar el filtro de apalancados.
+    "universe_", "max_pairs",
 )
 
 
