@@ -24,6 +24,7 @@ from src.analysis.scoring import score_and_tier
 from src.analysis.impulse import medir_impulso
 from src.analysis.outcome_tracker import OutcomeTracker
 from src.analysis.signal_tracker import abrir_senal, evaluar_senales
+from src.analysis import grupos
 from src.analysis.retroceso import detectar_retroceso
 from src.utils import procedencia
 from src.notify.telegram import (Telegram, texto_alerta, texto_bajada,
@@ -308,6 +309,13 @@ class StateEngine:
         """
         snap = dict(snap)
         snap["flow_disponible"] = symbol in getattr(self, "_shortlist", ())
+        # Volatilidad de la hora previa, para agrupar la moneda al medirla.
+        # Va aqui y no en `snapshot()` porque este helper solo alimenta la
+        # MEDICION: ni el score, ni los niveles, ni el veto la ven.
+        try:
+            snap["vol_previa_pct"] = grupos.volatilidad_previa(st.candles)
+        except Exception:
+            snap["vol_previa_pct"] = None
         try:
             if self._db is not None:
                 row = self._db.get_pair_meta(symbol)

@@ -167,6 +167,15 @@ CREATE INDEX IF NOT EXISTS idx_alertas_sym ON alertas_emitidas (symbol, ts_ms DE
 COLS_V11_INT = ("objetivo_alcanzable", "hoyo_ambiguo")
 COLS_V11 = ("reward_neto_pct", "cobertura_velas") + COLS_V11_INT
 
+# v12 — objetivo por grupo de moneda, EN SOMBRA. No decide nada: mide si un
+# objetivo escalado a lo que la moneda se mueve de verdad habria funcionado
+# mejor que el 3.2% fijo. `vol_previa_pct` se guarda cruda a proposito, para
+# poder reagrupar el historico despues sin volver a desplegar. Ver
+# src/analysis/grupos.py.
+COLS_V12_TEXTO = ("grupo_vol",)
+COLS_V12_INT = ("ms_objetivo_grupo",)
+COLS_V12 = ("vol_previa_pct", "objetivo_grupo_pct") + COLS_V12_TEXTO + COLS_V12_INT
+
 _CREATE_TELEGRAM_HILOS = """
 CREATE TABLE IF NOT EXISTS telegram_hilos (
     symbol     TEXT    PRIMARY KEY,
@@ -208,7 +217,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 #           poder excluir las incompletas (F01); ambiguedad intravela de la
 #           sombra del hoyo (F05); y la tabla alertas_emitidas, porque 2.695 de
 #           5.002 alertas con niveles no tenian fila propia en signals (F04).
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 # --- Contexto de la senal: lo que el engine ya calcula y hasta ahora se tiraba
 #
@@ -489,6 +498,23 @@ class Database:
                 logger.info(
                     f"Migracion v10->11: {len(nuevas)} columnas nuevas en outcomes "
                     f"y tabla alertas_emitidas"
+                )
+
+        if version < 12:
+            cols = [r[1] for r in self._conn.execute("PRAGMA table_info(outcomes)")]
+            nuevas = [c for c in COLS_V12 if c not in cols]
+            for col in nuevas:
+                if col in COLS_V12_TEXTO:
+                    tipo = "TEXT"
+                elif col in COLS_V12_INT:
+                    tipo = "INTEGER"
+                else:
+                    tipo = "REAL"
+                self._conn.execute(f"ALTER TABLE outcomes ADD COLUMN {col} {tipo}")
+            if nuevas:
+                logger.info(
+                    f"Migracion v11->12: {len(nuevas)} columnas de sombra para el "
+                    f"objetivo por grupo de moneda (no cambia ninguna emision)"
                 )
 
         self._conn.execute(

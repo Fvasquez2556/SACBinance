@@ -31,7 +31,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from src.analysis import hoyo
+from src.analysis import grupos, hoyo
 from src.config.settings import get_settings
 from src.utils import procedencia
 from src.utils.logger import get_logger
@@ -392,6 +392,10 @@ class OutcomeTracker:
             "reward_neto_pct": trade_levels.get("reward_neto_pct"),
             "objetivo_alcanzable": 1 if trade_levels.get("objetivo_alcanzable") else 0,
         }
+        # Objetivo por grupo de moneda, EN SOMBRA: se guarda cual le tocaria y
+        # luego se mide si lo alcanza. No cambia el TP ofrecido ni nada de lo
+        # que el sistema decide. Ver src/analysis/grupos.py.
+        row.update(grupos.campos(snapshot.get("vol_previa_pct")))
         row.update(_contexto(snapshot, trade_levels))
         row["strategy_version"] = procedencia.version()
         row["config_hash"] = procedencia.config_hash()
@@ -414,6 +418,10 @@ class OutcomeTracker:
             row[f"ms_up_{_SUFIJO[u]}"] = None
             row[f"ms_dn_{_SUFIJO[u]}"] = None
         row["ms_tp"] = row["ms_sl"] = None
+        # Igual que el resto de la escalera: la fila en memoria arranca con
+        # TODAS las columnas de cruce a None. Si no, leerlas antes del primer
+        # cruce revienta con KeyError en vez de decir "todavia no".
+        row["ms_objetivo_grupo"] = None
         row["ms_mfe"] = row["ms_mae"] = None
         row["dip_antes_obj"] = None
         row["forma"] = None
@@ -558,6 +566,12 @@ class OutcomeTracker:
                 k_dn = f"ms_dn_{suf}"
                 if row.get(k_dn) is None and dn_pct <= -u:
                     row[k_dn] = cambios[k_dn] = transcurrido
+
+            # --- Objetivo por grupo (sombra) ---
+            # Mismo criterio que la escalera: primer cruce, y ya no se toca.
+            obj_grupo = row.get("objetivo_grupo_pct")
+            if obj_grupo and row.get("ms_objetivo_grupo") is None and up_pct >= obj_grupo:
+                row["ms_objetivo_grupo"] = cambios["ms_objetivo_grupo"] = transcurrido
 
             # --- TP / SL ofrecidos por el sistema ---
             tp, sl = row.get("take_profit"), row.get("stop_loss")
