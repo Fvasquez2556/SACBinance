@@ -22,6 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.websockets import WebSocket
 
+from src.analysis.signal_tracker import cerrar_vencidas
 from src.api.routes import router, set_engine
 from src.api.ws_server import broadcast, broadcast_loop, set_engine as ws_set_engine, ws_endpoint
 from src.config.settings import get_settings
@@ -386,6 +387,11 @@ async def _db_flush_loop(db, engine=None) -> None:
     de que llegara una vela del par, asi que un par que salia del universo
     dejaba su seguimiento colgado — la duracion mas larga observada fue de
     117.92h sobre una ventana de 24.
+
+    Lo mismo vale para las SEÑALES, que se quedaron fuera de aquel arreglo: su
+    caducidad solo se miraba al llegar una vela del par. El 11-sep habia 24
+    señales OPEN de mas de 12h con `signal_expiry_hours=12`, y la mas vieja
+    llevaba 155.7 horas. Ahora las dos tablas tienen el mismo reloj.
     """
     s = get_settings()
     while True:
@@ -394,11 +400,16 @@ async def _db_flush_loop(db, engine=None) -> None:
             db.flush()
         except Exception as e:
             logger.debug(f"db_flush_loop error: {e}")
+        ahora_ms = int(time.time() * 1000)
         try:
             if engine is not None and engine._outcomes is not None:
-                engine._outcomes.cerrar_vencidos(int(time.time() * 1000))
+                engine._outcomes.cerrar_vencidos(ahora_ms)
         except Exception as e:
             logger.debug(f"cerrar_vencidos error: {e}")
+        try:
+            cerrar_vencidas(db, ahora_ms)
+        except Exception as e:
+            logger.debug(f"cerrar_vencidas (señales) error: {e}")
 
 
 async def _prune_loop(db) -> None:

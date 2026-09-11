@@ -58,6 +58,10 @@ CREATE TABLE IF NOT EXISTS klines (
     o REAL, h REAL, l REAL, c REAL, v REAL,
     PRIMARY KEY (symbol, tf, open_time)
 );
+-- La purga filtra por (tf, open_time) sin symbol, y la clave primaria empieza
+-- por symbol: sin este indice el borrado horario recorre la tabla entera. Con
+-- 3 dias de retencion daba igual; con 30 la tabla crece ~10x y deja de darlo.
+CREATE INDEX IF NOT EXISTS idx_klines_tf_time ON klines (tf, open_time);
 """
 
 _CREATE_OUTCOMES = """
@@ -958,6 +962,26 @@ class Database:
             for r in rows
         ]
 
+    def kline_en(self, symbol: str, tf: str, ts_ms: int) -> Optional[dict]:
+        """
+        La ultima vela cerrada en o antes de `ts_ms`. None si no hay ninguna.
+
+        Se usa para poner precio de salida a una señal que caduca por reloj: sin
+        esto habria que inventarlo con el precio de hoy, que es justamente el
+        error que la comprobacion de caducidad evita al mirar la edad primero.
+        """
+        cur = self._conn.execute(
+            """SELECT open_time, o, h, l, c FROM klines
+               WHERE symbol = ? AND tf = ? AND open_time <= ?
+               ORDER BY open_time DESC LIMIT 1""",
+            (symbol, tf, ts_ms),
+        )
+        row = cur.fetchone()
+        if row is None:
+            return None
+        return {"open_time": row[0], "o": row[1], "h": row[2],
+                "l": row[3], "c": row[4]}
+
     def last_kline_time(self, symbol: str, tf: str) -> Optional[int]:
         """open_time de la vela mas reciente guardada (None si no hay)."""
         cur = self._conn.execute(
@@ -968,10 +992,18 @@ class Database:
         return row[0] if row and row[0] is not None else None
 
     def prune_klines(self) -> int:
-        """Purga klines viejas: 1m/5m/15m a corto plazo, 1h/4h/1d a largo plazo."""
+        """
+        Purga klines viejas. La retencion la fija la configuracion, no el codigo.
+
+        Antes eran 3 dias clavados para 1m/5m/15m, y ese numero era el techo de
+        todo lo que se podia reconstruir despues: de 2.985 outcomes con ventana
+        de 8h ya vencida, ninguno conservaba todas sus velas. La evidencia se
+        borraba antes que el resultado que tenia que explicar.
+        """
+        s = get_settings()
         now = time.time()
-        cortos = int((now - 3 * 86400) * 1000)     # 1m/5m/15m: 3 dias
-        largos = int((now - 400 * 86400) * 1000)   # 1h/4h/1d: ~13 meses
+        cortos = int((now - s.klines_1m_retention_days * 86400) * 1000)
+        largos = int((now - s.klines_htf_retention_days * 86400) * 1000)
         c1 = self._conn.execute(
             "DELETE FROM klines WHERE tf IN ('1m','5m','15m') AND open_time < ?", (cortos,)
         )
@@ -979,7 +1011,14 @@ class Database:
             "DELETE FROM klines WHERE tf IN ('1h','4h','1d') AND open_time < ?", (largos,)
         )
         self._conn.commit()
-        return c1.rowcount + c2.rowcount
+        borradas = c1.rowcount + c2.rowcount
+        if borradas:
+            logger.info(
+                f"Purga de velas: {borradas} borradas "
+                f"(1m/5m/15m > {s.klines_1m_retention_days}d, "
+                f"1h/4h/1d > {s.klines_htf_retention_days}d)"
+            )
+        return borradas
 
     def close(self) -> None:
         """Vuelca lo pendiente antes de cerrar: con escritura diferida, cerrar

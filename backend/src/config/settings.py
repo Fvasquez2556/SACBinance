@@ -98,6 +98,21 @@ class Settings(BaseSettings):
     history_rolling_days: int = Field(default=30)     # retencion de symbol_states
     log_retention_days: int = Field(default=14)       # retencion de analysis_log
     prune_interval_minutes: int = Field(default=60)   # cada cuanto se purga
+    # --- Retencion de velas ---
+    # Estaba clavada a 3 dias para 1m/5m/15m, y esos 3 dias eran el techo de
+    # todo lo que se puede reconstruir despues. La revision del 11-sep lo
+    # midio: de 2.985 outcomes con ventana de 8h ya vencida, NINGUNO conservaba
+    # todas sus velas de 1m, y 1.720 no conservaban ninguna.
+    #
+    # Lo que hay que poder reconstruir marca el minimo: la ventana de
+    # evaluacion mas larga (24h) mas el calentamiento de features que la
+    # precede (500 velas de 1m = 8.3h) mas margen. Con eso, 3 dias no llegan ni
+    # para una sola cohorte, y para calibrar hacen falta varias.
+    #
+    # El coste es barato: ~283.000 velas de 1m al dia sobre 266 pares, que en
+    # disco son unos 17 MB diarios. 30 dias son ~500 MB.
+    klines_1m_retention_days: int = Field(default=30)
+    klines_htf_retention_days: int = Field(default=400)   # 1h/4h/1d, ~13 meses
 
     # --- Estadistica adaptativa (hereda de v2) ---
     ewma_alpha: float = Field(default=0.05)

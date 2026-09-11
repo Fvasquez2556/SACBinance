@@ -147,3 +147,87 @@ def evaluar_senales(symbol: str, high: float, low: float, close: float, db) -> L
         cerradas.append({**sig, "status": status, "result_pct": result_pct})
 
     return cerradas
+
+
+def cerrar_vencidas(db, now_ms: Optional[int] = None,
+                    margen_min: int = 15) -> dict:
+    """
+    Cierra por RELOJ las señales caducadas, lleguen velas o no.
+
+    Por que hace falta, si la caducidad ya se comprueba
+    ---------------------------------------------------
+    Se comprueba dentro de `evaluar_senales()`, que solo corre cuando llega una
+    vela DE ESE PAR. Si el par sale del universo, se le corta el stream o deja
+    de operarse, la señal no vuelve a mirarse nunca: el 11-sep habia 24 señales
+    OPEN de mas de 12h con `signal_expiry_hours=12`, y la mas vieja llevaba
+    155.7 horas. Es el mismo fallo que tenian los outcomes, en la tabla que no
+    se toco entonces; ahora manda el reloj, igual que en
+    `OutcomeTracker.cerrar_vencidos()`.
+
+    De donde sale el precio de salida
+    ---------------------------------
+    De la ultima vela guardada en o antes del vencimiento — NO del precio de
+    hoy. Calificar una señal de hace seis dias contra el precio actual es lo
+    que inflaba el win rate con ruido, y es la razon de que la edad se mire
+    antes que TP/SL.
+
+    Si esa vela esta a mas de `margen_min` minutos del vencimiento, no se sabe
+    a que precio estaba el par cuando caduco: la señal se cierra STALE y sin
+    resultado, que es lo que las estadisticas ya ignoran. Inventar un numero
+    seria peor que no tenerlo.
+
+    Se llama desde el bucle de volcado, no desde el camino de la vela.
+    """
+    if db is None:
+        return {"expired": 0, "stale": 0}
+    s = get_settings()
+    now_ms = int(time.time() * 1000) if now_ms is None else now_ms
+    expiry_ms = s.signal_expiry_hours * 3600 * 1000
+    margen_ms = margen_min * 60_000
+
+    try:
+        abiertas = db.get_open_signals()
+    except Exception as e:
+        logger.debug(f"cerrar_vencidas: no pude leer señales abiertas: {e}")
+        return {"expired": 0, "stale": 0}
+
+    n_exp = n_stale = 0
+    for sig in abiertas:
+        edad = now_ms - sig["ts_open"]
+        if edad < expiry_ms:
+            continue
+
+        entry = sig.get("entry")
+        vence_en = sig["ts_open"] + expiry_ms
+        status, exit_price = "STALE", None
+
+        # Demasiado vieja para que el sistema la siguiera: ni se intenta poner
+        # precio. Mismo criterio que `evaluar_senales`.
+        if edad < expiry_ms * 2 and entry and entry > 0:
+            try:
+                vela = db.kline_en(sig["symbol"], "1m", vence_en)
+            except Exception:
+                vela = None
+            if vela is not None and vence_en - vela["open_time"] <= margen_ms:
+                status, exit_price = "EXPIRED", vela["c"]
+
+        result_pct = (
+            None if exit_price is None or not entry
+            else round((exit_price - entry) / entry * 100.0, 3)
+        )
+        try:
+            db.close_signal(sig["id"], status, result_pct, now_ms)
+        except Exception as e:
+            logger.debug(f"[{sig['symbol']}] cerrar_vencidas: {e}")
+            continue
+        if status == "EXPIRED":
+            n_exp += 1
+        else:
+            n_stale += 1
+
+    if n_exp or n_stale:
+        logger.info(
+            f"Señales cerradas por reloj: {n_exp} EXPIRED con precio del "
+            f"vencimiento, {n_stale} STALE sin precio conocido"
+        )
+    return {"expired": n_exp, "stale": n_stale}
