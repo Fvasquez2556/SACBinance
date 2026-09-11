@@ -1,0 +1,81 @@
+{
+  "service": {
+    "ActiveState": "active",
+    "MainPID": "288127",
+    "ExecMainStartTimestamp": "Thu 2026-09-10 22:54:02 UTC",
+    "StandardOutput": "append",
+    "StandardError": "append"
+  },
+  "settings": {
+    "exigir_objetivo_operador": false,
+    "coste_operacion_pct": 0.5,
+    "objetivo_operador_pct": 3.2,
+    "universe_refresh_seconds": 3600,
+    "universe_min_churn": 0.05,
+    "reparacion_velas_seconds": 300,
+    "reparacion_velas_umbral_min": 4,
+    "outcome_window_hours": 24,
+    "shortlist_min_churn": 0.25,
+    "rr_target": 2.0,
+    "telegram_enabled": true
+  },
+  "process_cwd": "/home/flox/sacbinance/backend",
+  "status": {
+    "status": "activo",
+    "total_pairs": 224,
+    "state_distribution": {
+      "NEUTRAL": 176,
+      "SUBIENDO": 28,
+      "CAYENDO": 16,
+      "CONSOLIDANDO": 2,
+      "TOC\u00d3_FONDO": 2
+    },
+    "tier_distribution": {
+      "VIGILANCIA": 1,
+      "MODERADA": 2
+    },
+    "interesting": 3
+  },
+  "signals/stats": {
+    "total": 2325,
+    "open": 54,
+    "closed": 2271,
+    "tp": 540,
+    "sl": 1315,
+    "expired": 416,
+    "win_rate": 23.8,
+    "pct_en_positivo": 33.0,
+    "pct_sobre_meta": 7.5,
+    "expired_en_positivo": 210,
+    "avg_result_pct": -0.11,
+    "nota": "win_rate = TP antes que SL, en BRUTO. No incluye comision ni deslizamiento, y las EXPIRED positivas cuentan como fallo."
+  },
+  "log_counts": {
+    "StandardOutput": {
+      "lines": 6520,
+      "Reparando velas:": 65,
+      "Universo actualizado:": 0,
+      "Shortlist aggTrade actualizada": 126,
+      "Traceback": 0,
+      "handler error": 0,
+      "flush error": 0,
+      "outcome_tracker error": 0,
+      "Telegram sendMessage fallo": 0,
+      "Telegram sendMessage rechazado": 0,
+      "Version de estrategia:": 1
+    },
+    "StandardError": {
+      "lines": 6520,
+      "Reparando velas:": 65,
+      "Universo actualizado:": 0,
+      "Shortlist aggTrade actualizada": 126,
+      "Traceback": 0,
+      "handler error": 0,
+      "flush error": 0,
+      "outcome_tracker error": 0,
+      "Telegram sendMessage fallo": 0,
+      "Telegram sendMessage rechazado": 0,
+      "Version de estrategia:": 1
+    }
+  }
+}

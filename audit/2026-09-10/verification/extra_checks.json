@@ -1,0 +1,68 @@
+{
+  "htf_null_cases": [
+    {
+      "signal_id": 2317,
+      "symbol": "TAOUSDT",
+      "ts_open": 1789080900384,
+      "sombra": 0,
+      "rsi14_1m": 42.2
+    },
+    {
+      "signal_id": 2318,
+      "symbol": "LUNCUSDT",
+      "ts_open": 1789080900487,
+      "sombra": 0,
+      "rsi14_1m": 39.0
+    },
+    {
+      "signal_id": 2319,
+      "symbol": "KAITOUSDT",
+      "ts_open": 1789080901354,
+      "sombra": 0,
+      "rsi14_1m": 35.8
+    },
+    {
+      "signal_id": 2343,
+      "symbol": "GPSUSDT",
+      "ts_open": 1789101900206,
+      "sombra": 0,
+      "rsi14_1m": 45.5
+    }
+  ],
+  "alert_thresholds": {
+    "n": 46,
+    "below_gross": 26,
+    "below_net": 29
+  },
+  "historical_closed_missing_coverage": 2484,
+  "gap_reference": {
+    "url": "https://api.binance.com/api/v3/klines?symbol=ADAUSDT&interval=1m&startTime=1789103760000&endTime=1789103819999&limit=1",
+    "bars": [
+      [
+        1789103760000,
+        "0.21010000",
+        "0.21030000",
+        "0.21010000",
+        "0.21010000",
+        "325915.50000000",
+        1789103819999,
+        "68511.68836000",
+        187,
+        "259918.20000000",
+        "54635.75647000",
+        "0"
+      ]
+    ],
+    "present_in_snapshot": 0
+  },
+  "frontend_deployment": {
+    "git_head": "b8a3d6486fb63e62d74379e58f31b7a24d0300c9",
+    "dist_exists": true,
+    "js_assets": 1,
+    "new_historical_tooltip": false,
+    "new_net_label": false,
+    "js_mtimes": [
+      1788982232.3437128
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "scope": "Verificación de correcciones, sin modificar producción",
+  "backend_source": "b8a3d6486fb63e62d74379e58f31b7a24d0300c9",
+  "checks": {
+    "snapshot_integrity": "ok",
+    "directed_python_checks": {"total": 23, "passed": 8, "failed": 15},
+    "typescript": "tsc -b frontend/tsconfig.json --pretty false: exit 0",
+    "report_build": "Data app protected-runtime and authored-content checks pass",
+    "report_browser": "Rendered main metrics, all 14 findings across pagination, row selection F07 and matching detail, source panel and underlying 46/17/29 alert counts verified; no console errors in inspected log",
+    "production_changes": "none"
+  },
+  "limitations": [
+    "Only 6.42 hours since current backend deployment at snapshot time; no 24-hour outcomes for this version have matured.",
+    "Frontend TypeScript check is local and does not deploy its output.",
+    "Directed tests are not complete system coverage or proof of trading precision.",
+    "Logs inspected at INFO and in bounded tail; DEBUG-only errors can be absent."
+  ]
+}

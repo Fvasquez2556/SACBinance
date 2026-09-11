@@ -1,0 +1,293 @@
+{
+  "start_ms": 1789080842000,
+  "end_ms": 1789103950891,
+  "hours_post_deploy": 6.419136388888889,
+  "queries": {
+    "schema": [
+      {
+        "key": "version",
+        "value": "11"
+      }
+    ],
+    "versions": [
+      {
+        "strategy_version": null,
+        "config_hash": null,
+        "n": 2792,
+        "first": 1788580560560,
+        "last": 1789079641876,
+        "closed": 2579
+      },
+      {
+        "strategy_version": "b8a3d64",
+        "config_hash": "50d5bbbe74aa",
+        "n": 69,
+        "first": 1789080900384,
+        "last": 1789103580761,
+        "closed": 0
+      },
+      {
+        "strategy_version": "c41d477",
+        "config_hash": "816644176fa0",
+        "n": 5,
+        "first": 1789080300931,
+        "last": 1789080840268,
+        "closed": 0
+      },
+      {
+        "strategy_version": "e222b70",
+        "config_hash": "816644176fa0",
+        "n": 6,
+        "first": 1789079820258,
+        "last": 1789080181275,
+        "closed": 0
+      }
+    ],
+    "post_outcomes": [
+      {
+        "n": 69,
+        "real_n": 29,
+        "closed": 0,
+        "null_rsi1": 0,
+        "null_rsi15": 4,
+        "null_macd": 4,
+        "null_bb": 4,
+        "null_flow": 0,
+        "subscribed": 4,
+        "not_subscribed_with_trades": 0,
+        "subscribed_no_trades": 2,
+        "below_goal": 44,
+        "missing_net": 0
+      }
+    ],
+    "alerts": [
+      {
+        "n": 46,
+        "without_signal": 17,
+        "below_goal": 29,
+        "min_net": -0.22,
+        "max_net": 11.3
+      }
+    ],
+    "telegram": [
+      {
+        "telegram": "enviado",
+        "n": 2
+      },
+      {
+        "telegram": "no_procede",
+        "n": 44
+      }
+    ],
+    "post_signals": [
+      {
+        "n": 29,
+        "below_gross": 14,
+        "below_net": 15
+      }
+    ],
+    "stale": [
+      {
+        "kind": "outcomes",
+        "n": 0,
+        "age": null
+      },
+      {
+        "kind": "signals",
+        "n": 27,
+        "age": 138.26943694444444
+      }
+    ],
+    "coverage": [
+      {
+        "strategy_version": null,
+        "n": 2579,
+        "min_coverage": 0.2319,
+        "avg_coverage": 0.8992378947368421,
+        "low": 95,
+        "missing": 2484
+      }
+    ],
+    "bad_times": [
+      {
+        "negative": 0,
+        "late": 0
+      }
+    ],
+    "history_bad_times": [
+      {
+        "negative": 87,
+        "late": 104
+      }
+    ],
+    "metadata": [
+      {
+        "n": 281,
+        "oldest": 1785185085,
+        "newest": 1789102506,
+        "recent": 184
+      }
+    ],
+    "universe_examples": [
+      {
+        "symbol": "JUPUSDT",
+        "vol_24h": 4004598.56947,
+        "updated": 1789102506
+      },
+      {
+        "symbol": "SYRUPUSDT",
+        "vol_24h": 2451598.82572,
+        "updated": 1789102506
+      }
+    ],
+    "gaps_after_deploy": [
+      {
+        "symbols": 224,
+        "gaps": 2342,
+        "missing_minutes": 2344,
+        "max_gap": 2
+      }
+    ],
+    "gap_examples": [
+      {
+        "symbol": "0GUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "AAPLBUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "ACEUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "ADAUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "ADXUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "AEROUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "ALGOUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "ALLOUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "ANIMEUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "APTUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      },
+      {
+        "symbol": "ARBUSDT",
+        "open_time": 1789103820000,
+        "prev": 1789103700000,
+        "missing": 1
+      }
+    ],
+    "latest_klines": [
+      {
+        "symbols": 259,
+        "stale": 35,
+        "oldest": 1788939060000,
+        "newest": 1789103880000
+      }
+    ],
+    "post_logs": [
+      {
+        "level": "STATE",
+        "n": 3381
+      },
+      {
+        "level": "VETO_ALERTA",
+        "n": 176
+      },
+      {
+        "level": "BASE",
+        "n": 101
+      },
+      {
+        "level": "VETO",
+        "n": 65
+      },
+      {
+        "level": "SIGNAL",
+        "n": 60
+      },
+      {
+        "level": "ALERT",
+        "n": 57
+      },
+      {
+        "level": "TENDENCIA",
+        "n": 33
+      },
+      {
+        "level": "IGNICION",
+        "n": 5
+      },
+      {
+        "level": "FAKEOUT",
+        "n": 1
+      }
+    ],
+    "coverage_overcount": [],
+    "alerts_log_match": [
+      {
+        "logs": 46,
+        "recorded": 46
+      }
+    ],
+    "table_counts": [
+      {
+        "name": "signals",
+        "n": 2345
+      },
+      {
+        "name": "outcomes",
+        "n": 2872
+      },
+      {
+        "name": "alertas_emitidas",
+        "n": 46
+      }
+    ]
+  }
+}

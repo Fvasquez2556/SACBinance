@@ -1,0 +1,21 @@
+{
+  "schema": "SELECT * FROM schema_meta",
+  "versions": "SELECT strategy_version,config_hash,count(*) n,min(ts_open) first,max(ts_open) last,sum(cerrado) closed FROM outcomes GROUP BY 1,2",
+  "post_outcomes": "SELECT count(*) n,sum(sombra=0) real_n,sum(cerrado) closed,sum(rsi14_1m IS NULL) null_rsi1,sum(rsi14_15m IS NULL) null_rsi15,sum(macd_hist_15m IS NULL) null_macd,sum(bb_position_15m IS NULL) null_bb,sum(flow_disponible IS NULL) null_flow,sum(flow_disponible=1) subscribed,sum(flow_disponible=0 AND flow_trades_30s>0) not_subscribed_with_trades,sum(flow_disponible=1 AND flow_trades_30s=0) subscribed_no_trades,sum(objetivo_alcanzable=0) below_goal,sum(reward_neto_pct IS NULL) missing_net FROM outcomes WHERE ts_open>=:start",
+  "alerts": "SELECT count(*) n,sum(signal_id IS NULL) without_signal,sum(objetivo_alcanzable=0) below_goal,min(reward_neto_pct) min_net,max(reward_neto_pct) max_net FROM alertas_emitidas",
+  "telegram": "SELECT telegram,count(*) n FROM alertas_emitidas GROUP BY 1",
+  "post_signals": "SELECT count(*) n,sum((take_profit/entry-1)*100<3.2) below_gross,sum((take_profit/entry-1)*100-0.5<3.2) below_net FROM signals WHERE ts_open>=:start",
+  "stale": "SELECT 'outcomes' kind,count(*) n,max((:end-ts_open)/3600000.0) age FROM outcomes WHERE cerrado=0 AND ts_open<:end-86400000 UNION ALL SELECT 'signals',count(*),max((:end-ts_open)/3600000.0) FROM signals WHERE status='OPEN' AND ts_open<:end-43200000",
+  "coverage": "SELECT strategy_version,count(*) n,min(cobertura_velas) min_coverage,avg(cobertura_velas) avg_coverage,sum(cobertura_velas<0.98) low,sum(cobertura_velas IS NULL) missing FROM outcomes WHERE cerrado=1 GROUP BY 1",
+  "bad_times": "SELECT sum(ms_tp<0 OR ms_sl<0 OR ms_up_32<0 OR ms_mfe<0 OR ms_mae<0) negative,sum(ms_tp>86400000 OR ms_sl>86400000 OR ms_up_32>86400000 OR ms_mfe>86400000 OR ms_mae>86400000) late FROM outcomes WHERE ts_open>=:start",
+  "history_bad_times": "SELECT sum(ms_tp<0 OR ms_sl<0 OR ms_up_32<0 OR ms_mfe<0 OR ms_mae<0) negative,sum(ms_tp>86400000 OR ms_sl>86400000 OR ms_up_32>86400000 OR ms_mfe>86400000 OR ms_mae>86400000) late FROM outcomes WHERE ts_open<:start",
+  "metadata": "SELECT count(*) n,min(updated) oldest,max(updated) newest,sum(updated>=:end/1000-3900) recent FROM pair_metadata",
+  "universe_examples": "SELECT symbol,vol_24h,updated FROM pair_metadata WHERE symbol IN ('SUPERUSDT','JUPUSDT','SYRUPUSDT')",
+  "gaps_after_deploy": "WITH x AS (SELECT symbol,open_time,lag(open_time) OVER(PARTITION BY symbol ORDER BY open_time) prev FROM klines WHERE tf='1m' AND open_time>=:start) SELECT count(DISTINCT symbol) symbols,count(*) gaps,sum((open_time-prev)/60000-1) missing_minutes,max((open_time-prev)/60000-1) max_gap FROM x WHERE open_time-prev>60000",
+  "gap_examples": "WITH x AS (SELECT symbol,open_time,lag(open_time) OVER(PARTITION BY symbol ORDER BY open_time) prev FROM klines WHERE tf='1m' AND open_time>=:start) SELECT *,(open_time-prev)/60000-1 missing FROM x WHERE open_time-prev>60000 ORDER BY open_time DESC LIMIT 12",
+  "latest_klines": "SELECT count(*) symbols,sum(t<:end-4*60000) stale,min(t) oldest,max(t) newest FROM (SELECT symbol,max(open_time) t FROM klines WHERE tf='1m' GROUP BY symbol)",
+  "post_logs": "SELECT level,count(*) n FROM analysis_log WHERE ts_ms>=:start GROUP BY 1 ORDER BY 2 DESC",
+  "coverage_overcount": "SELECT signal_id,symbol,ts_open,ts_last,n_velas,cast((ts_last-ts_open)/60000 AS int)+1 max_distinct_minutes,cobertura_velas FROM outcomes WHERE ts_open>=:start AND n_velas>cast((ts_last-ts_open)/60000 AS int)+1",
+  "alerts_log_match": "SELECT count(*) logs,sum(EXISTS(SELECT 1 FROM alertas_emitidas a WHERE a.symbol=l.symbol AND abs(a.ts_ms-l.ts_ms)<=2000)) recorded FROM analysis_log l WHERE l.ts_ms>=:start AND l.level='ALERT' AND l.message LIKE '%TP=%' ",
+  "table_counts": "SELECT 'signals' name,count(*) n FROM signals UNION ALL SELECT 'outcomes',count(*) FROM outcomes UNION ALL SELECT 'alertas_emitidas',count(*) FROM alertas_emitidas"
+}
