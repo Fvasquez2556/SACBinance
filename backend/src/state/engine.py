@@ -344,20 +344,32 @@ class StateEngine:
         return st is not None and len(st.candles) > 0
 
     def preload_1m(self, symbol: str, candles: list) -> None:
-        if self.is_warm(symbol):
+        """
+        Carga o REPARA el buffer de 1m con velas traidas por REST.
+
+        Antes salia de vacio si el par ya estaba caliente, asi que la reparacion
+        periodica no reparaba nada: descargaba el hueco, lo guardaba en la base
+        y lo tiraba antes de llegar al buffer que de verdad se analiza. Ahora
+        fusiona, que es idempotente: repetir la llamada con las mismas velas no
+        cambia nada, y con velas nuevas mete solo las que faltaban.
+        """
+        if not candles:
             return
         st = self._get(symbol)
-        for c in candles:
-            st.add_closed_candle(c)
-        if candles:
-            logger.info(f"[{symbol}] backfill {len(candles)} velas 1m (warm)")
+        caliente = self.is_warm(symbol)
+        n = st.fusionar_velas(candles)
+        if not n:
+            return
+        if caliente:
+            logger.info(f"[{symbol}] reparadas {n} velas 1m que faltaban")
+        else:
+            logger.info(f"[{symbol}] backfill {n} velas 1m (warm)")
 
     def preload_htf(self, symbol: str, tf: str, candles: list) -> None:
         st = self._get(symbol)
-        buf = st.get_candles_tf(tf)
-        for c in candles:
-            buf.append(c)
-        logger.debug(f"[{symbol}] backfill {len(candles)} velas {tf}")
+        n = st.fusionar_velas_htf(tf, candles)
+        logger.debug(f"[{symbol}] backfill {n} velas {tf} nuevas "
+                     f"de {len(candles)} recibidas")
 
     # --- Macro / regimen BTC --------------------------------------------------
 
@@ -482,6 +494,13 @@ class StateEngine:
         # Veto blow-off
         bo = detect_blow_off(st.candles)
         if bo.detected:
+            # El plan que ya estaba vivo se actualiza ANTES de vetar. Este
+            # `return` salia sin pasar por AlertManager, y la vela de
+            # agotamiento es justo la que suele perforar el stop: su desenlace
+            # se perdia hasta la siguiente vela que no fuera blow-off.
+            await self._refrescar_alerta_viva(
+                symbol, st, now_ms, h, l, c, None, DISPLAY_CAYENDO,
+                bool((getattr(st, "retroceso", None) or {}).get("detectado")))
             st.set_fsm_state(FSM_EXHAUSTED)
             st.last_early = None
             self._last_tier[symbol] = "NINGUNO"
@@ -774,72 +793,8 @@ class StateEngine:
         # --- Alerta viva: refrescar contra sus niveles CONGELADOS ---
         # Se hace antes de decidir una emision nueva: si el par ya tiene una
         # alerta viva, no puede volver a emitir mas arriba.
-        if s.alerta_congelada_enabled:
-            cambio = self._alertas.actualizar(
-                symbol, now_ms, h, l, c, impulso, display_state=display,
-                viene_de_caida=retro.detectado,
-            )
-            if cambio is not None:
-                if self._emit:
-                    await self._emit({
-                        "type": "alerta_cambio",
-                        "ts": now_ms,
-                        "symbol": symbol,
-                        "alerta": cambio.to_dict(),
-                    })
-                # Si ya se aviso de este par, se EDITA ese mensaje en vez de
-                # mandar otro: el aviso de las 03:00 se actualiza solo y el
-                # historial no se llena de repeticiones del mismo simbolo.
-                if self._tg.activo and self._tg.tiene_mensaje(symbol):
-                    try:
-                        await self._tg.actualizar(symbol, texto_alerta(
-                            symbol, cambio.to_dict(), st.retroceso, st.sr_levels))
-                    except Exception as e:
-                        logger.debug(f"[{symbol}] editar aviso: {e}")
-                    # El SL sale como mensaje aparte, no como edicion: una
-                    # edicion no hace sonar el telefono y esto hay que verlo.
-                    if cambio.motivo_cierre in (MOTIVO_SL, MOTIVO_TP):
-                        redactar = (texto_stop if cambio.motivo_cierre == MOTIVO_SL
-                                    else texto_tp)
-                        que = ("stop" if cambio.motivo_cierre == MOTIVO_SL
-                               else "TP")
-                        try:
-                            await self._tg.responder(
-                                symbol, redactar(symbol, cambio.to_dict()))
-                            logger.info(f"[{symbol}] AVISO {que} enviado")
-                        except Exception as e:
-                            logger.warning(f"[{symbol}] aviso {que} fallo: {e}")
-
-            # Escalones de bajada: cada uno suena una vez, colgando del aviso
-            # original del par. Solo para pares de los que ya se aviso.
-            viva = self._alertas.get(symbol)
-            # Hitos hacia arriba: llegar a la meta y superar +4.2% sobre el
-            # entry de la PRIMERA señal del episodio.
-            if viva is not None and viva.hitos_nuevos:
-                hitos = list(viva.hitos_nuevos)
-                viva.hitos_nuevos.clear()
-                if self._tg.activo and self._tg.tiene_mensaje(symbol):
-                    for h in hitos:
-                        try:
-                            await self._tg.responder(
-                                symbol, texto_hito(symbol, viva.to_dict(), h))
-                            logger.info(f"[{symbol}] AVISO hito {h} enviado")
-                        except Exception as e:
-                            logger.warning(f"[{symbol}] aviso hito fallo: {e}")
-            if viva is not None and viva.bajadas_nuevas:
-                niveles = list(viva.bajadas_nuevas)
-                viva.bajadas_nuevas.clear()
-                if self._tg.activo and self._tg.tiene_mensaje(symbol):
-                    for niv in niveles:
-                        try:
-                            await self._tg.responder(
-                                symbol, texto_bajada(symbol, viva.to_dict(), niv))
-                            logger.info(f"[{symbol}] AVISO bajada -{niv}% enviado")
-                        except Exception as e:
-                            logger.warning(f"[{symbol}] aviso bajada fallo: {e}")
-            st.alerta = (
-                a.to_dict() if (a := self._alertas.get(symbol)) is not None else {}
-            )
+        await self._refrescar_alerta_viva(
+            symbol, st, now_ms, h, l, c, impulso, display, retro.detectado)
 
         if alertable and (state_changed or tier_changed):
             emitir = True
@@ -959,6 +914,102 @@ class StateEngine:
         if not alertable or not (state_changed or tier_changed):
             if transition and self._emit:
                 await self._emit({"type": "transition", "ts": now_ms, **st.snapshot()})
+
+    async def _refrescar_alerta_viva(
+        self, symbol: str, st, now_ms: int, high: float, low: float,
+        close: float, impulso, display: str, viene_de_caida: bool,
+    ) -> None:
+        """
+        Pasa la vela recien cerrada por el plan que ya estaba vivo.
+
+        Esta parte del ciclo se necesita desde dos sitios distintos, y por eso
+        esta aqui suelta: ademas del camino normal la llama el veto de
+        blow-off, que antes hacia `return` sin tocar AlertManager. La vela de
+        agotamiento es justo la que suele perforar el stop, asi que el
+        desenlace se quedaba sin registrar hasta la siguiente vela que no fuera
+        blow-off — y si el par seguia agotado, no llegaba nunca. Un plan vivo
+        se actualiza SIEMPRE antes de vetar nada.
+
+        `impulso` puede venir None (el veto corta antes de calcularlo): la
+        alerta se actualiza igual, porque el impulso solo alimenta la fase y lo
+        que no puede esperar es el TP/SL contra los niveles congelados.
+        """
+        if not get_settings().alerta_congelada_enabled:
+            return
+        cambio = self._alertas.actualizar(
+            symbol, now_ms, high, low, close, impulso,
+            display_state=display, viene_de_caida=viene_de_caida,
+        )
+        if cambio is not None:
+            if self._emit:
+                await self._emit({
+                    "type": "alerta_cambio",
+                    "ts": now_ms,
+                    "symbol": symbol,
+                    "alerta": cambio.to_dict(),
+                })
+            # Si ya se aviso de este par, se EDITA ese mensaje en vez de
+            # mandar otro: el aviso de las 03:00 se actualiza solo y el
+            # historial no se llena de repeticiones del mismo simbolo.
+            if self._tg.activo and self._tg.tiene_mensaje(symbol):
+                try:
+                    await self._tg.actualizar(symbol, texto_alerta(
+                        symbol, cambio.to_dict(), st.retroceso, st.sr_levels))
+                except Exception as e:
+                    logger.debug(f"[{symbol}] editar aviso: {e}")
+                # El SL sale como mensaje aparte, no como edicion: una
+                # edicion no hace sonar el telefono y esto hay que verlo.
+                if cambio.motivo_cierre in (MOTIVO_SL, MOTIVO_TP):
+                    redactar = (texto_stop if cambio.motivo_cierre == MOTIVO_SL
+                                else texto_tp)
+                    que = ("stop" if cambio.motivo_cierre == MOTIVO_SL
+                           else "TP")
+                    await self._responder_aviso(
+                        symbol, redactar(symbol, cambio.to_dict()), f"AVISO {que}")
+
+        # Escalones de bajada: cada uno suena una vez, colgando del aviso
+        # original del par. Solo para pares de los que ya se aviso.
+        viva = self._alertas.get(symbol)
+        # Hitos hacia arriba: llegar a la meta y superar +4.2% sobre el
+        # entry de la PRIMERA señal del episodio.
+        if viva is not None and viva.hitos_nuevos:
+            hitos = list(viva.hitos_nuevos)
+            viva.hitos_nuevos.clear()
+            for hito in hitos:
+                await self._responder_aviso(
+                    symbol, texto_hito(symbol, viva.to_dict(), hito),
+                    f"AVISO hito {hito}")
+        if viva is not None and viva.bajadas_nuevas:
+            niveles = list(viva.bajadas_nuevas)
+            viva.bajadas_nuevas.clear()
+            for niv in niveles:
+                await self._responder_aviso(
+                    symbol, texto_bajada(symbol, viva.to_dict(), niv),
+                    f"AVISO bajada -{niv}%")
+        st.alerta = (
+            a.to_dict() if (a := self._alertas.get(symbol)) is not None else {}
+        )
+
+    async def _responder_aviso(self, symbol: str, texto: str, que: str) -> bool:
+        """
+        Cuelga un aviso de seguimiento del hilo del par y dice si salio.
+
+        `responder` devuelve False cuando Telegram rechaza el envio, sin
+        excepcion de por medio: registrarlo como enviado por no haber reventado
+        era lo que hacia indistinguible un telefono callado de un sistema roto.
+        """
+        if not (self._tg.activo and self._tg.tiene_mensaje(symbol)):
+            return False
+        try:
+            entregado = await self._tg.responder(symbol, texto)
+        except Exception as e:
+            logger.warning(f"[{symbol}] {que} fallo: {e}")
+            return False
+        if entregado:
+            logger.info(f"[{symbol}] {que} enviado")
+        else:
+            logger.warning(f"[{symbol}] {que} NO entregado: Telegram lo rechazo")
+        return entregado
 
     async def on_live_candle(
         self, symbol: str, t: int, o: float, h: float, l: float, c: float, v: float
@@ -1130,13 +1181,21 @@ class StateEngine:
         self._aviso_ultimo[symbol] = now_ms
         self._tg.olvidar(symbol)     # aviso nuevo = hilo nuevo que editar
         try:
-            await self._tg.avisar(symbol, texto_alerta(
+            entregado = await self._tg.avisar(symbol, texto_alerta(
                 symbol, st.alerta, st.retroceso, st.sr_levels))
-            logger.info(f"[{symbol}] AVISO enviado a Telegram")
-            _anotar("enviado")
         except Exception as e:
             logger.warning(f"[{symbol}] aviso fallo: {e}")
             _anotar("fallo", f"{type(e).__name__}: {e}")
+            return
+        # Un rechazo de la API no levanta excepcion: `avisar` devuelve False y
+        # ese False es lo que se registra. Marcar "enviado" por no haber
+        # reventado convertia cada rechazo en un aviso fantasma en la tabla.
+        if entregado:
+            logger.info(f"[{symbol}] AVISO enviado a Telegram")
+            _anotar("enviado")
+        else:
+            logger.warning(f"[{symbol}] aviso NO entregado: Telegram lo rechazo")
+            _anotar("fallo", "Telegram no confirmo el envio")
 
     # --- Snapshot -------------------------------------------------------------
 

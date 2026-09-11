@@ -25,7 +25,7 @@ from fastapi.websockets import WebSocket
 from src.api.routes import router, set_engine
 from src.api.ws_server import broadcast, broadcast_loop, set_engine as ws_set_engine, ws_endpoint
 from src.config.settings import get_settings
-from src.data_ingestion.hydrator import hydrate_all
+from src.data_ingestion.hydrator import hydrate_all, reparar_1m
 from src.data_ingestion.rest_periodic import start_rest_periodic
 from src.data_ingestion.universe import (fetch_universe, get_last_volumes,
                                           get_usdt_pairs)
@@ -50,6 +50,13 @@ app.include_router(router)
 @app.websocket("/ws")
 async def websocket_route(websocket: WebSocket):
     await ws_endpoint(websocket)
+
+
+# Pares como maximo a los que se les piden huecos internos en cada vuelta de
+# la reparacion. Un request por par: con esto la reparacion nunca pasa de 40
+# peticiones cada `reparacion_velas_seconds`, muy por debajo del limite de peso
+# de Binance, aunque el dia que se active haya 224 pares con huecos.
+REPARACION_MAX_PARES = 40
 
 
 # Servir el frontend compilado (frontend/dist) si existe.
@@ -223,10 +230,13 @@ async def _shortlist_loop(engine, ws_mgr) -> None:
             if s.btc_symbol not in top:
                 top.append(s.btc_symbol)
             if top:
-                await ws_mgr.update_shortlist(top)
-                # El engine necesita saber quien tiene flujo para poder
-                # distinguir "sin compradores" de "sin suscripcion".
-                engine.set_shortlist(top)
+                # Al motor va lo que quedo SUSCRITO, no lo que se pidio. Es la
+                # unica forma de que `flow_disponible` signifique algo: si el
+                # gestor no pudo aplicar un cambio, marcar el par como
+                # disponible convierte su cero de trades en "nadie compro"
+                # cuando en realidad es "nunca miramos".
+                suscrita = await ws_mgr.update_shortlist(top)
+                engine.set_shortlist(suscrita)
         except Exception as e:
             logger.debug(f"shortlist_loop error: {e}")
 
@@ -280,17 +290,34 @@ async def _reparacion_velas_loop(engine, db) -> None:
     stop o el objetivo, y los indicadores por numero de velas dejan de
     representar minutos reales.
 
-    Se detecta por atraso — la ultima vela del par mas vieja que el umbral — y
-    se repara con el mismo hidratador del arranque, que ya descarga solo el
-    hueco desde la ultima vela guardada.
+    Se detecta de dos formas, porque una sola no basta:
+
+      - Por ATRASO: la ultima vela del par es mas vieja que el umbral. Es lo
+        que habia, y solo ve el hueco mientras el stream sigue caido.
+      - Por SECUENCIA: faltan minutos ENTRE la primera y la ultima vela del
+        buffer. En cuanto el stream vuelve, el hueco deja de estar al final y
+        el detector por atraso ya no lo ve nunca mas. En la copia del 10-sep
+        quedaban 2.344 minutos-par ausentes en 224 simbolos, todos internos.
+
+    Cada caso se repara distinto. Un par ATRASADO puede llevar parado el
+    tiempo suficiente para que le falten tambien los marcos superiores, asi
+    que va por el hidratador completo. Un par con huecos INTERNOS solo
+    necesita el marco de 1m: pedir los seis marcos de los 224 pares cada cinco
+    minutos serian ~1.300 peticiones por vuelta, por encima del limite de peso
+    de Binance y para nada. En los dos casos `preload_1m` fusiona sin duplicar.
     """
     s = get_settings()
+    # Huecos que una reparacion ya intento y no pudo rellenar, por par. Binance
+    # no emite vela para un minuto SIN OPERACIONES, asi que en un par iliquido
+    # hay huecos que no existen y no se pueden rellenar nunca. Sin esta memoria
+    # el bucle los reintentaria cada cinco minutos para siempre.
+    irreparables: dict = {}
     while True:
         await asyncio.sleep(s.reparacion_velas_seconds)
         try:
             ahora = int(time.time() * 1000)
             umbral = s.reparacion_velas_umbral_min * 60_000
-            atrasados = []
+            atrasados, con_huecos, minutos = [], [], 0
             for sym, st in engine.states.items():
                 velas = st.candles
                 if not velas:
@@ -298,13 +325,54 @@ async def _reparacion_velas_loop(engine, db) -> None:
                     continue
                 if ahora - velas[-1].t > umbral:
                     atrasados.append(sym)
-            if not atrasados:
-                continue
-            logger.info(
-                f"Reparando velas: {len(atrasados)} pares con mas de "
-                f"{s.reparacion_velas_umbral_min} min sin vela"
-            )
-            await hydrate_all(atrasados, engine, db)
+                    continue
+                faltan = st.huecos_1m()
+                if not faltan:
+                    irreparables.pop(sym, None)
+                    continue
+                # Se reintenta solo si el hueco CAMBIO desde el ultimo intento
+                if irreparables.get(sym) == faltan:
+                    continue
+                con_huecos.append(sym)
+                minutos += faltan
+
+            # Tope por vuelta: la reparacion no puede convertirse en una rafaga
+            # de cientos de peticiones contra el limite de peso de Binance.
+            if len(con_huecos) > REPARACION_MAX_PARES:
+                con_huecos = con_huecos[:REPARACION_MAX_PARES]
+                minutos = sum(engine.get_symbol(x).huecos_1m()
+                              for x in con_huecos
+                              if engine.get_symbol(x) is not None)
+
+            if atrasados:
+                logger.info(
+                    f"Reparando velas: {len(atrasados)} pares con mas de "
+                    f"{s.reparacion_velas_umbral_min} min sin vela"
+                )
+                await hydrate_all(atrasados, engine, db)
+            if con_huecos:
+                logger.info(
+                    f"Reparando huecos internos: {len(con_huecos)} pares "
+                    f"({minutos} minutos ausentes)"
+                )
+                await reparar_1m(con_huecos, engine, db)
+                # Lo que siga faltando despues de pedirlo es, hasta nuevo aviso,
+                # un minuto que Binance no tiene.
+                sin_rellenar = 0
+                for sym in con_huecos:
+                    st = engine.get_symbol(sym)
+                    if st is None:
+                        continue
+                    resto = st.huecos_1m()
+                    if resto:
+                        irreparables[sym] = resto
+                        sin_rellenar += resto
+                    else:
+                        irreparables.pop(sym, None)
+                logger.info(
+                    f"Huecos internos: {minutos - sin_rellenar} minutos "
+                    f"rellenados, {sin_rellenar} sin vela en Binance"
+                )
         except Exception as e:
             logger.warning(f"reparacion_velas_loop error: {e}")
 

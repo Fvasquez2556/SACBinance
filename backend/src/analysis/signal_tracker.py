@@ -5,8 +5,22 @@ Cada vez que el sistema marca un par como oportunidad operable (estado +
 niveles validos), se registra una "señal" con su entry/TP/SL. Despues, en
 cada vela 1m cerrada, se comprueba si el precio toco el TP o el SL.
 
-Tras unos dias esto da un WIN RATE real: el unico dato que dice si el
-sistema acierta. Sin medicion, los umbrales son pura intuicion.
+Que es — y que NO es — el numero que sale de aqui
+-------------------------------------------------
+Lo que se mide es la FRECUENCIA CON QUE EL PRECIO TOCA EL TP ANTES QUE EL SL,
+en BRUTO, sobre una operacion simulada que nadie ejecuto. No es un win rate
+real y llamarlo asi era el problema:
+
+  - No hay fill, ni spread, ni deslizamiento, ni comision. Con el coste
+    configurado (`coste_operacion_pct`) el umbral de rentabilidad se mueve.
+  - Una señal EXPIRED en positivo cuenta como fallo aunque hubiera dejado
+    dinero; al 10-sep eran 210 de 416.
+  - Cuando una misma vela contiene el TP y el SL, el orden dentro del minuto
+    es desconocido.
+
+Sirve para comparar versiones entre si con el mismo sesgo, que ya es bastante.
+No sirve para decir cuanto se gana. Para eso hace falta la medicion por plan
+completo, con costes y muestra separada por version.
 """
 from __future__ import annotations
 

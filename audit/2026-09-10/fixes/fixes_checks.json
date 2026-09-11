@@ -1,0 +1,172 @@
+{
+  "checks": [
+    {
+      "check": "F02 ignores pre-entry candle",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "check": "F02 ignores candle after 24h",
+      "expected": null,
+      "actual": null,
+      "passed": true
+    },
+    {
+      "check": "F02 wall clock closes without further candles",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F11 duplicate candle is idempotent",
+      "expected": 1,
+      "actual": 1,
+      "passed": true
+    },
+    {
+      "check": "F11 timestamp cannot move backwards",
+      "expected": 100120000,
+      "actual": 100120000,
+      "passed": true
+    },
+    {
+      "check": "F02 only candles fully closed within window contribute",
+      "expected": null,
+      "actual": null,
+      "passed": true
+    },
+    {
+      "check": "F07 indicator mapping with explicit timeframes",
+      "expected": [
+        52,
+        55,
+        0.1,
+        0.7
+      ],
+      "actual": [
+        52,
+        55,
+        0.1,
+        0.7
+      ],
+      "passed": true
+    },
+    {
+      "check": "F05 no TP awarded in ambiguous fill candle",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F05 subsequent candle may hit TP",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F10 ordinary coins remain eligible",
+      "expected": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "actual": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "passed": true
+    },
+    {
+      "check": "F10 leveraged examples excluded",
+      "expected": [
+        true,
+        true,
+        true
+      ],
+      "actual": [
+        true,
+        true,
+        true
+      ],
+      "passed": true
+    },
+    {
+      "check": "F11 indicator buffer deduplicates closed candle",
+      "expected": 1,
+      "actual": 1,
+      "passed": true
+    },
+    {
+      "check": "F01 repair hydrator adds missing bar to warm engine",
+      "expected": 100080000,
+      "actual": 100080000,
+      "passed": true
+    },
+    {
+      "check": "F01 repeated repair preserves unique HTF bars",
+      "expected": 1,
+      "actual": 1,
+      "passed": true
+    },
+    {
+      "check": "F12 config hash reflects rr_target",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F12 config hash reflects coste_operacion_pct",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F12 config hash reflects exigir_objetivo_operador",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F12 config hash reflects flow_min_trades",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F12 config hash reflects rise_z",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F09 repeated small universe update eventually subscribes new pair",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F08 engine availability matches actual accepted shortlist",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F13 active alert receives update during blow-off",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "check": "F04 failed Telegram response is recorded as failure",
+      "expected": "fallo",
+      "actual": "fallo",
+      "passed": true
+    }
+  ],
+  "passed": 23,
+  "failed": 0
+}

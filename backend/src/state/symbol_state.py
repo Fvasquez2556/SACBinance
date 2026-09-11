@@ -235,6 +235,30 @@ class SymbolState:
         # La vela viva de ese TF queda obsoleta al cerrar
         self.live_htf[tf] = None
 
+    def fusionar_velas_htf(self, tf: str, velas) -> int:
+        """
+        Igual que `fusionar_velas`, para un marco superior.
+
+        `preload_htf` hacia `buf.append(c)` sin mirar: cada reparacion periodica
+        volvia a meter las mismas velas de 15m y 1h. El buffer es un deque
+        acotado, asi que el efecto no era crecer sino EXPULSAR historia real por
+        copias — 260 huecos de 15m se convertian en 130 velas distintas y 130
+        repetidas, y las medias largas se calculaban sobre la mitad del tiempo
+        que creian cubrir.
+        """
+        buf = self.get_candles_tf(tf)
+        nuevas = [c for c in velas if c is not None]
+        if not nuevas:
+            return 0
+        fusion = {c.t: c for c in buf}
+        antes = len(fusion)
+        for c in nuevas:
+            fusion[c.t] = c
+        ordenadas = [fusion[t] for t in sorted(fusion)][-buf.maxlen:] if buf.maxlen else [fusion[t] for t in sorted(fusion)]
+        buf.clear()
+        buf.extend(ordenadas)
+        return max(0, len(fusion) - antes)
+
     def set_live_htf(self, tf: str, candle: Candle) -> None:
         """Vela HTF en formacion (k['x'] == False). No toca el buffer cerrado."""
         if tf in self.live_htf:
@@ -282,7 +306,25 @@ class SymbolState:
         return m
 
     def add_closed_candle(self, c: Candle) -> bool:
-        """Vela 1m cerrada: muta buffer + estadistica adaptativa. Retorna True si warm."""
+        """
+        Vela 1m cerrada: muta buffer + estadistica adaptativa. True si warm.
+
+        Idempotente por apertura de vela. El mismo minuto llega dos veces cada
+        vez que el WS reconecta, y la reparacion por REST repite tramos que ya
+        habian entrado: contarlo dos veces mete su retorno dos veces en la EWMA
+        —que es la escala con la que se miden TODOS los z-scores— y adelanta
+        `candles_in_fsm` sin que haya pasado un minuto. Una vela repetida
+        refresca los valores sin volver a alimentar la estadistica; una
+        anterior a la ultima no entra por aqui (ver `fusionar_velas`).
+        """
+        if self.candles and c.t <= self.candles[-1].t:
+            warm = self.stats.ready_n >= self._warmup
+            if c.t == self.candles[-1].t:
+                self.candles[-1] = c
+                self.ind = indicators_from_candles(self.candles)
+                self.live_metrics = None
+            return warm
+
         prev_close = self.candles[-1].c if self.candles else None
         self.candles.append(c)
         if prev_close and prev_close > 0:
@@ -296,6 +338,71 @@ class SymbolState:
         self.live_ts = c.t
         self.candles_in_fsm += 1
         return self.stats.ready_n >= self._warmup
+
+    def fusionar_velas(self, velas) -> int:
+        """
+        Mete un lote de velas 1m en el buffer sin duplicar y en orden.
+
+        Es el camino de la REPARACION, distinto del de la vela en vivo. Un
+        hueco interno —un minuto que el WS no trajo y el REST recupera despues—
+        cae por debajo del final del buffer, y `add_closed_candle` lo
+        rechazaria por atrasado. Aqui se reconstruye el buffer entero por
+        apertura de vela, que es la identidad unica del minuto.
+
+        La estadistica adaptativa NO se realimenta con lo insertado por el
+        medio: su EWMA es secuencial y reinyectarla fuera de orden desplazaría
+        sigma sin que el mercado haya hecho nada. Lo que se recupera es la
+        CONTINUIDAD del buffer, que es lo que leen los indicadores y lo que
+        decide si una ventana se puede sostener. Devuelve cuantas velas
+        faltaban de verdad.
+        """
+        nuevas = [c for c in velas if c is not None]
+        if not nuevas:
+            return 0
+        if not self.candles:
+            insertadas = 0
+            for c in sorted(nuevas, key=lambda x: x.t):
+                self.add_closed_candle(c)
+                insertadas += 1
+            return insertadas
+
+        tope = self.candles[-1].t
+        posteriores = sorted((c for c in nuevas if c.t > tope), key=lambda x: x.t)
+        internas = {c.t: c for c in nuevas if c.t <= tope}
+
+        insertadas = 0
+        conocidas = {c.t for c in self.candles}
+        faltantes = {t: c for t, c in internas.items() if t not in conocidas}
+        if faltantes:
+            fusion = {c.t: c for c in self.candles}
+            fusion.update(faltantes)
+            ordenadas = [fusion[t] for t in sorted(fusion)][-self.candles.maxlen:]
+            self.candles.clear()
+            self.candles.extend(ordenadas)
+            insertadas += len(faltantes)
+
+        for c in posteriores:
+            self.add_closed_candle(c)
+            insertadas += 1
+
+        if insertadas:
+            self.ind = indicators_from_candles(self.candles)
+        return insertadas
+
+    def huecos_1m(self, desde_ms: int = 0) -> int:
+        """
+        Minutos ausentes ENTRE la primera y la ultima vela del buffer.
+
+        El detector de reparacion miraba solo el ultimo minuto: en cuanto el
+        stream volvia, el hueco dejaba de ser visible y se quedaba dentro para
+        siempre. En la copia del 10-sep quedaban 2.344 minutos-par ausentes en
+        224 simbolos, todos internos, todos invisibles para ese detector.
+        """
+        velas = [c for c in self.candles if c.t >= desde_ms]
+        if len(velas) < 2:
+            return 0
+        esperados = (velas[-1].t - velas[0].t) // 60_000 + 1
+        return max(0, int(esperados) - len(velas))
 
     def update_live(self, c: Candle) -> bool:
         """Vela 1m en formacion: metricas provisionales (no muta buffer)."""

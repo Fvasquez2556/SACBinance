@@ -24,6 +24,24 @@ Todo se simula sobre las velas de 1m guardadas, dentro de la misma ventana
 de 24h que usa el sistema. Cuando una vela contiene a la vez el disparo de
 entrada y el stop, no se puede saber el orden: se cuenta como parada, que es
 el supuesto pesimista, y se reporta aparte cuantas veces pasa.
+
+REGLA DE EJECUCION v2 (11-sep-2026)
+-----------------------------------
+La auditoria del 10-sep encontro que este estudio era mas optimista que el
+seguimiento en vivo, en dos puntos, y por eso sus numeros no eran comparables
+con los de produccion:
+
+  - El fill se tomaba en `min(apertura, disparo)`, es decir, mejor precio que
+    el nivel al que se dispara la alerta. Ahora es el disparo, igual que en
+    `backend/src/analysis/hoyo.py`: el peor fill posible del nivel.
+  - El objetivo se podia conceder en la propia vela de entrada, cuyo maximo
+    pudo ocurrir ANTES de la compra. Ahora el TP se mira desde la vela
+    siguiente; el stop si se aplica en la de entrada, que es el lado
+    pesimista.
+
+Las dos reglas son las mismas que usa el tracker en vivo. Cualquier cifra
+publicada de este estudio ANTES de esta fecha se midio con la regla v1 y no se
+puede comparar con las de ahora sin volver a ejecutarlo.
 """
 from __future__ import annotations
 
@@ -60,15 +78,28 @@ def pct(n, d):
 # ----------------------------------------------------------------------
 # simulacion
 # ----------------------------------------------------------------------
-def simular(velas, entrada, stop, techo, desde_idx=0):
-    """Recorre las velas y devuelve (desenlace, resultado_pct, ms, mfe, mae)."""
+def simular(velas, entrada, stop, techo, desde_idx=0, tp_desde_idx=None):
+    """
+    Recorre las velas y devuelve (desenlace, resultado_pct, ms, mfe, mae).
+
+    `tp_desde_idx` marca desde que vela se puede conceder el objetivo. En la
+    vela en la que se ENTRA no se puede: su maximo pudo ocurrir antes de que
+    el precio bajara al nivel de compra, y darlo por bueno es cobrar un techo
+    al que nunca se llego estando dentro. Por el mismo motivo su maximo
+    tampoco cuenta para el MFE. El minimo si cuenta, y el stop tambien: ese es
+    el lado pesimista, y es la regla del tracker en vivo.
+    """
+    if tp_desde_idx is None:
+        tp_desde_idx = desde_idx
     mfe = mae = 0.0
     for k in range(desde_idx, len(velas)):
         v = velas[k]
-        mfe = max(mfe, (v["h"] - entrada) / entrada * 100)
+        ambigua = k < tp_desde_idx
+        if not ambigua:
+            mfe = max(mfe, (v["h"] - entrada) / entrada * 100)
         mae = min(mae, (v["l"] - entrada) / entrada * 100)
         toca_sl = v["l"] <= stop
-        toca_tp = v["h"] >= techo
+        toca_tp = v["h"] >= techo and not ambigua
         if toca_sl and toca_tp:
             return "SL", (stop - entrada) / entrada * 100, v["open_time"], mfe, mae
         if toca_sl:
@@ -104,7 +135,11 @@ def evaluar(s, velas):
         return out
     out["entro"] = True
     v0 = velas[idx]
-    fill = min(disparo, v0["o"]) if v0["o"] <= disparo else disparo
+    # El peor fill posible del nivel: el nivel mismo. Coger la apertura cuando
+    # era mejor suponia un precio que solo se consigue si la orden estaba ya
+    # puesta y el hueco de apertura la cruzo — y el tracker en vivo no lo
+    # supone. Ver la REGLA DE EJECUCION v2 arriba.
+    fill = disparo
     out["fill"] = fill
     out["ms_disparo"] = v0["open_time"] - s["ts_open"]
     out["tp_desde_fill"] = (tp_sys - fill) / fill * 100
@@ -119,7 +154,8 @@ def evaluar(s, velas):
     for nom, stop in reglas.items():
         # ambiguedad dentro de la vela de entrada
         ambiguo = v0["l"] <= stop
-        d, r, t, mfe, mae = simular(velas, fill, stop, tp_sys, desde_idx=idx)
+        d, r, t, mfe, mae = simular(velas, fill, stop, tp_sys,
+                                    desde_idx=idx, tp_desde_idx=idx + 1)
         out[nom] = {"des": d, "res": r, "mfe": mfe, "mae": mae,
                     "ambiguo": ambiguo, "stop_pct": (stop - fill) / fill * 100}
     return out

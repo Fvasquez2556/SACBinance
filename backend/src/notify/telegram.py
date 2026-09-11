@@ -93,8 +93,17 @@ class Telegram:
 
     # --- Envio de avisos --------------------------------------------------
 
-    async def avisar(self, symbol: str, texto: str) -> None:
-        """Manda un aviso nuevo y recuerda su id para poder editarlo."""
+    async def avisar(self, symbol: str, texto: str) -> bool:
+        """
+        Manda un aviso nuevo y recuerda su id para poder editarlo.
+
+        Devuelve si el mensaje llego de verdad. Antes no devolvia nada:
+        `_pedir` se traga el rechazo de la API y el fallo de red y devuelve
+        None, asi que el llamante marcaba "enviado" sin que hubiera salido
+        nada — solo una excepcion, que aqui no se produce nunca, lo habria
+        delatado. Lo que se registra en `alertas_emitidas` tiene que ser el
+        resultado, no la intencion.
+        """
         r = await self._pedir("sendMessage", {
             "chat_id": self.chat_id,
             "text": texto,
@@ -104,6 +113,8 @@ class Telegram:
         if r and "message_id" in r:
             self._mensajes[symbol] = r["message_id"]
             self._recordar(symbol, r["message_id"])
+            return True
+        return False
 
     async def actualizar(self, symbol: str, texto: str) -> bool:
         """\nEdita el aviso que ya se mando para ese par. Devuelve False si no habia\nninguno, para que el llamante decida si manda uno nuevo o lo deja.\n"""
@@ -119,7 +130,7 @@ class Telegram:
         })
         return r is not None
 
-    async def responder(self, symbol: str, texto: str) -> None:
+    async def responder(self, symbol: str, texto: str) -> bool:
         """
         Cuelga un mensaje del aviso original de ese par.
 
@@ -148,8 +159,8 @@ class Telegram:
                 allow_sending_without_reply=True,
             ))
             if r is not None:
-                return
-        await self._pedir("sendMessage", payload)
+                return True
+        return await self._pedir("sendMessage", payload) is not None
 
     def olvidar(self, symbol: str) -> None:
         self._mensajes.pop(symbol, None)

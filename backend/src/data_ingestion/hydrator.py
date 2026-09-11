@@ -44,6 +44,22 @@ def _buffer_size(s, tf: str) -> int:
     return getattr(s, f"candle_buffer_{tf}", 200)
 
 
+def _primer_hueco(velas: List[Candle], tf_ms: int):
+    """
+    Apertura de la primera vela que falta ENTRE las que hay. None si no falta
+    ninguna.
+
+    Sin esto la descarga se dimensionaba solo por lo vieja que era la ULTIMA
+    vela, asi que un hueco de hace una hora con el stream ya restablecido
+    pedia cinco velas de la cola y no reparaba nada. Es el mismo motivo por el
+    que el detector de atraso no veia esos huecos.
+    """
+    for anterior, siguiente in zip(velas, velas[1:]):
+        if siguiente.t - anterior.t > tf_ms:
+            return anterior.t + tf_ms
+    return None
+
+
 async def _fetch_klines_raw(
     session: aiohttp.ClientSession,
     symbol: str,
@@ -96,6 +112,9 @@ async def _hydrate_tf(
     if cached:
         last_t = cached[-1].t
         missing = int((now_ms - last_t) / tf_ms)
+        hueco = _primer_hueco(cached, tf_ms)
+        if hueco is not None:
+            missing = max(missing, int((now_ms - hueco) / tf_ms))
         if missing < buffer_size:
             fetch_n = min(max(missing + 5, 5), buffer_size)
             modo = "checkpoint"
@@ -143,6 +162,38 @@ async def _hydrate_symbol(
     async with sem:
         for tf in _TFS_ORDER:
             await _hydrate_tf(symbol, tf, engine, db, session, base_url)
+
+
+async def reparar_1m(symbols: List[str], engine, db=None) -> int:
+    """
+    Rellena SOLO el marco de 1m de los pares indicados. Devuelve cuantos se
+    pidieron.
+
+    La reparacion periodica no puede usar `hydrate_all`: son seis marcos por
+    par, y con 224 pares con huecos serian ~1.300 peticiones de golpe cada
+    cinco minutos — por encima del limite de peso de Binance, y para nada,
+    porque los huecos que importan son los de 1m. Aqui va un request por par.
+
+    Ojo con lo que NO puede arreglar: Binance no emite vela para un minuto sin
+    operaciones, asi que en un par ilíquido hay huecos que no existen y no se
+    pueden rellenar. El bucle que llama a esto no debe reintentarlos sin fin
+    (ver `_reparacion_velas_loop`).
+    """
+    if not symbols:
+        return 0
+    s = get_settings()
+    sem = asyncio.Semaphore(s.hydration_concurrency)
+    base_url = s.binance_rest_base.rstrip("/")
+
+    async def uno(sym, session):
+        async with sem:
+            await _hydrate_tf(sym, "1m", engine, db, session, base_url)
+
+    connector = aiohttp.TCPConnector(limit=s.hydration_concurrency + 10)
+    async with aiohttp.ClientSession(connector=connector) as session:
+        await asyncio.gather(*(uno(x, session) for x in symbols),
+                             return_exceptions=True)
+    return len(symbols)
 
 
 async def hydrate_all(symbols: List[str], engine, db=None) -> None:

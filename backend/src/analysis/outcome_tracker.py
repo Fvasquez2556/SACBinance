@@ -46,6 +46,13 @@ _SUFIJO = {1.0: "1", 1.2: "12", 2.0: "2", 3.2: "32",
 
 OBJETIVO = 3.2  # umbral sobre el que se clasifica la forma del camino
 
+# Duracion de la vela con la que se mide (1m). El camino de una señal se mide
+# por INTERVALOS COMPLETOS: una vela solo cuenta si su minuto entero cae dentro
+# de la ventana. La que empieza antes del vencimiento y cierra despues tiene su
+# maximo en un instante desconocido, que puede ser posterior al vencimiento;
+# concederle el TP era atribuir a la señal un precio de fuera de su ventana.
+VELA_MS = 60_000
+
 # --- Marcadores del tablero -------------------------------------------------
 # Colores, y por que cada uno:
 #   VERDE     llego al objetivo de +3.2%
@@ -180,6 +187,12 @@ class OutcomeTracker:
 
     def _registrar_memoria(self, row: dict) -> None:
         sid = row["signal_id"]
+        # Marca de idempotencia, SOLO en memoria: la apertura de la ultima vela
+        # ya contada. No es una columna — `abrir_outcome` arma el INSERT con las
+        # claves de la fila — y no hace falta que lo sea: `ts_last` ya la
+        # guarda. Una fila recien abierta no ha contado ninguna vela (n_velas=0)
+        # y arranca en None; una que vuelve de la base reanuda donde se quedo.
+        row["ts_vela"] = row.get("ts_last") if row.get("n_velas") else None
         self._abiertos[sid] = row
         self._por_symbol.setdefault(row["symbol"], []).append(sid)
         if sid < 0:
@@ -501,9 +514,29 @@ class OutcomeTracker:
                     self._sombra_activa.discard(symbol)
                 continue
 
+            # La vela que CIERRA despues del vencimiento tampoco entra, aunque
+            # haya abierto antes. Su maximo puede ocurrir en cualquier instante
+            # del minuto, incluido uno posterior al vencimiento, y una prueba
+            # le concedia el TP con el maximo fuera de ventana. Se salta sin
+            # cerrar: el cierre lo da el reloj (`cerrar_vencidos`) o la
+            # siguiente vela, que ya cae entera fuera.
+            if transcurrido + VELA_MS > ventana_ms:
+                continue
+
+            # Idempotencia. La misma vela llega dos veces cuando el WS
+            # reconecta o cuando la reparacion por REST repite un minuto ya
+            # recibido; y una reparacion puede traerla atrasada. Contarla dos
+            # veces inflaba `n_velas` — y con el la cobertura, que es
+            # justamente el dato con el que se decide si una fila se puede
+            # leer — y una atrasada hacia retroceder `ts_last`.
+            ultima_vela = row.get("ts_vela")
+            if ultima_vela is not None and ts <= ultima_vela:
+                continue
+
             cambios: dict = {"ts_last": ts, "n_velas": row["n_velas"] + 1}
             row["n_velas"] += 1
             row["ts_last"] = ts
+            row["ts_vela"] = ts
 
             up_pct = (high - entry) / entry * 100.0
             dn_pct = (low - entry) / entry * 100.0
@@ -544,16 +577,11 @@ class OutcomeTracker:
                 if row.get(f"ms_up_{_SUFIJO[OBJETIVO]}") is not None:
                     row["dip_antes_obj"] = cambios["dip_antes_obj"] = row["mae_pct"]
 
-            # --- Fin de ventana ---
-            if transcurrido >= ventana_ms:
-                row["forma"] = cambios["forma"] = _clasificar_forma(row, dip_umbral)
-                row["cobertura_velas"] = cambios["cobertura_velas"] = _cobertura(row)
-                row["cerrado"] = cambios["cerrado"] = 1
-                cerrados.append(dict(row))
-                self._abiertos.pop(sid, None)
-                ids.remove(sid)
-                if sid < 0:
-                    self._sombra_activa.discard(symbol)
+            # El cierre por fin de ventana ya no ocurre aqui. Al exigir que la
+            # vela caiga ENTERA dentro de la ventana, ninguna que se procese
+            # puede llegar al vencimiento: la ultima que cuenta cierra un minuto
+            # antes. Cierran, por ese orden, el reloj (`cerrar_vencidos`, cada
+            # `db_flush_interval`) o la primera vela que ya cae fuera.
 
             try:
                 self._db.guardar_outcome(sid, cambios)
@@ -586,7 +614,11 @@ def _cobertura(row: dict) -> float:
     Se guarda al cerrar. No arregla el hueco — eso lo hace la reparacion por
     REST — pero permite excluir del analisis lo que no se puede sostener.
     """
-    esperados = get_settings().outcome_window_hours * 60
+    # El denominador son las velas que PUEDEN entrar, no los minutos de la
+    # ventana: la que cierra despues del vencimiento ya no cuenta, asi que en
+    # una ventana de 24h el maximo alcanzable son 1.439 velas y no 1.440. Con
+    # el denominador antiguo, una cobertura perfecta se leia como 99.93%.
+    esperados = get_settings().outcome_window_hours * 3600_000 // VELA_MS - 1
     if esperados <= 0:
         return 0.0
     return round(min(1.0, (row.get("n_velas") or 0) / esperados), 4)
