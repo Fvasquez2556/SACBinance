@@ -1,0 +1,551 @@
+{
+  "snapshot": {
+    "source": "flox@100.96.211.5:/home/flox/sacbinance/backend/data/sacbinance.db",
+    "started_utc": "2026-09-11T07:18:14.112547+00:00",
+    "finished_utc": "2026-09-11T07:18:33.331951+00:00",
+    "commit": "25d03fa82c147a1c28786c6fd9fb236863557a21",
+    "working_tree_status": " M frontend/package-lock.json\n",
+    "size_bytes": 153313280,
+    "sha256": "71cc3e8c1148bd3593c58a729c4196c0a7f7644f6e4c8fce3bfebb6ad2bb6856",
+    "integrity_check": [
+      [
+        "ok"
+      ]
+    ],
+    "tables": [
+      {
+        "table": "alertas_emitidas",
+        "rows": 66,
+        "sql": "CREATE TABLE alertas_emitidas (\n    id            INTEGER PRIMARY KEY AUTOINCREMENT,\n    ts_ms         INTEGER NOT NULL,\n    symbol        TEXT    NOT NULL,\n    signal_id     INTEGER,          -- NULL si no hubo fila en signals\n    entry         REAL,\n    take_profit   REAL,\n    stop_loss     REAL,\n    tp_pct        REAL,\n    sl_pct        REAL,\n    reward_neto_pct REAL,\n    objetivo_alcanzable INTEGER,\n    tier          TEXT,\n    score         INTEGER,\n    display_state TEXT,\n    senal_n       INTEGER,\n    telegram      TEXT,             -- enviado / fallo / no_procede\n    telegram_detalle TEXT,\n    strategy_version TEXT,\n    config_hash   TEXT\n)"
+      },
+      {
+        "table": "analysis_log",
+        "rows": 88551,
+        "sql": "CREATE TABLE analysis_log (\n    id      INTEGER PRIMARY KEY AUTOINCREMENT,\n    ts_ms   INTEGER NOT NULL,\n    symbol  TEXT,\n    level   TEXT,\n    message TEXT\n)"
+      },
+      {
+        "table": "klines",
+        "rows": 1239984,
+        "sql": "CREATE TABLE klines (\n    symbol    TEXT    NOT NULL,\n    tf        TEXT    NOT NULL,\n    open_time INTEGER NOT NULL,\n    o REAL, h REAL, l REAL, c REAL, v REAL,\n    PRIMARY KEY (symbol, tf, open_time)\n)"
+      },
+      {
+        "table": "outcomes",
+        "rows": 2900,
+        "sql": "CREATE TABLE outcomes (\n    signal_id     INTEGER PRIMARY KEY,\n    symbol        TEXT    NOT NULL,\n    ts_open       INTEGER NOT NULL,\n    ts_last       INTEGER,\n    entry         REAL    NOT NULL,\n    take_profit   REAL,\n    stop_loss     REAL,\n    tp_pct        REAL,\n    sl_pct        REAL,\n    display_state TEXT,\n    tier          TEXT,\n    score         INTEGER,\n    macro         TEXT,\n    taxonomia     TEXT,\n    -- Excursiones maximas dentro de la ventana\n    mfe_pct       REAL    DEFAULT 0,\n    mae_pct       REAL    DEFAULT 0,\n    ms_mfe        INTEGER,\n    ms_mae        INTEGER,\n    -- Primer cruce de cada umbral, en ms desde la apertura. NULL = no llego.\n    ms_up_1       INTEGER, ms_up_2  INTEGER, ms_up_32 INTEGER,\n    ms_up_5       INTEGER, ms_up_10 INTEGER,\n    ms_dn_1       INTEGER, ms_dn_2  INTEGER, ms_dn_32 INTEGER,\n    ms_dn_5       INTEGER, ms_dn_10 INTEGER,\n    ms_tp         INTEGER, ms_sl    INTEGER,\n    -- Camino hasta +3.2%\n    dip_antes_obj REAL,\n    forma         TEXT,\n    n_velas       INTEGER DEFAULT 0,\n    cerrado       INTEGER DEFAULT 0,\n    -- 1 = señal que el gate macro suprimio. Se mide pero NO se alerta:\n    -- sin esto no hay forma de saber si el gate protege o cuesta dinero.\n    sombra        INTEGER DEFAULT 0,\n    -- Liquidez en el momento de la señal. Las metricas de impulso son\n    -- todas RATIOS, y un ratio no tiene escala: \"volumen 1.77x\" sobre\n    -- 1.195 USDT/min no es el mismo suceso que 1.59x sobre 40.048.\n    vol_24h       REAL,\n    vol_1m_medio  REAL\n, ms_up_12 INTEGER, ms_up_42 INTEGER, ms_dn_12 INTEGER, ms_dn_42 INTEGER, pos_en_rango REAL, dist_soporte_pct REAL, dist_resistencia_pct REAL, z_drop REAL, z_rise REAL, velocity REAL, ret_1m_pct REAL, drawdown_pct REAL, rango_1h_pct REAL, sigma_pct REAL, atr_pct REAL, ruido_1m_pct REAL, atr_percentile REAL, vol_ratio REAL, buy_ratio_30s REAL, flow_trades_30s REAL, rsi5 REAL, rsi14 REAL, macd_hist REAL, bb_position REAL, fase_impulso TEXT, fuerza_impulso REAL, consumido_pct REAL, retro_caida_pct REAL, retro_rebote_pct REAL, retro_confirmado REAL, btc_regime TEXT, macro_gate_mult REAL, score_trend REAL, es_fakeout REAL, senal_n REAL, hoyo_disparo REAL, hoyo_fill REAL, hoyo_mfe_pct REAL, hoyo_mae_pct REAL, precio_ultimo REAL, ms_hoyo INTEGER, ms_hoyo_mfe INTEGER, ms_hoyo_mae INTEGER, ms_hoyo_a INTEGER, ms_hoyo_c2 INTEGER, ms_hoyo_c3 INTEGER, hoyo_celda TEXT, hoyo_a TEXT, hoyo_c2 TEXT, hoyo_c3 TEXT, sombra_motivo TEXT, rsi14_1m REAL, rsi14_15m REAL, macd_hist_15m REAL, bb_position_15m REAL, flow_disponible INTEGER, strategy_version TEXT, config_hash TEXT, reward_neto_pct REAL, cobertura_velas REAL, objetivo_alcanzable INTEGER, hoyo_ambiguo INTEGER)"
+      },
+      {
+        "table": "pair_metadata",
+        "rows": 283,
+        "sql": "CREATE TABLE pair_metadata (\n    symbol    TEXT PRIMARY KEY,\n    vol_24h   REAL,\n    updated   INTEGER\n)"
+      },
+      {
+        "table": "schema_meta",
+        "rows": 1,
+        "sql": "CREATE TABLE schema_meta (\n    key   TEXT PRIMARY KEY,\n    value TEXT\n)"
+      },
+      {
+        "table": "signals",
+        "rows": 2363,
+        "sql": "CREATE TABLE signals (\n    id           INTEGER PRIMARY KEY AUTOINCREMENT,\n    symbol       TEXT    NOT NULL,\n    ts_open      INTEGER NOT NULL,\n    display_state TEXT,\n    tier         TEXT,\n    score        INTEGER,\n    entry        REAL,\n    take_profit  REAL,\n    stop_loss    REAL,\n    risk_reward  REAL,\n    macro        TEXT,\n    status       TEXT    NOT NULL DEFAULT 'OPEN',\n    ts_close     INTEGER,\n    result_pct   REAL\n)"
+      },
+      {
+        "table": "sqlite_sequence",
+        "rows": 4,
+        "sql": "CREATE TABLE sqlite_sequence(name,seq)"
+      },
+      {
+        "table": "symbol_states",
+        "rows": 58870,
+        "sql": "CREATE TABLE symbol_states (\n    id         INTEGER PRIMARY KEY AUTOINCREMENT,\n    symbol     TEXT    NOT NULL,\n    ts_ms      INTEGER NOT NULL,\n    state      TEXT    NOT NULL,\n    fsm_state  TEXT,\n    score      INTEGER,\n    tier       TEXT,\n    macro      TEXT,\n    price      REAL\n)"
+      },
+      {
+        "table": "telegram_hilos",
+        "rows": 6,
+        "sql": "CREATE TABLE telegram_hilos (\n    symbol     TEXT    PRIMARY KEY,\n    message_id INTEGER NOT NULL,\n    ts_ms      INTEGER NOT NULL\n)"
+      }
+    ]
+  },
+  "schema_version": [
+    {
+      "key": "version",
+      "value": "11"
+    }
+  ],
+  "outcome_cohorts": [
+    {
+      "strategy_version": null,
+      "n": 2792,
+      "closed": 2623,
+      "shadow": 481,
+      "first_entry_ms": 1788580560560,
+      "last_entry_ms": 1789079641876,
+      "with_coverage": 139,
+      "closed_coverage_ge_95pct": 114,
+      "ever_32": 1123,
+      "raw_32_before_sl": 710,
+      "same_bar_32_sl": 0,
+      "with_sl": 2792
+    },
+    {
+      "strategy_version": "e222b70",
+      "n": 6,
+      "closed": 0,
+      "shadow": 6,
+      "first_entry_ms": 1789079820258,
+      "last_entry_ms": 1789080181275,
+      "with_coverage": 0,
+      "closed_coverage_ge_95pct": 0,
+      "ever_32": 0,
+      "raw_32_before_sl": 0,
+      "same_bar_32_sl": 0,
+      "with_sl": 6
+    },
+    {
+      "strategy_version": "c41d477",
+      "n": 5,
+      "closed": 0,
+      "shadow": 0,
+      "first_entry_ms": 1789080300931,
+      "last_entry_ms": 1789080840268,
+      "with_coverage": 0,
+      "closed_coverage_ge_95pct": 0,
+      "ever_32": 2,
+      "raw_32_before_sl": 1,
+      "same_bar_32_sl": 0,
+      "with_sl": 5
+    },
+    {
+      "strategy_version": "b8a3d64",
+      "n": 83,
+      "closed": 0,
+      "shadow": 45,
+      "first_entry_ms": 1789080900384,
+      "last_entry_ms": 1789106101153,
+      "with_coverage": 0,
+      "closed_coverage_ge_95pct": 0,
+      "ever_32": 15,
+      "raw_32_before_sl": 13,
+      "same_bar_32_sl": 0,
+      "with_sl": 83
+    },
+    {
+      "strategy_version": "25d03fa",
+      "n": 14,
+      "closed": 0,
+      "shadow": 5,
+      "first_entry_ms": 1789107960389,
+      "last_entry_ms": 1789110780456,
+      "with_coverage": 0,
+      "closed_coverage_ge_95pct": 0,
+      "ever_32": 0,
+      "raw_32_before_sl": 0,
+      "same_bar_32_sl": 0,
+      "with_sl": 14
+    }
+  ],
+  "states": [
+    {
+      "taxonomia": "NEUTRAL",
+      "display_state": "SUBIENDO",
+      "sombra": 0,
+      "n": 1599
+    },
+    {
+      "taxonomia": "NEUTRAL",
+      "display_state": "TOCÓ_FONDO",
+      "sombra": 1,
+      "n": 297
+    },
+    {
+      "taxonomia": "NEUTRAL",
+      "display_state": "TOCÓ_FONDO",
+      "sombra": 0,
+      "n": 281
+    },
+    {
+      "taxonomia": "NEUTRAL",
+      "display_state": "CONSOLIDANDO",
+      "sombra": 0,
+      "n": 234
+    },
+    {
+      "taxonomia": "NEUTRAL",
+      "display_state": "SUBIENDO",
+      "sombra": 1,
+      "n": 203
+    },
+    {
+      "taxonomia": "TENDENCIA",
+      "display_state": "SUBIENDO",
+      "sombra": 0,
+      "n": 159
+    },
+    {
+      "taxonomia": "NEUTRAL",
+      "display_state": "BREAKOUT_INCIPIENTE",
+      "sombra": 0,
+      "n": 63
+    },
+    {
+      "taxonomia": "NEUTRAL",
+      "display_state": "CONSOLIDANDO",
+      "sombra": 1,
+      "n": 29
+    },
+    {
+      "taxonomia": "COMPRIMIDA",
+      "display_state": "SUBIENDO",
+      "sombra": 0,
+      "n": 10
+    },
+    {
+      "taxonomia": "COMPRIMIDA",
+      "display_state": "CONSOLIDANDO",
+      "sombra": 0,
+      "n": 9
+    },
+    {
+      "taxonomia": "IGNICION",
+      "display_state": "SUBIENDO",
+      "sombra": 0,
+      "n": 5
+    },
+    {
+      "taxonomia": "TENDENCIA",
+      "display_state": "SUBIENDO",
+      "sombra": 1,
+      "n": 4
+    },
+    {
+      "taxonomia": "BASE_POST_CAIDA",
+      "display_state": "TOCÓ_FONDO",
+      "sombra": 0,
+      "n": 1
+    },
+    {
+      "taxonomia": "COMPRIMIDA",
+      "display_state": "CONSOLIDANDO",
+      "sombra": 1,
+      "n": 1
+    },
+    {
+      "taxonomia": "COMPRIMIDA",
+      "display_state": "SUBIENDO",
+      "sombra": 1,
+      "n": 1
+    },
+    {
+      "taxonomia": "IGNICION",
+      "display_state": "BREAKOUT_INCIPIENTE",
+      "sombra": 0,
+      "n": 1
+    },
+    {
+      "taxonomia": "NEUTRAL",
+      "display_state": "BREAKOUT_INCIPIENTE",
+      "sombra": 1,
+      "n": 1
+    },
+    {
+      "taxonomia": "TENDENCIA",
+      "display_state": "BREAKOUT_INCIPIENTE",
+      "sombra": 0,
+      "n": 1
+    },
+    {
+      "taxonomia": "TENDENCIA",
+      "display_state": "CONSOLIDANDO",
+      "sombra": 1,
+      "n": 1
+    }
+  ],
+  "alert_profiles": [
+    {
+      "display_state": "CONSOLIDANDO",
+      "n": 42,
+      "without_signal": 14
+    },
+    {
+      "display_state": "SUBIENDO",
+      "n": 11,
+      "without_signal": 1
+    },
+    {
+      "display_state": "TOCÓ_FONDO",
+      "n": 13,
+      "without_signal": 4
+    }
+  ],
+  "profile_logs": [
+    {
+      "level": "BASE",
+      "n": 1663
+    },
+    {
+      "level": "IGNICION",
+      "n": 131
+    },
+    {
+      "level": "TENDENCIA",
+      "n": 2382
+    }
+  ],
+  "kline_ranges": [
+    {
+      "tf": "15m",
+      "n": 67852,
+      "symbols": 261,
+      "first_ms": 1788851700000,
+      "last_ms": 1789110000000
+    },
+    {
+      "tf": "1d",
+      "n": 47227,
+      "symbols": 283,
+      "first_ms": 1773100800000,
+      "last_ms": 1788998400000
+    },
+    {
+      "tf": "1h",
+      "n": 78826,
+      "symbols": 283,
+      "first_ms": 1787932800000,
+      "last_ms": 1789106400000
+    },
+    {
+      "tf": "1m",
+      "n": 801695,
+      "symbols": 261,
+      "first_ms": 1788851280000,
+      "last_ms": 1789111020000
+    },
+    {
+      "tf": "4h",
+      "n": 57426,
+      "symbols": 283,
+      "first_ms": 1785988800000,
+      "last_ms": 1789084800000
+    },
+    {
+      "tf": "5m",
+      "n": 186958,
+      "symbols": 261,
+      "first_ms": 1788851400000,
+      "last_ms": 1789110600000
+    }
+  ],
+  "outcome_quality": [
+    {
+      "cerrado": 0,
+      "n": 277,
+      "min_bars": 4,
+      "max_bars": 1389,
+      "zero_bars": 0,
+      "over_1440_bars": 0,
+      "min_coverage": null,
+      "max_coverage": null,
+      "same_bar_plan_tp_sl": 0,
+      "extrema_after_24h": 0
+    },
+    {
+      "cerrado": 1,
+      "n": 2623,
+      "min_bars": 9,
+      "max_bars": 1409,
+      "zero_bars": 0,
+      "over_1440_bars": 0,
+      "min_coverage": 0.2319,
+      "max_coverage": 0.9611,
+      "same_bar_plan_tp_sl": 0,
+      "extrema_after_24h": 104
+    }
+  ],
+  "feature_coverage": {
+    "drawdown_pct": {
+      "n": 2900,
+      "non_null": 786
+    },
+    "sigma_pct": {
+      "n": 2900,
+      "non_null": 786
+    },
+    "atr_pct": {
+      "n": 2900,
+      "non_null": 786
+    },
+    "atr_percentile": {
+      "n": 2900,
+      "non_null": 786
+    },
+    "vol_ratio": {
+      "n": 2900,
+      "non_null": 786
+    },
+    "rsi5": {
+      "n": 2900,
+      "non_null": 786
+    },
+    "rsi14_1m": {
+      "n": 2900,
+      "non_null": 108
+    },
+    "rsi14_15m": {
+      "n": 2900,
+      "non_null": 101
+    },
+    "macd_hist_15m": {
+      "n": 2900,
+      "non_null": 101
+    },
+    "dist_soporte_pct": {
+      "n": 2900,
+      "non_null": 695
+    },
+    "dist_resistencia_pct": {
+      "n": 2900,
+      "non_null": 700
+    },
+    "retro_caida_pct": {
+      "n": 2900,
+      "non_null": 786
+    },
+    "retro_rebote_pct": {
+      "n": 2900,
+      "non_null": 786
+    },
+    "retro_confirmado": {
+      "n": 2900,
+      "non_null": 786
+    },
+    "btc_regime": {
+      "n": 2900,
+      "non_null": 786
+    },
+    "strategy_version": {
+      "n": 2900,
+      "non_null": 108
+    },
+    "config_hash": {
+      "n": 2900,
+      "non_null": 108
+    },
+    "cobertura_velas": {
+      "n": 2900,
+      "non_null": 139
+    }
+  },
+  "absent_outcome_columns": [
+    "grupo_vol",
+    "vol_previa_pct",
+    "horizonte",
+    "horizon_min",
+    "swing_high",
+    "swing_low",
+    "swing_high_ts",
+    "swing_low_ts",
+    "grind_r2",
+    "grind_slope",
+    "compression_state"
+  ],
+  "reconstructability": [
+    {
+      "horizon_min": 15,
+      "mature_rows": 2899,
+      "all_full_1m_bars_present": 753,
+      "no_bars": 1602,
+      "mean_bar_coverage": 0.4277337012763017
+    },
+    {
+      "horizon_min": 30,
+      "mature_rows": 2897,
+      "all_full_1m_bars_present": 193,
+      "no_bars": 1597,
+      "mean_bar_coverage": 0.4263744896623112
+    },
+    {
+      "horizon_min": 60,
+      "mature_rows": 2886,
+      "all_full_1m_bars_present": 5,
+      "no_bars": 1576,
+      "mean_bar_coverage": 0.4246860941776209
+    },
+    {
+      "horizon_min": 120,
+      "mature_rows": 2872,
+      "all_full_1m_bars_present": 4,
+      "no_bars": 1568,
+      "mean_bar_coverage": 0.4246243065471332
+    },
+    {
+      "horizon_min": 240,
+      "mature_rows": 2861,
+      "all_full_1m_bars_present": 2,
+      "no_bars": 1533,
+      "mean_bar_coverage": 0.4245319028516497
+    },
+    {
+      "horizon_min": 360,
+      "mature_rows": 2841,
+      "all_full_1m_bars_present": 0,
+      "no_bars": 1509,
+      "mean_bar_coverage": 0.42346107877194333
+    },
+    {
+      "horizon_min": 480,
+      "mature_rows": 2807,
+      "all_full_1m_bars_present": 0,
+      "no_bars": 1456,
+      "mean_bar_coverage": 0.41840745586079464
+    },
+    {
+      "horizon_min": 1440,
+      "mature_rows": 2623,
+      "all_full_1m_bars_present": 0,
+      "no_bars": 1112,
+      "mean_bar_coverage": 0.42750570473363686
+    }
+  ],
+  "local_database_schemas": [
+    {
+      "path": "D:\\SACBinance\\data\\sacbinance.db",
+      "tables": [
+        "symbol_states",
+        "sqlite_sequence",
+        "analysis_log",
+        "pair_metadata",
+        "signals",
+        "klines"
+      ],
+      "has_labels": false
+    },
+    {
+      "path": "D:\\SACBinance\\data\\sacbinance_2026-09-10.db",
+      "tables": [
+        "symbol_states",
+        "sqlite_sequence",
+        "analysis_log",
+        "pair_metadata",
+        "signals",
+        "klines",
+        "schema_meta",
+        "outcomes",
+        "telegram_hilos"
+      ],
+      "has_labels": false
+    },
+    {
+      "path": "D:\\SACBinance\\backend\\data\\sacbinance.db",
+      "tables": [
+        "symbol_states",
+        "sqlite_sequence",
+        "analysis_log",
+        "pair_metadata",
+        "signals",
+        "klines",
+        "schema_meta",
+        "outcomes"
+      ],
+      "has_labels": false
+    }
+  ]
+}

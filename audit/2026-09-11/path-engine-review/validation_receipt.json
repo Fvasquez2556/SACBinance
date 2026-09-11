@@ -1,0 +1,18 @@
+{
+  "checked_utc": "2026-09-11T21:34:51.008059+00:00",
+  "local_commit": "10f990a416308c20ca34aa4f774a3430d71f0019",
+  "remote_state": "25d03fa82c147a1c28786c6fd9fb236863557a21\n M frontend/package-lock.json\nActiveEnterTimestamp=Fri 2026-09-11 06:06:20 UTC\nMainPID=390990",
+  "report_links_checked": 32,
+  "link_errors": [],
+  "synthetic_checks": [
+    "horizon_overwrite",
+    "future_leak_at_index_100",
+    "mfe_definition_after_sl",
+    "same_candle_tie",
+    "bar_count_is_not_elapsed_time",
+    "production_schema_adapter_required"
+  ],
+  "scope": "Read-only review and local audit artifacts. No production or UI changes.",
+  "refreshed_snapshot": "2026-09-11T21:33:30.801214+00:00",
+  "refreshed_sha256": "392a155c6c00daa210faf459a2b2729f83c5663a4be0710c355ae6ae3ea6a7d6"
+}

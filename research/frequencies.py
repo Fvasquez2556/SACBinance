@@ -60,6 +60,9 @@ CORTES_DEFAULT: Dict[str, List[float]] = {
 @dataclass
 class Consulta:
     n: int = 0
+    # Filas frente a observaciones INDEPENDIENTES. Con etiquetas superpuestas
+    # las dos cifras se separan mucho, y la que decide es la segunda.
+    n_efectivo: float = 0.0
     p_tp: Optional[float] = None
     p_sl: Optional[float] = None
     p_exp: Optional[float] = None
@@ -86,24 +89,73 @@ class Consulta:
 #  Carga y discretizacion
 # =============================================================================
 
-def cargar_labels(db: str, features: Sequence[str]) -> dict:
+def cargar_labels(db: str, features: Sequence[str],
+                  horizonte_min: Optional[int] = None,
+                  politica: Optional[str] = None,
+                  evaluador: Optional[int] = None,
+                  solo_completos: bool = True) -> dict:
+    """
+    Lee las etiquetas de UNA evaluacion concreta.
+
+    Desde que `labels` distingue horizonte, politica y version del evaluador,
+    la tabla contiene varias evaluaciones a la vez. Leerla entera mezclaria
+    horizontes de 4h con los de 8h y stops por ATR con stops fijos en la misma
+    frecuencia — que es exactamente el error que la identidad nueva vino a
+    evitar. Si no se especifica cual, se exige que solo haya una.
+
+    `solo_completos` descarta las etiquetas cuyo horizonte tiene huecos o
+    todavia no ha terminado: una frecuencia calculada sobre ventanas a medias
+    no es una frecuencia mas ruidosa, es otra cosa.
+    """
     conn = sqlite3.connect(db)
+    combos = conn.execute(
+        "SELECT DISTINCT horizonte_min, politica, evaluador FROM labels"
+    ).fetchall()
+    if not combos:
+        conn.close()
+        raise SystemExit("No hay etiquetas. Corre research/labeling.py primero.")
+
+    sel = [c for c in combos
+           if (horizonte_min is None or c[0] == horizonte_min)
+           and (politica is None or c[1] == politica)
+           and (evaluador is None or c[2] == evaluador)]
+    if not sel:
+        conn.close()
+        raise SystemExit(
+            f"Ninguna evaluacion coincide. Disponibles: {combos}")
+    if len(sel) > 1:
+        conn.close()
+        raise SystemExit(
+            "La base tiene varias evaluaciones y mezclarlas daria una "
+            "frecuencia sin sentido. Elige una con --horizonte-min / "
+            f"--politica / --evaluador. Disponibles: {sel}")
+    h, pol, ev = sel[0]
+
     cols = ", ".join(features)
+    filtro = "WHERE horizonte_min=? AND politica=? AND evaluador=?"
+    params = [h, pol, ev]
+    if solo_completos:
+        filtro += " AND estado='COMPLETO'"
     cur = conn.execute(
-        f"""SELECT t0, t1, etiqueta, ret_pct, mfe_pct, mae_pct, ambiguo,
-                   concurrencia, {cols}
-            FROM labels ORDER BY t0"""
+        f"""SELECT t0, t1, etiqueta, ret_pct, mfe_salida, mae_salida, ambiguo,
+                   concurrencia, mfe_ventana, {cols}
+            FROM labels {filtro} ORDER BY t0""", params
     )
     filas = cur.fetchall()
     conn.close()
     if not filas:
-        raise SystemExit("No hay etiquetas. Corre research/labeling.py primero.")
+        raise SystemExit(
+            f"La evaluacion {pol} a {h} min no tiene etiquetas"
+            + (" con estado COMPLETO." if solo_completos else "."))
     a = np.array(filas, dtype=float)
     return {
         "t0": a[:, 0].astype(np.int64), "t1": a[:, 1].astype(np.int64),
         "y": a[:, 2].astype(np.int8), "ret": a[:, 3], "mfe": a[:, 4],
         "mae": a[:, 5], "amb": a[:, 6].astype(np.int8),
-        "conc": np.maximum(a[:, 7], 1.0), "X": a[:, 8:],
+        "conc": np.maximum(a[:, 7], 1.0), "mfe_ventana": a[:, 8],
+        "X": a[:, 9:],
+        "evaluacion": {"horizonte_min": int(h), "politica": pol,
+                       "evaluador": int(ev), "solo_completos": solo_completos},
     }
 
 
@@ -165,8 +217,14 @@ class TablaFrecuencias:
             sw = float(ws.sum())
             if sw <= 0:
                 continue
+            # Tamaño efectivo de muestra (Kish): (sum w)^2 / sum w^2. Con
+            # etiquetas superpuestas, mil filas que se solapan casi del todo
+            # valen como unas pocas observaciones independientes. Contar filas
+            # dejaba pasar celdas que parecian robustas y no lo eran.
+            n_ef = float(sw * sw / max(float((ws * ws).sum()), 1e-12))
             self.tabla[int(cid)] = {
                 "n": int(sel.sum()),
+                "n_efectivo": n_ef,
                 "p_tp": float(np.average(y[sel] == 1, weights=ws)),
                 "p_sl": float(np.average(y[sel] == -1, weights=ws)),
                 "p_exp": float(np.average(y[sel] == 0, weights=ws)),
@@ -183,7 +241,8 @@ class TablaFrecuencias:
         if e is None:
             return c
         c.n = e["n"]
-        if c.n < self.n_min:
+        c.n_efectivo = e["n_efectivo"]
+        if e["n_efectivo"] < self.n_min:
             return c            # suficiente = False -> SIN_DATOS
         c.suficiente = True
         c.p_tp, c.p_sl, c.p_exp = e["p_tp"], e["p_sl"], e["p_exp"]
@@ -200,7 +259,7 @@ class TablaFrecuencias:
         ok = np.zeros(ids.size, dtype=bool)
         for i, cid in enumerate(ids):
             e = self.tabla.get(int(cid))
-            if e is not None and e["n"] >= self.n_min:
+            if e is not None and e["n_efectivo"] >= self.n_min:
                 p[i] = e["p_tp"]
                 ok[i] = True
         return p, ok
@@ -262,12 +321,21 @@ def split_purgado(d: dict, frac_train: float = 0.7,
 # =============================================================================
 
 def reporte(db: str, features: Sequence[str], n_min: int,
-            frac_train: float) -> None:
-    d = cargar_labels(db, features)
+            frac_train: float, horizonte_min: Optional[int] = None,
+            politica: Optional[str] = None, evaluador: Optional[int] = None,
+            solo_completos: bool = True) -> None:
+    d = cargar_labels(db, features, horizonte_min, politica, evaluador,
+                      solo_completos)
     n = d["y"].size
+    ev = d["evaluacion"]
 
     print("=" * 68)
     print(f"TASA BASE  —  {n:,} eventos etiquetados")
+    # Sin esto, dos reportes con numeros distintos parecen un cambio de
+    # mercado cuando en realidad son horizontes o politicas distintas.
+    print(f"evaluacion: politica {ev['politica']} | horizonte "
+          f"{ev['horizonte_min']} min | evaluador v{ev['evaluador']}"
+          + ("" if ev["solo_completos"] else " | INCLUYE ventanas incompletas"))
     print("=" * 68)
     for lab, val in (("TP", 1), ("SL", -1), ("EXPIRO", 0)):
         m = d["y"] == val
@@ -293,8 +361,8 @@ def reporte(db: str, features: Sequence[str], n_min: int,
 
     t = TablaFrecuencias(features, CORTES_DEFAULT, n_min=n_min)
     t.entrenar(d, tr)
-    print(f"  celdas: {len(t.tabla):,} | con n>={n_min}: "
-          f"{sum(1 for v in t.tabla.values() if v['n'] >= n_min):,}")
+    print(f"  celdas: {len(t.tabla):,} | con muestra efectiva >={n_min}: "
+          f"{sum(1 for v in t.tabla.values() if v['n_efectivo'] >= n_min):,}")
 
     p, ok = t.p_tp_array(d["X"][te])
     y = (d["y"][te] == 1).astype(float)
@@ -317,7 +385,8 @@ def reporte(db: str, features: Sequence[str], n_min: int,
     print("\n" + "=" * 68)
     print("MEJORES CELDAS POR ESPERANZA  (solo n suficiente)")
     print("=" * 68)
-    filas = [(cid, e) for cid, e in t.tabla.items() if e["n"] >= n_min]
+    filas = [(cid, e) for cid, e in t.tabla.items()
+             if e["n_efectivo"] >= n_min]
     filas.sort(key=lambda x: x[1]["ret"], reverse=True)
     print(f"  {'n':>8} {'TP':>7} {'lift':>6} {'E[ret]':>8} {'MAE p10':>9}")
     for cid, e in filas[:10]:
@@ -333,7 +402,14 @@ def main(argv=None) -> int:
     ap.add_argument("--db", default="research/data/history.db")
     ap.add_argument("--features", default=",".join(FEATURES[:4]),
                     help="menos features = celdas mas pobladas")
-    ap.add_argument("--n-min", type=int, default=200)
+    ap.add_argument("--n-min", type=int, default=200,
+                    help="muestra EFECTIVA minima por celda (Kish), no filas")
+    ap.add_argument("--horizonte-min", type=int,
+                    help="horizonte de la evaluacion a leer, en minutos")
+    ap.add_argument("--politica", help='p.ej. "fijo:3.2/2" o "atr:2/1.5"')
+    ap.add_argument("--evaluador", type=int, help="version del evaluador")
+    ap.add_argument("--incluir-incompletas", action="store_true",
+                    help="no filtrar por estado=COMPLETO (no recomendado)")
     ap.add_argument("--frac-train", type=float, default=0.7)
     a = ap.parse_args(argv)
 
@@ -341,7 +417,8 @@ def main(argv=None) -> int:
     for f in feats:
         if f not in FEATURES:
             ap.error(f"feature desconocida: {f}. Validas: {FEATURES}")
-    reporte(a.db, feats, a.n_min, a.frac_train)
+    reporte(a.db, feats, a.n_min, a.frac_train, a.horizonte_min,
+            a.politica, a.evaluador, not a.incluir_incompletas)
     return 0
 
 

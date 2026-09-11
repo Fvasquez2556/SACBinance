@@ -1,0 +1,106 @@
+{
+  "schema_version": {
+    "sql": "SELECT * FROM schema_meta",
+    "parameters": []
+  },
+  "outcome_cohorts": {
+    "sql": "SELECT strategy_version,\n    count(*) n, sum(cerrado=1) closed, sum(sombra=1) shadow,\n    min(ts_open) first_entry_ms, max(ts_open) last_entry_ms,\n    sum(cobertura_velas IS NOT NULL) with_coverage,\n    sum(cobertura_velas>=0.95 AND cerrado=1) closed_coverage_ge_95pct,\n    sum(ms_up_32 IS NOT NULL) ever_32,\n    sum(ms_up_32 IS NOT NULL AND (ms_sl IS NULL OR ms_up_32<ms_sl)) raw_32_before_sl,\n    sum(ms_up_32 IS NOT NULL AND ms_up_32=ms_sl) same_bar_32_sl,\n    sum(stop_loss IS NOT NULL) with_sl\n    FROM outcomes GROUP BY strategy_version ORDER BY first_entry_ms",
+    "parameters": []
+  },
+  "states": {
+    "sql": "SELECT taxonomia, display_state, sombra,\n    count(*) n FROM outcomes GROUP BY 1,2,3 ORDER BY n DESC",
+    "parameters": []
+  },
+  "alert_profiles": {
+    "sql": "SELECT display_state,\n    count(*) n, sum(signal_id IS NULL) without_signal FROM alertas_emitidas\n    GROUP BY 1",
+    "parameters": []
+  },
+  "profile_logs": {
+    "sql": "SELECT level, count(*) n\n    FROM analysis_log WHERE level IN ('TENDENCIA','IGNICION','BASE') GROUP BY level",
+    "parameters": []
+  },
+  "kline_ranges": {
+    "sql": "SELECT tf, count(*) n,\n    count(DISTINCT symbol) symbols, min(open_time) first_ms, max(open_time) last_ms\n    FROM klines GROUP BY tf",
+    "parameters": []
+  },
+  "outcome_quality": {
+    "sql": "SELECT cerrado, count(*) n,\n    min(n_velas) min_bars, max(n_velas) max_bars,\n    sum(n_velas=0) zero_bars, sum(n_velas>1440) over_1440_bars,\n    min(cobertura_velas) min_coverage, max(cobertura_velas) max_coverage,\n    sum(ms_tp=ms_sl) same_bar_plan_tp_sl,\n    sum(ms_mfe>86400000 OR ms_mae>86400000) extrema_after_24h\n    FROM outcomes GROUP BY cerrado",
+    "parameters": []
+  },
+  "nonnull_drawdown_pct": {
+    "sql": "SELECT count(*) n, count(drawdown_pct) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_sigma_pct": {
+    "sql": "SELECT count(*) n, count(sigma_pct) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_atr_pct": {
+    "sql": "SELECT count(*) n, count(atr_pct) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_atr_percentile": {
+    "sql": "SELECT count(*) n, count(atr_percentile) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_vol_ratio": {
+    "sql": "SELECT count(*) n, count(vol_ratio) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_rsi5": {
+    "sql": "SELECT count(*) n, count(rsi5) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_rsi14_1m": {
+    "sql": "SELECT count(*) n, count(rsi14_1m) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_rsi14_15m": {
+    "sql": "SELECT count(*) n, count(rsi14_15m) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_macd_hist_15m": {
+    "sql": "SELECT count(*) n, count(macd_hist_15m) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_dist_soporte_pct": {
+    "sql": "SELECT count(*) n, count(dist_soporte_pct) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_dist_resistencia_pct": {
+    "sql": "SELECT count(*) n, count(dist_resistencia_pct) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_retro_caida_pct": {
+    "sql": "SELECT count(*) n, count(retro_caida_pct) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_retro_rebote_pct": {
+    "sql": "SELECT count(*) n, count(retro_rebote_pct) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_retro_confirmado": {
+    "sql": "SELECT count(*) n, count(retro_confirmado) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_btc_regime": {
+    "sql": "SELECT count(*) n, count(btc_regime) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_strategy_version": {
+    "sql": "SELECT count(*) n, count(strategy_version) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_config_hash": {
+    "sql": "SELECT count(*) n, count(config_hash) non_null FROM outcomes",
+    "parameters": []
+  },
+  "nonnull_cobertura_velas": {
+    "sql": "SELECT count(*) n, count(cobertura_velas) non_null FROM outcomes",
+    "parameters": []
+  },
+  "outcome_entries": {
+    "sql": "SELECT signal_id,symbol,ts_open FROM outcomes",
+    "parameters": []
+  }
+}

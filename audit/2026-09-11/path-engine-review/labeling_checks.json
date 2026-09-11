@@ -1,0 +1,35 @@
+{
+  "horizon_overwrite": {
+    "horizons_written_bars": [
+      240,
+      480
+    ],
+    "horizons_retained_bars": [
+      480
+    ]
+  },
+  "future_leak_at_index_100": {
+    "identical_history_through_index": 100,
+    "atr_relative_original": 1.0,
+    "atr_relative_after_future_change": 0.29411764705882354,
+    "volume_relative_original": 1.0,
+    "volume_relative_after_future_change": 0.5
+  },
+  "mfe_definition_after_sl": {
+    "label": -1,
+    "mfe_until_exit_pct": 1.0,
+    "mfe_full_horizon_pct": 5.000000000000004,
+    "bars_until_tp_despite_sl_first": 2
+  },
+  "same_candle_tie": {
+    "label": -1,
+    "ambiguous": 1
+  },
+  "bar_count_is_not_elapsed_time": {
+    "requested_bars": 2,
+    "declared_interval_min": 1,
+    "tp_bar_open_minutes_after_entry_bar_open": 60,
+    "label": 1
+  },
+  "production_schema_adapter_required": "no such column: open"
+}

@@ -1,0 +1,300 @@
+{
+  "schema_version": [
+    {
+      "key": "version",
+      "value": "11"
+    }
+  ],
+  "outcome_cohorts": [
+    {
+      "strategy_version": null,
+      "n": 2792,
+      "closed": 2782,
+      "shadow": 481,
+      "first_entry_ms": 1788580560560,
+      "last_entry_ms": 1789079641876,
+      "with_coverage": 298,
+      "closed_coverage_ge_95pct": 242,
+      "ever_32": 1146,
+      "raw_32_before_sl": 715,
+      "same_bar_32_sl": 0,
+      "with_sl": 2792
+    },
+    {
+      "strategy_version": "e222b70",
+      "n": 6,
+      "closed": 0,
+      "shadow": 6,
+      "first_entry_ms": 1789079820258,
+      "last_entry_ms": 1789080181275,
+      "with_coverage": 0,
+      "closed_coverage_ge_95pct": 0,
+      "ever_32": 5,
+      "raw_32_before_sl": 3,
+      "same_bar_32_sl": 0,
+      "with_sl": 6
+    },
+    {
+      "strategy_version": "c41d477",
+      "n": 5,
+      "closed": 0,
+      "shadow": 0,
+      "first_entry_ms": 1789080300931,
+      "last_entry_ms": 1789080840268,
+      "with_coverage": 0,
+      "closed_coverage_ge_95pct": 0,
+      "ever_32": 3,
+      "raw_32_before_sl": 1,
+      "same_bar_32_sl": 0,
+      "with_sl": 5
+    },
+    {
+      "strategy_version": "b8a3d64",
+      "n": 83,
+      "closed": 0,
+      "shadow": 45,
+      "first_entry_ms": 1789080900384,
+      "last_entry_ms": 1789106101153,
+      "with_coverage": 0,
+      "closed_coverage_ge_95pct": 0,
+      "ever_32": 65,
+      "raw_32_before_sl": 22,
+      "same_bar_32_sl": 0,
+      "with_sl": 83
+    },
+    {
+      "strategy_version": "25d03fa",
+      "n": 176,
+      "closed": 0,
+      "shadow": 97,
+      "first_entry_ms": 1789107960389,
+      "last_entry_ms": 1789161001761,
+      "with_coverage": 0,
+      "closed_coverage_ge_95pct": 0,
+      "ever_32": 82,
+      "raw_32_before_sl": 32,
+      "same_bar_32_sl": 0,
+      "with_sl": 176
+    }
+  ],
+  "alert_profiles": [
+    {
+      "display_state": "BREAKOUT_INCIPIENTE",
+      "n": 2,
+      "without_signal": 0
+    },
+    {
+      "display_state": "CONSOLIDANDO",
+      "n": 64,
+      "without_signal": 20
+    },
+    {
+      "display_state": "SUBIENDO",
+      "n": 41,
+      "without_signal": 5
+    },
+    {
+      "display_state": "TOCÓ_FONDO",
+      "n": 42,
+      "without_signal": 7
+    }
+  ],
+  "profile_logs": [
+    {
+      "level": "BASE",
+      "n": 1839
+    },
+    {
+      "level": "IGNICION",
+      "n": 158
+    },
+    {
+      "level": "TENDENCIA",
+      "n": 2589
+    }
+  ],
+  "kline_ranges": [
+    {
+      "tf": "15m",
+      "n": 67125,
+      "symbols": 266,
+      "first_ms": 1788902100000,
+      "last_ms": 1789161300000
+    },
+    {
+      "tf": "1d",
+      "n": 48144,
+      "symbols": 288,
+      "first_ms": 1773100800000,
+      "last_ms": 1788998400000
+    },
+    {
+      "tf": "1h",
+      "n": 82800,
+      "symbols": 288,
+      "first_ms": 1787932800000,
+      "last_ms": 1789156800000
+    },
+    {
+      "tf": "1m",
+      "n": 847566,
+      "symbols": 266,
+      "first_ms": 1788901680000,
+      "last_ms": 1789162260000
+    },
+    {
+      "tf": "4h",
+      "n": 59184,
+      "symbols": 288,
+      "first_ms": 1785988800000,
+      "last_ms": 1789142400000
+    },
+    {
+      "tf": "5m",
+      "n": 189986,
+      "symbols": 266,
+      "first_ms": 1788901800000,
+      "last_ms": 1789161900000
+    }
+  ],
+  "outcome_quality": [
+    {
+      "cerrado": 0,
+      "n": 280,
+      "min_bars": 21,
+      "max_bars": 1376,
+      "zero_bars": 0,
+      "over_1440_bars": 0,
+      "min_coverage": null,
+      "max_coverage": null,
+      "same_bar_plan_tp_sl": 0,
+      "extrema_after_24h": 0
+    },
+    {
+      "cerrado": 1,
+      "n": 2782,
+      "min_bars": 9,
+      "max_bars": 1409,
+      "zero_bars": 0,
+      "over_1440_bars": 0,
+      "min_coverage": 0.2319,
+      "max_coverage": 0.9722,
+      "same_bar_plan_tp_sl": 0,
+      "extrema_after_24h": 104
+    }
+  ],
+  "absent_outcome_columns": [
+    "grupo_vol",
+    "vol_previa_pct",
+    "horizonte",
+    "horizon_min",
+    "swing_high",
+    "swing_low",
+    "swing_high_ts",
+    "swing_low_ts",
+    "grind_r2",
+    "grind_slope",
+    "compression_state"
+  ],
+  "reconstructability": [
+    {
+      "horizon_min": 15,
+      "mature_rows": 3062,
+      "all_full_1m_bars_present": 667,
+      "no_bars": 1907,
+      "mean_bar_coverage": 0.36012876737893157
+    },
+    {
+      "horizon_min": 30,
+      "mature_rows": 3060,
+      "all_full_1m_bars_present": 192,
+      "no_bars": 1903,
+      "mean_bar_coverage": 0.3591503267973832
+    },
+    {
+      "horizon_min": 60,
+      "mature_rows": 3058,
+      "all_full_1m_bars_present": 5,
+      "no_bars": 1872,
+      "mean_bar_coverage": 0.35883650552593266
+    },
+    {
+      "horizon_min": 120,
+      "mature_rows": 3050,
+      "all_full_1m_bars_present": 4,
+      "no_bars": 1858,
+      "mean_bar_coverage": 0.36182118749139264
+    },
+    {
+      "horizon_min": 240,
+      "mature_rows": 3031,
+      "all_full_1m_bars_present": 2,
+      "no_bars": 1823,
+      "mean_bar_coverage": 0.3612130716211399
+    },
+    {
+      "horizon_min": 360,
+      "mature_rows": 3012,
+      "all_full_1m_bars_present": 0,
+      "no_bars": 1742,
+      "mean_bar_coverage": 0.36184879793731417
+    },
+    {
+      "horizon_min": 480,
+      "mature_rows": 2985,
+      "all_full_1m_bars_present": 0,
+      "no_bars": 1720,
+      "mean_bar_coverage": 0.36115651325521114
+    },
+    {
+      "horizon_min": 1440,
+      "mature_rows": 2782,
+      "all_full_1m_bars_present": 0,
+      "no_bars": 1407,
+      "mean_bar_coverage": 0.35952881848915585
+    }
+  ],
+  "local_database_schemas": [
+    {
+      "path": "D:\\SACBinance\\data\\sacbinance.db",
+      "tables": [
+        "symbol_states",
+        "sqlite_sequence",
+        "analysis_log",
+        "pair_metadata",
+        "signals",
+        "klines"
+      ],
+      "has_labels": false
+    },
+    {
+      "path": "D:\\SACBinance\\data\\sacbinance_2026-09-10.db",
+      "tables": [
+        "symbol_states",
+        "sqlite_sequence",
+        "analysis_log",
+        "pair_metadata",
+        "signals",
+        "klines",
+        "schema_meta",
+        "outcomes",
+        "telegram_hilos"
+      ],
+      "has_labels": false
+    },
+    {
+      "path": "D:\\SACBinance\\backend\\data\\sacbinance.db",
+      "tables": [
+        "symbol_states",
+        "sqlite_sequence",
+        "analysis_log",
+        "pair_metadata",
+        "signals",
+        "klines",
+        "schema_meta",
+        "outcomes"
+      ],
+      "has_labels": false
+    }
+  ]
+}

@@ -37,6 +37,44 @@ El filtro CUSUM simetrico dispara un evento solo cuando el retorno acumulado
 supera un umbral desde el ultimo evento, lo que concentra el muestreo en
 momentos con movimiento real. Se registra ademas la concurrencia para poder
 aplicar despues la ponderacion por unicidad promedio.
+
+-----------------------------------------------------------------------------
+CORRECCIONES DE LA REVISION DEL 11-SEP (path-engine-review)
+-----------------------------------------------------------------------------
+La revision encontro cuatro defectos que invalidaban el dataset producido.
+Todos estan corregidos aqui, y `verificar_labeling.py` lo comprueba:
+
+1. FILTRACION DE FUTURO. Las medias de calentamiento se rellenaban con la
+   media de las PRIMERAS 500 observaciones (`atr_med[:win] = atr[:win].mean()`),
+   asi que la feature del indice 100 dependia de las velas 101..499. Cambiando
+   solo el futuro, `f_atr_rel[100]` pasaba de 1.0 a 0.294. Peor aun: el ancho
+   de ventana era `min(500, max(50, n//10))`, o sea funcion del largo TOTAL de
+   la serie — la misma vela daba features distintas segun cuantos datos se
+   hubieran cargado, y el filtro de eventos (idx > 60) no cubria ni de lejos
+   la zona contaminada (0..500). Ahora las ventanas son constantes y las
+   medias son causales por construccion: el valor en i depende solo de
+   0..i. Se comprueba con una prueba de invariancia de prefijo.
+
+2. IDENTIDAD. La PK era `(symbol, interval, t0)` con `INSERT OR REPLACE`, asi
+   que etiquetar a 4h y despues a 8h dejaba solo lo ultimo, y un SL fijo
+   pisaba al SL por ATR sobre la misma entrada. La PK incluye ahora horizonte,
+   politica y version del evaluador: cada combinacion es una fila propia.
+
+3. TIEMPO. El horizonte se contaba en VELAS. Con huecos —y el historico de 1m
+   los tiene— dos velas pueden abarcar 60 minutos y quedar etiquetadas como un
+   horizonte de 2 minutos. Ahora el horizonte es tiempo real en milisegundos y
+   cada fila guarda su cobertura: que fraccion de las velas esperadas existia
+   de verdad.
+
+4. SEMANTICA DE MFE/MAE. El tracker en vivo mide el recorrido completo de la
+   ventana; aqui se medía hasta la vela de salida. Las dos son utiles y no son
+   la misma: tras un SL en -2% con subida posterior a +5%, una dice +1% y la
+   otra +5%. Ahora se guardan las DOS, con nombres distintos.
+
+Ademas, `velas_a_tp` se rellenaba aunque el SL hubiera ido primero: la fila
+decia "SL" y a la vez "llego al TP en 3 velas". Se conserva —es informacion
+real sobre el recorrido— pero acompañada de `tp_primero`, para que nadie lo
+lea como un acierto.
 """
 from __future__ import annotations
 
@@ -53,25 +91,53 @@ import numpy as np
 
 _DAY_MS = 86_400_000
 
+# Version del evaluador. Sube cuando cambia la SEMANTICA de una etiqueta, para
+# que dos filas con el mismo t0 y distinta version no se confundan ni se pisen.
+#   1 -> 2: features causales, horizonte en tiempo real, MFE de ventana
+#           completa ademas del de salida, identidad por politica.
+EVALUADOR_VERSION = 2
+
+# Anchos de ventana FIJOS. Antes salian de `n//10`, o sea del largo total de la
+# serie: la misma vela daba features distintas segun el rango cargado, y dos
+# corridas del etiquetador no eran comparables entre si.
+VENTANA_ATR_REL = 500
+VENTANA_VOL_REL = 200
+
+# Estados de completitud de una etiqueta.
+COMPLETO = "COMPLETO"       # el horizonte entero existe y sin huecos relevantes
+INCOMPLETO = "INCOMPLETO"   # el horizonte existe pero le faltan velas
+PENDIENTE = "PENDIENTE"     # la serie se acaba antes del horizonte
+
 SCHEMA_LABELS = """
 CREATE TABLE IF NOT EXISTS labels (
     symbol        TEXT    NOT NULL,
     interval      TEXT    NOT NULL,
     t0            INTEGER NOT NULL,     -- ms del evento (entrada)
+    -- Identidad de la EVALUACION, no solo del instante. Sin esto, etiquetar a
+    -- 4h y luego a 8h dejaba una sola fila, y un SL fijo pisaba al de ATR.
+    horizonte_min INTEGER NOT NULL,     -- horizonte en MINUTOS reales
+    politica      TEXT    NOT NULL,     -- p.ej. "atr:2.0/1.5" o "fijo:3.2/2.0"
+    evaluador     INTEGER NOT NULL,     -- EVALUADOR_VERSION
     t1            INTEGER,              -- ms de salida
     precio_e      REAL    NOT NULL,     -- precio de entrada
     precio_s      REAL,                 -- precio de salida
     tp_pct        REAL,                 -- barrera superior usada (%)
     sl_pct        REAL,                 -- barrera inferior usada (%)
-    horizonte     INTEGER,              -- velas de la barrera temporal
     etiqueta      INTEGER,              -- 1=TP  -1=SL  0=expiro
     ret_pct       REAL,                 -- retorno realizado
-    mfe_pct       REAL,                 -- maximo favorable
-    mae_pct       REAL,                 -- maximo adverso
-    velas_a_tp    INTEGER,              -- velas hasta tocar TP (NULL si no)
+    -- Las DOS definiciones de excursion, que no son la misma cosa:
+    mfe_salida    REAL,                 -- maximo favorable HASTA LA SALIDA
+    mae_salida    REAL,                 -- maximo adverso  HASTA LA SALIDA
+    mfe_ventana   REAL,                 -- maximo favorable en TODO el horizonte
+    mae_ventana   REAL,                 -- maximo adverso  en TODO el horizonte
+    ms_a_tp       INTEGER,              -- ms hasta tocar TP (NULL si nunca)
+    tp_primero    INTEGER,              -- 1 si el TP se toco ANTES que el SL
     ambiguo       INTEGER DEFAULT 0,    -- TP y SL en la misma vela
     concurrencia  INTEGER,              -- etiquetas vivas simultaneas
-    -- features del estado en t0
+    -- Calidad del dato: sin esto una etiqueta con huecos parece una completa
+    estado        TEXT,                 -- COMPLETO / INCOMPLETO / PENDIENTE
+    cobertura     REAL,                 -- velas presentes / velas esperadas
+    -- features del estado en t0 (todas causales: solo usan datos <= t0)
     f_pct_dia     REAL,
     f_pos_dia     REAL,
     f_atr_rel     REAL,
@@ -79,12 +145,30 @@ CREATE TABLE IF NOT EXISTS labels (
     f_ret_1h      REAL,
     f_dist_max20  REAL,
     f_btc_reg     REAL,
-    PRIMARY KEY (symbol, interval, t0)
+    PRIMARY KEY (symbol, interval, t0, horizonte_min, politica, evaluador)
 ) WITHOUT ROWID;
 
 CREATE INDEX IF NOT EXISTS idx_lab_t0 ON labels (t0);
 CREATE INDEX IF NOT EXISTS idx_lab_sym ON labels (symbol, t0);
+CREATE INDEX IF NOT EXISTS idx_lab_pol ON labels (politica, horizonte_min);
 """
+
+# Orden canonico de las columnas al insertar. Se nombran a proposito: un INSERT
+# posicional contra `VALUES (?,?,...)` se descuadra en silencio en cuanto
+# alguien añade una columna al esquema.
+COLUMNAS_LABELS = (
+    "symbol", "interval", "t0", "horizonte_min", "politica", "evaluador",
+    "t1", "precio_e", "precio_s", "tp_pct", "sl_pct", "etiqueta", "ret_pct",
+    "mfe_salida", "mae_salida", "mfe_ventana", "mae_ventana",
+    "ms_a_tp", "tp_primero", "ambiguo", "concurrencia", "estado", "cobertura",
+    "f_pct_dia", "f_pos_dia", "f_atr_rel", "f_vol_rel", "f_ret_1h",
+    "f_dist_max20", "f_btc_reg",
+)
+
+_INSERT_LABELS = (
+    f"INSERT OR REPLACE INTO labels ({', '.join(COLUMNAS_LABELS)}) "
+    f"VALUES ({', '.join('?' * len(COLUMNAS_LABELS))})"
+)
 
 
 # =============================================================================
@@ -102,14 +186,50 @@ class Serie:
     n: int
 
 
-def cargar(conn: sqlite3.Connection, symbol: str, interval: str) -> Optional[Serie]:
-    cur = conn.execute(
-        """SELECT open_time, open, high, low, close, quote_volume
-           FROM klines WHERE symbol=? AND interval=? ORDER BY open_time""",
-        (symbol, interval),
-    )
-    filas = cur.fetchall()
-    if len(filas) < 500:
+# Los dos esquemas de klines que existen en el proyecto. Produccion guarda
+# `tf/o/h/l/c/v`; la base de investigacion, `interval/open/high/low/close/
+# quote_volume`. Apuntar el etiquetador a produccion fallaba con "no such
+# column: open" — no daba un resultado malo, no daba ninguno.
+#
+# En los dos casos `v` es volumen COTIZADO: el WS guarda k["q"], y mezclarlo
+# con volumen base romperia vol_rel, que es un ratio entre ambos.
+_ESQUEMAS = (
+    ("tf", "SELECT open_time, o, h, l, c, v FROM klines "
+           "WHERE symbol=? AND tf=? ORDER BY open_time"),
+    ("interval", "SELECT open_time, open, high, low, close, quote_volume "
+                 "FROM klines WHERE symbol=? AND interval=? ORDER BY open_time"),
+)
+
+
+def _columnas_klines(conn: sqlite3.Connection) -> set:
+    try:
+        return {r[1] for r in conn.execute("PRAGMA table_info(klines)")}
+    except sqlite3.Error:
+        return set()
+
+
+def cargar(conn: sqlite3.Connection, symbol: str, interval: str,
+           minimo: int = 500) -> Optional[Serie]:
+    """
+    Lee una serie de klines, sea cual sea el esquema de la base.
+
+    `minimo` es configurable para poder probar el motor con series cortas sin
+    tener que fabricar 500 velas; en produccion el valor por defecto sigue
+    siendo el que evita entrenar sobre nada.
+    """
+    cols = _columnas_klines(conn)
+    filas = None
+    for marca, sql in _ESQUEMAS:
+        if marca not in cols:
+            continue
+        filas = conn.execute(sql, (symbol, interval)).fetchall()
+        break
+    if filas is None:
+        raise ValueError(
+            "La tabla klines no tiene ni la columna 'tf' (esquema de "
+            "produccion) ni 'interval' (esquema de investigacion)"
+        )
+    if len(filas) < minimo:
         return None
     a = np.array(filas, dtype=float)
     return Serie(t=a[:, 0].astype(np.int64), o=a[:, 1], h=a[:, 2],
@@ -120,6 +240,28 @@ def cargar(conn: sqlite3.Connection, symbol: str, interval: str) -> Optional[Ser
 #  Indicadores auxiliares
 # =============================================================================
 
+def _media_causal(x: np.ndarray, win: int) -> np.ndarray:
+    """
+    Media movil de `win` que en el arranque se expande en vez de rellenarse.
+
+    Es la pieza que elimina la filtracion: el valor en i sale de x[0..i] y de
+    nada mas. Antes las primeras `win` posiciones se rellenaban con la media de
+    las primeras `win` observaciones — que para i=100 y win=500 significa mirar
+    400 velas del futuro.
+
+    Propiedad que garantiza: si dos series comparten el prefijo 0..i, el
+    resultado en i es identico aunque el resto difiera. `verificar_labeling.py`
+    lo comprueba.
+    """
+    n = x.size
+    if n == 0:
+        return x.astype(float)
+    cs = np.concatenate(([0.0], np.cumsum(x, dtype=float)))
+    i = np.arange(n)
+    lo = np.maximum(0, i - win + 1)
+    return (cs[i + 1] - cs[lo]) / (i - lo + 1)
+
+
 def atr_pct(s: Serie, period: int = 14) -> np.ndarray:
     """ATR como % del precio. atr[i] usa datos hasta i inclusive."""
     tr = np.empty(s.n)
@@ -128,9 +270,7 @@ def atr_pct(s: Serie, period: int = 14) -> np.ndarray:
         s.h[1:] - s.l[1:],
         np.maximum(np.abs(s.h[1:] - s.c[:-1]), np.abs(s.l[1:] - s.c[:-1])),
     )
-    k = np.ones(period) / period
-    suave = np.convolve(tr, k, mode="full")[:s.n]
-    suave[:period] = tr[:period].mean() if period <= s.n else tr.mean()
+    suave = _media_causal(tr, period)
     with np.errstate(divide="ignore", invalid="ignore"):
         return np.nan_to_num(suave / s.c * 100.0, nan=0.0, posinf=0.0)
 
@@ -164,6 +304,10 @@ def eventos_cusum(closes: np.ndarray, umbral: np.ndarray) -> np.ndarray:
 
 def calcular_features(s: Serie, atr: np.ndarray, velas_por_hora: int,
                       btc_reg: Optional[np.ndarray]) -> Dict[str, np.ndarray]:
+    """
+    Estado del mercado en cada vela. TODAS las features son causales: el valor
+    en i sale de las velas 0..i y de ninguna posterior.
+    """
     n = s.n
 
     # Ancla diaria fija: open de la primera vela de cada dia UTC
@@ -178,7 +322,6 @@ def calcular_features(s: Serie, atr: np.ndarray, velas_por_hora: int,
 
     # Posicion en el rango del dia (max/min acumulados DENTRO del dia)
     hi = np.empty(n); lo = np.empty(n)
-    ch = cl = -np.inf, np.inf
     ch, cl = -np.inf, np.inf
     for i in range(n):
         if cambio[i]:
@@ -190,17 +333,12 @@ def calcular_features(s: Serie, atr: np.ndarray, velas_por_hora: int,
     pos_dia = np.where(rng > 0, (s.c - lo) / np.maximum(rng, 1e-12), 0.5)
 
     # ATR relativo a su propia media larga (¿comprimida o expandida?)
-    win = min(500, max(50, n // 10))
-    k = np.ones(win) / win
-    atr_med = np.convolve(atr, k, mode="full")[:n]
-    atr_med[:win] = atr[:win].mean() if win <= n else atr.mean()
+    # Ventana FIJA y media causal: ver `_media_causal`.
+    atr_med = _media_causal(atr, VENTANA_ATR_REL)
     atr_rel = np.where(atr_med > 0, atr / np.maximum(atr_med, 1e-12), 1.0)
 
     # Volumen relativo
-    wv = min(200, max(30, n // 20))
-    kv = np.ones(wv) / wv
-    vol_med = np.convolve(s.v, kv, mode="full")[:n]
-    vol_med[:wv] = s.v[:wv].mean() if wv <= n else s.v.mean()
+    vol_med = _media_causal(s.v, VENTANA_VOL_REL)
     vol_rel = np.where(vol_med > 0, s.v / np.maximum(vol_med, 1e-12), 1.0)
 
     # Retorno de la ultima hora
@@ -242,31 +380,65 @@ def regimen_btc(conn: sqlite3.Connection, interval: str,
 
 def triple_barrera(
     s: Serie, eventos: np.ndarray, tp_pct: np.ndarray, sl_pct: np.ndarray,
-    horizonte: int,
+    horizonte_ms: int, intervalo_ms: int, cobertura_min: float = 0.98,
 ) -> Dict[str, np.ndarray]:
     """
     Para cada evento devuelve que barrera se toco primero, mas MFE/MAE.
-    tp_pct / sl_pct son arrays por evento (positivos, en %).
+
+    El horizonte es TIEMPO REAL en milisegundos, no un numero de velas. Con
+    huecos en el historico —y los hay— contar velas hacia que dos velas
+    separadas por una hora pasaran por un horizonte de dos minutos.
+
+    Devuelve las dos definiciones de excursion, que no son intercambiables:
+      - `mfe_salida` / `mae_salida`: hasta la vela en que se sale. Es lo que
+        habrias vivido operando con esas barreras.
+      - `mfe_ventana` / `mae_ventana`: en todo el horizonte, pase lo que pase
+        con las barreras. Es lo que mide el tracker en vivo, y lo que responde
+        "¿el movimiento llego a estar ahi?".
+
+    `estado` y `cobertura` dicen si la fila se puede creer: una etiqueta
+    calculada sobre la mitad de las velas no es una etiqueta incompleta, es una
+    etiqueta distinta.
     """
     m = eventos.size
     etiqueta = np.zeros(m, dtype=np.int8)
     t1_idx = np.zeros(m, dtype=np.int64)
-    ret = np.zeros(m); mfe = np.zeros(m); mae = np.zeros(m)
-    velas_tp = np.full(m, -1, dtype=np.int64)
+    ret = np.zeros(m)
+    mfe_sal = np.zeros(m); mae_sal = np.zeros(m)
+    mfe_ven = np.zeros(m); mae_ven = np.zeros(m)
+    ms_tp = np.full(m, -1, dtype=np.int64)
+    tp_primero = np.zeros(m, dtype=np.int8)
     ambiguo = np.zeros(m, dtype=np.int8)
+    estado = np.full(m, PENDIENTE, dtype=object)
+    cobertura = np.zeros(m)
+
+    esperadas = max(1, horizonte_ms // max(1, intervalo_ms))
 
     for j in range(m):
         i = int(eventos[j])
-        fin = min(i + horizonte, s.n - 1)
+        limite = s.t[i] + horizonte_ms
+        # Ultima vela cuya APERTURA cae dentro del horizonte.
+        fin = int(np.searchsorted(s.t, limite, side="right")) - 1
+        fin = min(fin, s.n - 1)
         if fin <= i:
             t1_idx[j] = i
+            cobertura[j] = 0.0
             continue
+
         pe = s.c[i]
         hs = s.h[i + 1:fin + 1]
         ls = s.l[i + 1:fin + 1]
-        if hs.size == 0:
-            t1_idx[j] = i
-            continue
+        ts = s.t[i + 1:fin + 1]
+
+        # Calidad: velas presentes frente a las que deberia haber, y si la
+        # serie llega siquiera al final del horizonte.
+        cobertura[j] = min(1.0, hs.size / esperadas)
+        if s.t[s.n - 1] < limite:
+            estado[j] = PENDIENTE
+        elif cobertura[j] >= cobertura_min:
+            estado[j] = COMPLETO
+        else:
+            estado[j] = INCOMPLETO
 
         up = pe * (1.0 + tp_pct[j] / 100.0)
         dn = pe * (1.0 - sl_pct[j] / 100.0)
@@ -276,8 +448,11 @@ def triple_barrera(
         i_up = int(np.argmax(toco_up)) if toco_up.any() else -1
         i_dn = int(np.argmax(toco_dn)) if toco_dn.any() else -1
 
+        # Momento del primer toque del TP, ocurra antes o despues del SL. Se
+        # conserva porque es informacion real del recorrido, pero `tp_primero`
+        # es lo unico que autoriza a contarlo como acierto.
         if i_up >= 0:
-            velas_tp[j] = i_up + 1
+            ms_tp[j] = int(ts[i_up] - s.t[i])
 
         if i_up < 0 and i_dn < 0:
             k = hs.size - 1
@@ -286,6 +461,7 @@ def triple_barrera(
         elif i_dn < 0 or (i_up >= 0 and i_up < i_dn):
             k = i_up
             etiqueta[j] = 1
+            tp_primero[j] = 1
             precio_sal = up
         elif i_up < 0 or i_dn < i_up:
             k = i_dn
@@ -301,16 +477,22 @@ def triple_barrera(
 
         t1_idx[j] = i + 1 + k
         ret[j] = (precio_sal - pe) / pe * 100.0
-        mfe[j] = (hs[:k + 1].max() - pe) / pe * 100.0
-        mae[j] = (ls[:k + 1].min() - pe) / pe * 100.0
+        mfe_sal[j] = (hs[:k + 1].max() - pe) / pe * 100.0
+        mae_sal[j] = (ls[:k + 1].min() - pe) / pe * 100.0
+        mfe_ven[j] = (hs.max() - pe) / pe * 100.0
+        mae_ven[j] = (ls.min() - pe) / pe * 100.0
 
     # Concurrencia: cuantas etiquetas estan vivas en cada evento
     conc = np.zeros(m, dtype=np.int64)
     for j in range(m):
         conc[j] = int(np.sum((eventos <= eventos[j]) & (t1_idx > eventos[j])))
 
-    return {"etiqueta": etiqueta, "t1_idx": t1_idx, "ret": ret, "mfe": mfe,
-            "mae": mae, "velas_tp": velas_tp, "ambiguo": ambiguo, "conc": conc}
+    return {"etiqueta": etiqueta, "t1_idx": t1_idx, "ret": ret,
+            "mfe_salida": mfe_sal, "mae_salida": mae_sal,
+            "mfe_ventana": mfe_ven, "mae_ventana": mae_ven,
+            "ms_a_tp": ms_tp, "tp_primero": tp_primero,
+            "ambiguo": ambiguo, "conc": conc,
+            "estado": estado, "cobertura": cobertura}
 
 
 # =============================================================================
@@ -318,6 +500,16 @@ def triple_barrera(
 # =============================================================================
 
 _VELAS_HORA = {"1m": 60, "3m": 20, "5m": 12, "15m": 4, "1h": 1}
+_MS_INTERVALO = {"1m": 60_000, "3m": 180_000, "5m": 300_000,
+                 "15m": 900_000, "1h": 3_600_000}
+
+
+def nombre_politica(modo: str, k_tp: float, k_sl: float,
+                    tp_fijo: float, sl_fijo: float) -> str:
+    """Identidad legible de la politica de salida. Entra en la PK."""
+    if modo == "atr":
+        return f"atr:{k_tp:g}/{k_sl:g}"
+    return f"fijo:{tp_fijo:g}/{sl_fijo:g}"
 
 
 def etiquetar(
@@ -331,10 +523,21 @@ def etiquetar(
     conn.executescript(SCHEMA_LABELS)
 
     vph = _VELAS_HORA.get(interval, 60)
-    horizonte = int(horizonte_h * vph)
+    intervalo_ms = _MS_INTERVALO.get(interval, 60_000)
+    horizonte_ms = int(horizonte_h * 3_600_000)
+    horizonte_min = int(round(horizonte_h * 60))
+    horizonte_velas = int(horizonte_h * vph)      # solo para filtrar eventos
     velas_dia = vph * 24
+    politica = nombre_politica(modo, k_tp, k_sl, tp_fijo, sl_fijo)
 
-    stats = {"simbolos": 0, "eventos": 0, "tp": 0, "sl": 0, "exp": 0, "amb": 0}
+    # Los eventos no pueden salir de la zona en la que las medias todavia se
+    # estan expandiendo: ahi la feature es causal pero tiene poca muestra. Se
+    # exige el mayor de los dos calentamientos, no `velas_dia // 24`, que eran
+    # 60 velas contra una zona de 500.
+    calentamiento = max(VENTANA_ATR_REL, VENTANA_VOL_REL, velas_dia)
+
+    stats = {"simbolos": 0, "eventos": 0, "tp": 0, "sl": 0, "exp": 0, "amb": 0,
+             "completos": 0, "incompletos": 0, "pendientes": 0}
     t0 = time.monotonic()
 
     for si, sym in enumerate(symbols, 1):
@@ -348,7 +551,7 @@ def etiquetar(
         # Umbral CUSUM proporcional a la volatilidad de cada momento
         umbral = np.maximum(atr / 100.0 * cusum_k, 1e-4)
         ev = eventos_cusum(s.c, umbral)
-        ev = ev[(ev > velas_dia // 24) & (ev < s.n - horizonte - 1)]
+        ev = ev[(ev > calentamiento) & (ev < s.n - horizonte_velas - 1)]
         if ev.size == 0:
             continue
 
@@ -359,25 +562,33 @@ def etiquetar(
             tp = np.full(ev.size, tp_fijo)
             sl = np.full(ev.size, sl_fijo)
 
-        r = triple_barrera(s, ev, tp, sl, horizonte)
+        r = triple_barrera(s, ev, tp, sl, horizonte_ms, intervalo_ms)
 
         filas = [
-            (sym, interval, int(s.t[ev[j]]), int(s.t[r["t1_idx"][j]]),
+            (sym, interval, int(s.t[ev[j]]), horizonte_min, politica,
+             EVALUADOR_VERSION,
+             int(s.t[r["t1_idx"][j]]),
              float(s.c[ev[j]]),
              float(s.c[ev[j]] * (1 + r["ret"][j] / 100.0)),
-             float(tp[j]), float(sl[j]), horizonte,
+             float(tp[j]), float(sl[j]),
              int(r["etiqueta"][j]), float(r["ret"][j]),
-             float(r["mfe"][j]), float(r["mae"][j]),
-             int(r["velas_tp"][j]), int(r["ambiguo"][j]), int(r["conc"][j]),
+             float(r["mfe_salida"][j]), float(r["mae_salida"][j]),
+             float(r["mfe_ventana"][j]), float(r["mae_ventana"][j]),
+             (int(r["ms_a_tp"][j]) if r["ms_a_tp"][j] >= 0 else None),
+             int(r["tp_primero"][j]), int(r["ambiguo"][j]), int(r["conc"][j]),
+             str(r["estado"][j]), float(r["cobertura"][j]),
              float(feats["f_pct_dia"][ev[j]]), float(feats["f_pos_dia"][ev[j]]),
              float(feats["f_atr_rel"][ev[j]]), float(feats["f_vol_rel"][ev[j]]),
              float(feats["f_ret_1h"][ev[j]]), float(feats["f_dist_max20"][ev[j]]),
              float(feats["f_btc_reg"][ev[j]]))
             for j in range(ev.size)
         ]
-        conn.executemany(
-            f"INSERT OR REPLACE INTO labels VALUES ({','.join('?' * 23)})", filas
-        )
+        if filas and len(filas[0]) != len(COLUMNAS_LABELS):
+            raise ValueError(
+                f"la fila tiene {len(filas[0])} valores y COLUMNAS_LABELS "
+                f"declara {len(COLUMNAS_LABELS)}"
+            )
+        conn.executemany(_INSERT_LABELS, filas)
         conn.commit()
 
         stats["simbolos"] += 1
@@ -386,6 +597,9 @@ def etiquetar(
         stats["sl"] += int((r["etiqueta"] == -1).sum())
         stats["exp"] += int((r["etiqueta"] == 0).sum())
         stats["amb"] += int(r["ambiguo"].sum())
+        stats["completos"] += int((r["estado"] == COMPLETO).sum())
+        stats["incompletos"] += int((r["estado"] == INCOMPLETO).sum())
+        stats["pendientes"] += int((r["estado"] == PENDIENTE).sum())
 
         if si % 10 == 0 or si == len(symbols):
             print(f"  {si}/{len(symbols)} | {stats['eventos']:,} eventos | "
@@ -393,13 +607,21 @@ def etiquetar(
 
     n = max(stats["eventos"], 1)
     print(f"\n{stats['simbolos']} simbolos, {stats['eventos']:,} eventos")
+    print(f"  politica {politica} | horizonte {horizonte_min} min | "
+          f"evaluador v{EVALUADOR_VERSION}")
     print(f"  TP  {stats['tp']:>8,} ({stats['tp']/n:6.1%})")
     print(f"  SL  {stats['sl']:>8,} ({stats['sl']/n:6.1%})")
     print(f"  EXP {stats['exp']:>8,} ({stats['exp']/n:6.1%})")
     print(f"  ambiguos intra-vela: {stats['amb']:,} ({stats['amb']/n:.1%})")
+    print(f"  calidad: {stats['completos']:,} completos, "
+          f"{stats['incompletos']:,} con huecos, {stats['pendientes']:,} sin "
+          f"horizonte entero")
     if stats["amb"] / n > 0.05:
         print("  ⚠ ambiguedad >5%: las etiquetas estan sesgadas hacia SL.")
         print("    Para conclusiones firmes hace falta 1s klines o aggTrades.")
+    if stats["incompletos"] / n > 0.05:
+        print("  ⚠ mas del 5% de las etiquetas tiene huecos en su horizonte.")
+        print("    Filtra por estado='COMPLETO' antes de sacar conclusiones.")
     return stats
 
 
@@ -418,11 +640,13 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
 
     conn = sqlite3.connect(a.db)
+    cols = _columnas_klines(conn)
+    campo_tf = "tf" if "tf" in cols else "interval"
     if a.symbols:
         syms = [x.strip().upper() for x in a.symbols.split(",") if x.strip()]
     else:
         syms = [r[0] for r in conn.execute(
-            "SELECT DISTINCT symbol FROM klines WHERE interval=? ORDER BY symbol",
+            f"SELECT DISTINCT symbol FROM klines WHERE {campo_tf}=? ORDER BY symbol",
             (a.interval,))]
     conn.close()
     if not syms:

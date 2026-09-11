@@ -1,0 +1,66 @@
+{
+  "source": "flox@100.96.211.5:/home/flox/sacbinance/backend/data/sacbinance.db",
+  "started_utc": "2026-09-11T21:32:19.579419+00:00",
+  "finished_utc": "2026-09-11T21:33:30.801214+00:00",
+  "commit": "25d03fa82c147a1c28786c6fd9fb236863557a21",
+  "working_tree_status": " M frontend/package-lock.json\n",
+  "size_bytes": 161566720,
+  "sha256": "392a155c6c00daa210faf459a2b2729f83c5663a4be0710c355ae6ae3ea6a7d6",
+  "integrity_check": [
+    [
+      "ok"
+    ]
+  ],
+  "tables": [
+    {
+      "table": "alertas_emitidas",
+      "rows": 149,
+      "sql": "CREATE TABLE alertas_emitidas (\n    id            INTEGER PRIMARY KEY AUTOINCREMENT,\n    ts_ms         INTEGER NOT NULL,\n    symbol        TEXT    NOT NULL,\n    signal_id     INTEGER,          -- NULL si no hubo fila en signals\n    entry         REAL,\n    take_profit   REAL,\n    stop_loss     REAL,\n    tp_pct        REAL,\n    sl_pct        REAL,\n    reward_neto_pct REAL,\n    objetivo_alcanzable INTEGER,\n    tier          TEXT,\n    score         INTEGER,\n    display_state TEXT,\n    senal_n       INTEGER,\n    telegram      TEXT,             -- enviado / fallo / no_procede\n    telegram_detalle TEXT,\n    strategy_version TEXT,\n    config_hash   TEXT\n)"
+    },
+    {
+      "table": "analysis_log",
+      "rows": 96632,
+      "sql": "CREATE TABLE analysis_log (\n    id      INTEGER PRIMARY KEY AUTOINCREMENT,\n    ts_ms   INTEGER NOT NULL,\n    symbol  TEXT,\n    level   TEXT,\n    message TEXT\n)"
+    },
+    {
+      "table": "klines",
+      "rows": 1294805,
+      "sql": "CREATE TABLE klines (\n    symbol    TEXT    NOT NULL,\n    tf        TEXT    NOT NULL,\n    open_time INTEGER NOT NULL,\n    o REAL, h REAL, l REAL, c REAL, v REAL,\n    PRIMARY KEY (symbol, tf, open_time)\n)"
+    },
+    {
+      "table": "outcomes",
+      "rows": 3062,
+      "sql": "CREATE TABLE outcomes (\n    signal_id     INTEGER PRIMARY KEY,\n    symbol        TEXT    NOT NULL,\n    ts_open       INTEGER NOT NULL,\n    ts_last       INTEGER,\n    entry         REAL    NOT NULL,\n    take_profit   REAL,\n    stop_loss     REAL,\n    tp_pct        REAL,\n    sl_pct        REAL,\n    display_state TEXT,\n    tier          TEXT,\n    score         INTEGER,\n    macro         TEXT,\n    taxonomia     TEXT,\n    -- Excursiones maximas dentro de la ventana\n    mfe_pct       REAL    DEFAULT 0,\n    mae_pct       REAL    DEFAULT 0,\n    ms_mfe        INTEGER,\n    ms_mae        INTEGER,\n    -- Primer cruce de cada umbral, en ms desde la apertura. NULL = no llego.\n    ms_up_1       INTEGER, ms_up_2  INTEGER, ms_up_32 INTEGER,\n    ms_up_5       INTEGER, ms_up_10 INTEGER,\n    ms_dn_1       INTEGER, ms_dn_2  INTEGER, ms_dn_32 INTEGER,\n    ms_dn_5       INTEGER, ms_dn_10 INTEGER,\n    ms_tp         INTEGER, ms_sl    INTEGER,\n    -- Camino hasta +3.2%\n    dip_antes_obj REAL,\n    forma         TEXT,\n    n_velas       INTEGER DEFAULT 0,\n    cerrado       INTEGER DEFAULT 0,\n    -- 1 = se\u00f1al que el gate macro suprimio. Se mide pero NO se alerta:\n    -- sin esto no hay forma de saber si el gate protege o cuesta dinero.\n    sombra        INTEGER DEFAULT 0,\n    -- Liquidez en el momento de la se\u00f1al. Las metricas de impulso son\n    -- todas RATIOS, y un ratio no tiene escala: \"volumen 1.77x\" sobre\n    -- 1.195 USDT/min no es el mismo suceso que 1.59x sobre 40.048.\n    vol_24h       REAL,\n    vol_1m_medio  REAL\n, ms_up_12 INTEGER, ms_up_42 INTEGER, ms_dn_12 INTEGER, ms_dn_42 INTEGER, pos_en_rango REAL, dist_soporte_pct REAL, dist_resistencia_pct REAL, z_drop REAL, z_rise REAL, velocity REAL, ret_1m_pct REAL, drawdown_pct REAL, rango_1h_pct REAL, sigma_pct REAL, atr_pct REAL, ruido_1m_pct REAL, atr_percentile REAL, vol_ratio REAL, buy_ratio_30s REAL, flow_trades_30s REAL, rsi5 REAL, rsi14 REAL, macd_hist REAL, bb_position REAL, fase_impulso TEXT, fuerza_impulso REAL, consumido_pct REAL, retro_caida_pct REAL, retro_rebote_pct REAL, retro_confirmado REAL, btc_regime TEXT, macro_gate_mult REAL, score_trend REAL, es_fakeout REAL, senal_n REAL, hoyo_disparo REAL, hoyo_fill REAL, hoyo_mfe_pct REAL, hoyo_mae_pct REAL, precio_ultimo REAL, ms_hoyo INTEGER, ms_hoyo_mfe INTEGER, ms_hoyo_mae INTEGER, ms_hoyo_a INTEGER, ms_hoyo_c2 INTEGER, ms_hoyo_c3 INTEGER, hoyo_celda TEXT, hoyo_a TEXT, hoyo_c2 TEXT, hoyo_c3 TEXT, sombra_motivo TEXT, rsi14_1m REAL, rsi14_15m REAL, macd_hist_15m REAL, bb_position_15m REAL, flow_disponible INTEGER, strategy_version TEXT, config_hash TEXT, reward_neto_pct REAL, cobertura_velas REAL, objetivo_alcanzable INTEGER, hoyo_ambiguo INTEGER)"
+    },
+    {
+      "table": "pair_metadata",
+      "rows": 288,
+      "sql": "CREATE TABLE pair_metadata (\n    symbol    TEXT PRIMARY KEY,\n    vol_24h   REAL,\n    updated   INTEGER\n)"
+    },
+    {
+      "table": "schema_meta",
+      "rows": 1,
+      "sql": "CREATE TABLE schema_meta (\n    key   TEXT PRIMARY KEY,\n    value TEXT\n)"
+    },
+    {
+      "table": "signals",
+      "rows": 2433,
+      "sql": "CREATE TABLE signals (\n    id           INTEGER PRIMARY KEY AUTOINCREMENT,\n    symbol       TEXT    NOT NULL,\n    ts_open      INTEGER NOT NULL,\n    display_state TEXT,\n    tier         TEXT,\n    score        INTEGER,\n    entry        REAL,\n    take_profit  REAL,\n    stop_loss    REAL,\n    risk_reward  REAL,\n    macro        TEXT,\n    status       TEXT    NOT NULL DEFAULT 'OPEN',\n    ts_close     INTEGER,\n    result_pct   REAL\n)"
+    },
+    {
+      "table": "sqlite_sequence",
+      "rows": 4,
+      "sql": "CREATE TABLE sqlite_sequence(name,seq)"
+    },
+    {
+      "table": "symbol_states",
+      "rows": 65593,
+      "sql": "CREATE TABLE symbol_states (\n    id         INTEGER PRIMARY KEY AUTOINCREMENT,\n    symbol     TEXT    NOT NULL,\n    ts_ms      INTEGER NOT NULL,\n    state      TEXT    NOT NULL,\n    fsm_state  TEXT,\n    score      INTEGER,\n    tier       TEXT,\n    macro      TEXT,\n    price      REAL\n)"
+    },
+    {
+      "table": "telegram_hilos",
+      "rows": 11,
+      "sql": "CREATE TABLE telegram_hilos (\n    symbol     TEXT    PRIMARY KEY,\n    message_id INTEGER NOT NULL,\n    ts_ms      INTEGER NOT NULL\n)"
+    }
+  ]
+}
