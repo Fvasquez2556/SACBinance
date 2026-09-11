@@ -1,8 +1,17 @@
-"""Read-only production snapshot over SSH; no source/server file modifications."""
+"""Read-only production snapshot over SSH; no source/server file modifications.
+
+Se conecta por el alias `sac` de ~/.ssh/config, no por la IP. SSH empareja los
+bloques de config por el NOMBRE que se escribe, no por la IP a la que resuelve:
+llamando a `flox@100.96.211.5` no se aplica el bloque `Host sac`, no se usa
+`IdentityFile ~/.ssh/id_ed25519_sac` y el servidor rechaza la clave por defecto
+con `Permission denied (publickey,password)` — sin caida a contrasena, porque
+BatchMode lo impide. El alias lleva dentro el usuario, la IP y la clave.
+"""
 import datetime, hashlib, json, pathlib, shlex, sqlite3, subprocess, tarfile
 
 ROOT = pathlib.Path(__file__).resolve().parent
-SSH = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'flox@100.96.211.5']
+HOST = 'sac'   # alias de ~/.ssh/config: HostName + User + IdentityFile
+SSH = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', HOST]
 
 def remote(command):
     return subprocess.check_output(SSH + [command], timeout=180)
@@ -25,6 +34,6 @@ profile = []
 for name, sql in schema:
     safe = name.replace('"', '""')
     profile.append({'table': name, 'rows': conn.execute(f'SELECT COUNT(*) FROM "{safe}"').fetchone()[0], 'sql': sql})
-metadata = {'source':'flox@100.96.211.5:/home/flox/sacbinance/backend/data/sacbinance.db', 'started_utc': started, 'finished_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'commit': revision, 'working_tree_status': status, 'size_bytes': db.stat().st_size, 'sha256': hashlib.sha256(db.read_bytes()).hexdigest(), 'integrity_check': integrity, 'tables':profile}
+metadata = {'source': HOST + ':/home/flox/sacbinance/backend/data/sacbinance.db', 'started_utc': started, 'finished_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'commit': revision, 'working_tree_status': status, 'size_bytes': db.stat().st_size, 'sha256': hashlib.sha256(db.read_bytes()).hexdigest(), 'integrity_check': integrity, 'tables':profile}
 (ROOT / 'provenance.json').write_text(json.dumps(metadata,indent=2),encoding='utf-8')
 print(json.dumps(metadata,indent=2))

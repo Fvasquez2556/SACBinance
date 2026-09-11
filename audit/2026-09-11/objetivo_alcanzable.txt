@@ -1,0 +1,20 @@
+n=775 operaciones cerradas con velas completas
+cortes de volatilidad (recorrido medio de la vela 1m): 0.068%  0.106%  0.165%
+
+LO QUE CADA GRUPO SE MUEVE DE VERDAD EN 24H DESDE LA ENTRADA
+grupo              vol.1m   sube med   sube p75   baja med  llega a 3.2%     n
+MUY TRANQUILA      0.046%      1.23%      2.75%     -3.48%         23.7%   194
+TRANQUILA          0.087%      1.38%      3.16%     -4.41%         24.7%   194
+MOVIDA             0.132%      1.81%      3.74%     -4.92%         30.9%   194
+MUY VOLATIL        0.220%      2.49%      6.00%     -6.06%         41.5%   193
+
+LECTURA: en NINGUN grupo la senal mediana llega al 3.2%. Y en todos,
+la caida maxima mediana es MAS PROFUNDA que la subida maxima mediana.
+Esa asimetria esta antes de elegir ningun stop: no es un problema de
+gestion de riesgo, es que la senal mediana no va a donde tiene que ir.
+
+OBJETIVO QUE ALCANZARIA LA MITAD DE LAS SENALES DE CADA GRUPO
+   MUY TRANQUILA    1.23%   (para que llegue 1 de cada 4: 2.75%)
+   TRANQUILA        1.38%   (para que llegue 1 de cada 4: 3.16%)
+   MOVIDA           1.81%   (para que llegue 1 de cada 4: 3.74%)
+   MUY VOLATIL      2.49%   (para que llegue 1 de cada 4: 6.00%)
