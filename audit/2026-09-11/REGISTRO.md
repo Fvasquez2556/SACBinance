@@ -118,3 +118,43 @@ Fuente: `audit/2026-09-10/verification/snapshot.db`, SHA-256 `ac87a6db622a8f5bb4
 ```bash
 backend/venv/Scripts/python.exe audit/2026-09-10/verification/acquire.py
 ```
+
+---
+
+# Addendum · 11-sep 00:55, con acceso al servidor
+
+Recuperado el acceso SSH (era un fallo mío de invocación, no del servidor), consulté la base viva. Tres correcciones a lo de arriba.
+
+## 1. Sí hubo un reinicio posterior, y tenías razón
+
+El servicio **se reinició el 11-sep a las 00:06 de Guatemala**. Yo había tratado el arranque de las 16:54 como "este reinicio"; tú dijiste que la actualización fue *antes* de un reinicio posterior, y era correcto.
+
+## 2. La cohorte se partió en dos etiquetas, sin motivo funcional
+
+| Versión | `config_hash` | Filas | Desde | Hasta |
+|---|---|---|---|---|
+| `b8a3d64` | 50d5bbbe74aa | **83** | 10/09 16:55 | 10/09 23:55 |
+| `25d03fa` | 50d5bbbe74aa | **11** | 11/09 00:26 | 11/09 00:48 |
+
+El repo del servidor está en **25d03fa**, así que al reiniciar, `procedencia` firmó las filas nuevas con ese commit. Pero **25d03fa no toca ni una línea del backend**: sus 26 ficheros están todos bajo `audit/`. Es el mismo código con otra etiqueta.
+
+**Consecuencia para el análisis de hoy:** `b8a3d64` y `25d03fa` son la misma cohorte y hay que **sumarlas**, no compararlas. Ahora mismo son 94 filas. El `config_hash` idéntico lo confirma: la configuración no cambió.
+
+Esto es un efecto secundario de firmar con el commit de git: un commit que solo añade documentación parte la muestra igual que uno que cambia la estrategia. El `config_hash` es el que distingue de verdad.
+
+## 3. Hay un hueco de 31 minutos
+
+Última fila de `b8a3d64` a las **23:55**, primera de `25d03fa` a las **00:26**. El servicio arrancó a las 00:06, así que 20 de esos minutos son hidratación y calentamiento. Las señales vivas durante ese hueco perdieron seguimiento.
+
+## Estado a las 00:55
+
+- **outcomes** 2.897 · **alertas** 63 · **signals** 2.360
+- Cohorte nueva: **94 outcomes** (83 + 11), frente a los 69 del snapshot de las 23:19
+
+## Sobre `acquire.py`
+
+El script de la auditoría tiene la misma trampa en la que caí: invoca `ssh flox@100.96.211.5` con la IP cruda, que **no coincide** con el bloque `Host sac` de `~/.ssh/config` y por tanto no usa la clave `id_ed25519_sac`. Para que funcione desde esta máquina hay que llamarlo con el alias `sac`.
+
+## Cuándo repetir esto
+
+**No merece la pena volver a bajar el snapshot ahora**: serían 94 ventanas inmaduras en vez de 69. El momento es **después de las 16:55 de hoy**, cuando cierren las primeras ventanas de 24h y haya algo que sí sea un resultado contra el 43,0% histórico.
