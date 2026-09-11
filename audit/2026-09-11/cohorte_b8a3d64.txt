@@ -1,0 +1,152 @@
+
+========================================================================
+1 · PERIMETRO
+========================================================================
+Version        b8a3d64 (esquema v11), config_hash 50d5bbbe74aa
+Primera fila   10/09 16:55
+Ultima fila    10/09 23:19   (fin del snapshot)
+Ventana        6.41 horas
+Outcomes       69  =  29 reales + 40 en sombra
+Alertas        46
+
+NINGUNA ventana de 24h ha vencido: la primera cierra el 11/09 a las 16:55.
+
+========================================================================
+2 · PRODUCCION: cuanto y de que tipo
+========================================================================
+Ritmo          4.5 outcomes reales/hora  (109/dia al ritmo actual)
+               7.2 alertas/hora
+Pares distintos 29 de 224 en el universo
+Tier           VIGILANCIA=18  MODERADA=10  EXTRA-FUERTE=1
+Estado         CONSOLIDANDO=17  SUBIENDO=7  TOCÓ_FONDO=5
+Taxonomia      NEUTRAL=29
+
+Vetadas y medidas en sombra (40):
+    34  GATE_MACRO
+     2  VETO: impulso AGOTADA — precio bajo la EMA7 e
+     2  VETO: la caida sigue acelerando (cuchillo cay
+     2  VETO: impulso AGOTADA — maximos planos en 3 T
+
+========================================================================
+3 · LOS ARREGLOS DE v11: se notan en las filas?
+========================================================================
+F07 · indicadores que antes NUNCA llegaban a la base
+   rsi14_1m            69/69 guardados   
+   rsi14_15m           65/69 guardados   (4 NULL)
+   macd_hist_15m       65/69 guardados   (4 NULL)
+   bb_position_15m     65/69 guardados   (4 NULL)
+
+F08 · disponibilidad de flujo
+   flow_disponible=1   4/69 (5.8%)
+   de esos, con 0 trades: 2  <- suscrito pero sin compradores
+   sin suscripcion:     65  <- su 0 de trades NO significa nada
+
+F12 · procedencia
+   con strategy_version 69/69
+   con config_hash      69/69
+
+F01 · cobertura de velas (solo se escribe al cerrar)
+   filas con cobertura registrada: 0/69  (ninguna ha cerrado todavia)
+   minutos sin vela por fila (contra el cierre real del snapshot):
+      mediana 9   minimo 2   maximo 12
+      filas sin NINGUN minuto perdido: 0/69
+      filas con MAS velas que minutos: 0  (un sobreconteo seria imposible sin duplicados)
+   Las tres filas mas antiguas pierden 12 minutos de 384 (3.1%).
+
+========================================================================
+4 · LOS NIVELES QUE SE OFRECIERON
+========================================================================
+El objetivo del operador son 3.2%. El TP que ofrece el sistema es BRUTO;
+el coste configurado (comision + deslizamiento) es 0.5 puntos.
+
+ALERTAS (lo que te llego)  (n=46)
+   TP bruto   mediana +2.56%   rango +0.28 a +11.80
+   TP neto    mediana +2.06%   rango -0.22 a +11.30
+   Riesgo(SL) mediana  1.29%   rango 0.14 a 5.90
+   NO llegan a 3.2% en bruto: 26/46 (56.5%)
+   NO llegan a 3.2% en neto:  29/46 (63.0%)
+   marcadas objetivo_alcanzable: 17/46 (37.0%)
+
+OUTCOMES reales  (n=29)
+   TP bruto   mediana +3.52%   rango +0.40 a +11.79
+   TP neto    mediana +3.02%   rango -0.10 a +11.30
+   Riesgo(SL) mediana  1.76%   rango 0.20 a 5.90
+   NO llegan a 3.2% en bruto: 14/29 (48.3%)
+   NO llegan a 3.2% en neto:  15/29 (51.7%)
+   marcadas objetivo_alcanzable: 14/29 (48.3%)
+
+
+========================================================================
+4b · POR QUE EL TP NO LLEGA A LA META: sale del SL
+========================================================================
+TP / riesgo en las 46 alertas: mediana 2.00  (rr_target = 2.0)
+   identicos a 2.00: 38/46
+
+El TP no se elige: es el riesgo multiplicado por 2. Asi que para ofrecer
+3.2% BRUTO hace falta un stop de 1.60%, y para 3.2% NETO uno de 1.85%.
+   alertas con stop < 1.60%: 26/46 (56.5%)  -> no pueden llegar ni en bruto
+   alertas con stop < 1.85%: 29/46 (63.0%)  -> no pueden llegar en neto
+
+Esa es la eleccion de fondo, y no la resuelve un umbral: o se aceptan
+stops mas anchos (mas riesgo por operacion), o se sube el rr_target (TP
+mas lejos sobre el mismo stop, que se toca menos veces), o se acepta que
+mas de la mitad de lo que emite el sistema no apunta a tu objetivo.
+
+========================================================================
+5 · CAMINO RECORRIDO HASTA EL CORTE (inmaduro)
+========================================================================
+Nada de esto es un resultado: son ventanas abiertas de entre 0.1 y 6.4 horas
+sobre una ventana nominal de 24. Un SL tocado ya es definitivo; un TP
+no tocado todavia puede tocarse manana.
+
+ESCALON             alcanzado   mediana de tiempo
++1%               19/29   65.5%   73 min
++2%                9/29   31.0%   133 min
++3.2% (meta)       4/29   13.8%   127 min
++4.2%              3/29   10.3%   139 min
++5%                3/29   10.3%   142 min
++10%               3/29   10.3%   185 min
+
+-1%               12/29   41.4%
+-2%                5/29   17.2%
+-3.2%              2/29    6.9%
+
+TP propio tocado   3/29 (10.3%)
+SL propio tocado   8/29 (27.6%)
+   los dos          1   <- el orden dentro del minuto no se sabe
+
+MFE (lo mas que subio)  mediana +1.23%   mejor +20.38%
+MAE (lo mas que bajo)   mediana -0.49%   peor  -3.40%
+
+A precio de corte: 22/29 en positivo (75.9%), mediana +0.64%
+
+========================================================================
+6 · LA REGLA DEL HOYO (entrar abajo, en sombra)
+========================================================================
+El precio bajo al nivel de entrada en 34/69 (49.3%)
+   de esos, 0 con vela ambigua (no se concede el TP en esa vela)
+   regla A   ABIERTA=22  SL=10  TP=2
+   regla C2  ABIERTA=27  SL=4  TP=3
+   regla C3  ABIERTA=31  TP=3
+
+========================================================================
+7 · TELEGRAM
+========================================================================
+    44  no_procede
+     2  enviado
+
+Alertas sin signal_id (sin outcome propio que mida SUS niveles): 17/46 (37.0%)
+
+========================================================================
+8 · CONTRA EL HISTORICO (con cuidado)
+========================================================================
+Las 2.792 filas sin firma mezclan seis dias y varias versiones. Sirve
+para ver si el ritmo y la forma de las senales cambiaron, no para
+atribuir mejoras a esta version.
+
+historico sin firma    n= 2311  TP med +2.56%  riesgo med 1.28%  score med 79
+b8a3d64                n=   29  TP med +3.52%  riesgo med 1.76%  score med 68
+
+Referencia historica (ventanas de 24h ya cerradas, sin firma, n=2197):
+   llegaron a +3.2% en bruto: 945 (43.0%)
+   ese es el numero que esta cohorte tendra que batir manana.
