@@ -1,0 +1,60 @@
+{
+  "as_of": "2026-09-14",
+  "scope": {
+    "strategy_version": "f82bcff",
+    "outcomes": "emitted, closed, non-shadow, 24h horizon",
+    "minimum_candle_coverage": 0.98,
+    "source_database": "/home/flox/sacbinance/backend/data/sacbinance.db via ssh alias sac, read-only"
+  },
+  "snapshots": {
+    "continuation": {
+      "n": 391,
+      "symbols": 184,
+      "reached_32_anytime": 109,
+      "reached_32_rate": 0.2787723785,
+      "reached_32_before_sl": 68,
+      "sl_before_32": 278,
+      "grouped_symbol_auc": 0.7358644024,
+      "chronological_holdout_auc": 0.7396934461,
+      "top_quintile_rate": 0.5316455696,
+      "baseline_rate": 0.2787723785,
+      "stable_features": ["score", "vol_24h (inverse)", "ruido_1m_pct", "atr_pct"]
+    },
+    "stop_paths": {
+      "all_stops": 298,
+      "sl_before_32": 279,
+      "planned_sl_pct": {"mean": 1.1680322581, "median": 0.838, "p75": 1.417},
+      "first_stop_bar_low_pct": {"mean": 1.2962092676, "median": 0.9686866411, "p75": 1.5936884366},
+      "whole_24h_low_pct": {"mean": 3.6551840899, "median": 2.9498525074, "p75": 4.6169865175},
+      "near_stop_recovery": {"n": 175, "recovered_entry_rate": 0.6228571429, "reached_32_rate": 0.1371428571}
+    },
+    "lower_entry_grid": {
+      "continuation_n": 68,
+      "falling_n": 279,
+      "continuation_offsets": {
+        "-0.25": {"fill_rate": 0.868, "target_after_fill_rate": 0.881, "target_before_new_sl_2_rate": 0.763},
+        "-0.50": {"fill_rate": 0.779, "target_after_fill_rate": 0.83, "target_before_new_sl_2_rate": 0.698}
+      },
+      "falling_offsets": {
+        "-1.50": {"fill_rate": 0.889, "target_after_fill_rate": 0.234, "post_fill_mae_median": 1.659},
+        "-2.00": {"fill_rate": 0.763, "target_after_fill_rate": 0.249, "post_fill_mae_median": 1.578},
+        "-2.50": {"fill_rate": 0.616, "target_after_fill_rate": 0.273, "post_fill_mae_median": 1.664, "mean_return_with_new_sl_1": 0.125, "mean_return_ci95": [-0.12, 0.37]},
+        "-3.00": {"fill_rate": 0.491, "target_after_fill_rate": 0.248, "post_fill_mae_median": 1.719}
+      }
+    }
+  },
+  "interpretation": {
+    "continuation_policy_candidate": "resting limit from original entry to -0.5%; shadow only",
+    "falling_policy_candidate": "observe -1.5% to -2.5% lower limits; no statistically confirmed edge",
+    "critical_limit": "The falling group is selected after observing the path. A deployable falling classifier must predict absolute drawdown bands from signal-time features and be evaluated out of sample.",
+    "forbidden_feature_leakage": ["sl_pct", "tp_pct", "take_profit", "stop_loss", "ms_*", "mfe_pct", "mae_pct", "post-emission data"]
+  },
+  "source_artifacts": {
+    "continuation_script": "C:/Users/felix/Documents/Codex/2026-09-09/grupos-listos-sobre-1-319-se/work/analyze_live_continuations.py",
+    "stop_path_script": "C:/Users/felix/Documents/Codex/2026-09-09/grupos-listos-sobre-1-319-se/work/analyze_live_stop_paths.py",
+    "lower_entry_script": "C:/Users/felix/Documents/Codex/2026-09-09/grupos-listos-sobre-1-319-se/work/analyze_live_lower_entry_grid.py",
+    "continuation_output": "C:/Users/felix/Documents/Codex/2026-09-09/grupos-listos-sobre-1-319-se/outputs/live_continuations_analysis_2026-09-14.json",
+    "stop_path_output": "C:/Users/felix/Documents/Codex/2026-09-09/grupos-listos-sobre-1-319-se/outputs/live_stop_path_analysis_2026-09-14.json",
+    "lower_entry_output": "C:/Users/felix/Documents/Codex/2026-09-09/grupos-listos-sobre-1-319-se/outputs/live_lower_entry_grid_2026-09-14.json"
+  }
+}
