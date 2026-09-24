@@ -1,0 +1,95 @@
+{
+  "utc": "20260922T073253Z",
+  "results": [
+    {
+      "case": "R1_real_negative_drop",
+      "retroceso": {
+        "detectado": true,
+        "confirmado": false,
+        "caida_pct": -4.0,
+        "suelo": 96,
+        "pico_previo": 100,
+        "minutos_desde_suelo": 0,
+        "rebote_pct": 0.0,
+        "reason": "cayo -4.0% desde 100 | suelo 96 hace 0min | rebotado 0.0%"
+      },
+      "actual_state": "CAIDA_ACTIVA",
+      "actual_verdict": "ESPERAR",
+      "expected_state": "CAIDA_ACTIVA"
+    },
+    {
+      "case": "R2_real_base_weak_volume",
+      "base": {
+        "detected": false,
+        "score": 0,
+        "caida_pct": -5.88,
+        "caida_velas": 91,
+        "base_velas": 88,
+        "base_rango_pct": 2.6,
+        "base_techo": 98.5,
+        "base_piso": 96.0,
+        "vol_dryup": 0.2,
+        "rompio": true,
+        "ruptura_vol_ratio": 0.5,
+        "dist_techo_pct": 0.51,
+        "reason": "rompe sin volumen (0.5x, minimo 2.0x)"
+      },
+      "retroceso": {
+        "detectado": true,
+        "confirmado": true,
+        "caida_pct": -2.54,
+        "suelo": 96,
+        "pico_previo": 98.5,
+        "minutos_desde_suelo": 1,
+        "rebote_pct": 3.12,
+        "reason": "cayo -2.54% desde 98.5 | suelo 96 hace 1min | rebotado 3.12% | REBOTE CONFIRMADO"
+      },
+      "actual_state": "REBOTE_CONFIRMADO",
+      "actual_verdict": "CANDIDATO",
+      "expected_verdict": "ESPERAR"
+    },
+    {
+      "case": "R3_alert_at_cap",
+      "rows": [
+        [
+          "AAAUSDT",
+          "TRANSICION",
+          null,
+          null
+        ],
+        [
+          "AAAUSDT",
+          "TRANSICION",
+          null,
+          null
+        ],
+        [
+          "BBBUSDT",
+          "TRANSICION",
+          null,
+          null
+        ],
+        [
+          "BBBUSDT",
+          "TRANSICION",
+          null,
+          null
+        ]
+      ],
+      "actual_linked_alert_777": 0,
+      "expected_linked_alert_777": 2
+    },
+    {
+      "case": "R4_frozen_cost_ignored",
+      "plan_cost": 0.5,
+      "before_net_pct": 4.5,
+      "after_net_pct": 4.2,
+      "expected_after_net_pct": 4.5
+    }
+  ],
+  "source_hashes": {
+    "motores/caida.py": "9c04c7867d66d1f36d3d4a8718f3303b60ab5999751325f6b35bcfe509dd2fbf",
+    "motores/servicio.py": "75ec784121817dbe8c04b9fa627237d631260af38289e6793c43ace2c7497229",
+    "evaluacion/almacen.py": "00d30ddf71f8994ae60b6936d854d1156d6c873e9a6e3a6702cefe949a266853"
+  }
+}

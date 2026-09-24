@@ -1,0 +1,65 @@
+{
+  "utc": "2026-09-22T07:55:38.493022+00:00",
+  "service_start": "Tue 2026-09-22 07:40:00 UTC",
+  "since_ms": 1790062800000,
+  "end_ms": 1790063703853,
+  "alerts": [
+    {
+      "alerts": 30,
+      "missing_a": 0,
+      "missing_b": 0
+    }
+  ],
+  "identity_mismatch": [
+    {
+      "n": 0
+    }
+  ],
+  "confluence": [
+    {
+      "motor": "caida",
+      "total": 316,
+      "with_confirmadas": 0,
+      "min_confirmadas": null,
+      "max_confirmadas": null
+    },
+    {
+      "motor": "continuacion",
+      "total": 359,
+      "with_confirmadas": 359,
+      "min_confirmadas": 0,
+      "max_confirmadas": 3
+    }
+  ],
+  "confluence_examples": [
+    {
+      "symbol": "CHIPUSDT",
+      "ts_ms": 1790063703853,
+      "confirmadas": 0
+    },
+    {
+      "symbol": "RONINUSDT",
+      "ts_ms": 1790063703749,
+      "confirmadas": 1
+    },
+    {
+      "symbol": "QNTUSDT",
+      "ts_ms": 1790063702740,
+      "confirmadas": 2
+    }
+  ],
+  "sources": {
+    "motores/caida.py": {
+      "mtime_utc": "2026-09-22T07:39:12.366261+00:00",
+      "predates_process": true
+    },
+    "motores/servicio.py": {
+      "mtime_utc": "2026-09-22T07:39:12.366498+00:00",
+      "predates_process": true
+    },
+    "evaluacion/almacen.py": {
+      "mtime_utc": "2026-09-22T07:39:12.369247+00:00",
+      "predates_process": true
+    }
+  }
+}

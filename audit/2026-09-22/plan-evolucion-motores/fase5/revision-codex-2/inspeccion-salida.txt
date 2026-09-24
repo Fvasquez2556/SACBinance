@@ -1,0 +1,62 @@
+{
+  "utc": "2026-09-22T21:21:20.350820+00:00",
+  "service": "ActiveState=active\nSubState=running\nMainPID=3615954\nNRestarts=12\nExecMainStartTimestamp=Tue 2026-09-22 21:00:56 UTC\n",
+  "http": {
+    "status": 200,
+    "pairs_count": null,
+    "state": null
+  },
+  "schema": [
+    {
+      "key": "version",
+      "value": "20"
+    }
+  ],
+  "experiment_tables": [
+    {
+      "name": "experimento_registro"
+    },
+    {
+      "name": "experimento_resultados"
+    }
+  ],
+  "registry": [
+    {
+      "huella": "cef2ec54020c46ca",
+      "version": "fase5-v3",
+      "declaracion": "{\"cobertura_minima\": 0.9, \"documento\": \"fase5/REGISTRO_CONGELADO.md\", \"documento_sha256\": \"af285a769f2d1f1ccfcd97e5c497d5a52a0fdd35cc553ac3dfb511b0da752900\", \"evaluador\": \"recorrido-v1\", \"filtros\": {\"D1\": \"ancla de 1h con ruptura alcista al crear el plan\", \"D2\": \"primera oportunidad de su episodio\", \"D3\": \"avisado por Telegram\"}, \"metodo\": \"metodo-v2\", \"poblacion_decisoria\": \"avisado por Telegram Y primera oportunidad de su episodio\", \"politicas\": [{\"clave\": \"REF\", \"descripcion\": \"la politica vigente: entrada, TP y SL que el plan congelo\", \"descuento_pct\": null, \"eje\": \"REFERENCIA\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"A1\", \"descripcion\": \"objetivo fijo +2,7 % neto\", \"descuento_pct\": null, \"eje\": \"SALIDA\", \"exploracion\": false, \"objetivo_neto_pct\": 2.7, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"A2\", \"descripcion\": \"objetivo fijo +3,2 % neto\", \"descuento_pct\": null, \"eje\": \"SALIDA\", \"exploracion\": false, \"objetivo_neto_pct\": 3.2, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"A3\", \"descripcion\": \"objetivo fijo +4,2 % neto — el rival principal\", \"descuento_pct\": null, \"eje\": \"SALIDA\", \"exploracion\": false, \"objetivo_neto_pct\": 4.2, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"A4\", \"descripcion\": \"objetivo fijo +4,7 % neto\", \"descuento_pct\": null, \"eje\": \"SALIDA\", \"exploracion\": false, \"objetivo_neto_pct\": 4.7, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"A5\", \"descripcion\": \"objetivo fijo +5,2 % neto — exploracion registrada\", \"descuento_pct\": null, \"eje\": \"SALIDA\", \"exploracion\": true, \"objetivo_neto_pct\": 5.2, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"B1\", \"descripcion\": \"comprar 0,5 % por debajo; mismo precio objetivo\", \"descuento_pct\": 0.5, \"eje\": \"ENTRADA\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"B2\", \"descripcion\": \"comprar 1,5 % por debajo; mismo precio objetivo\", \"descuento_pct\": 1.5, \"eje\": \"ENTRADA\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"C1\", \"descripcion\": \"stop fijo -2,0 %\", \"descuento_pct\": null, \"eje\": \"STOP\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": null, \"stop_pct\": 2.0}, {\"clave\": \"C2\", \"descripcion\": \"stop fijo -3,0 %\", \"descuento_pct\": null, \"eje\": \"STOP\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": null, \"stop_pct\": 3.0}, {\"clave\": \"C3\", \"descripcion\": \"stop del plan x 1,5\", \"descuento_pct\": null, \"eje\": \"STOP\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": 1.5, \"stop_pct\": null}], \"puertas\": {\"bootstrap\": \"agrupado por par\", \"dinero_limite_inferior_pct\": 0.3, \"habilidad_min_puntos\": 0.0, \"ic\": 95, \"n_minimo\": 50, \"terreno_nuevo\": \"solo planes creados despues de la congelacion\"}, \"regla_cobertura\": \"un plan solo es medible con cobertura >= 0,90 de las velas esperadas; por debajo se marca SIN_DATOS, no entra en ninguna media y se puede volver a medir cuando las velas se recuperen\", \"regla_fill\": \"la vela del fill aplica su STOP (se lleno bajando, asi que el minimo vino despues) pero NO concede el objetivo (su maximo pudo ser anterior al fill); solo cuentan velas cuyo minuto entero cae en la ventana\", \"version\": \"fase5-v3\"}",
+      "ts_congelado": 1790110861014
+    }
+  ],
+  "results": [],
+  "new_plans": [
+    {
+      "huella": "cef2ec54020c46ca",
+      "n": 40,
+      "first_created": 1790110980913,
+      "first_due": 1790154180913
+    }
+  ],
+  "flags_explicit_in_env": {},
+  "experiment_log": [
+    "[2026-09-22 21:01:01.014] [INFO   ] [state.engine                ] Experimentos de la fase 5: huella cef2ec54020c46ca, congelada ahora"
+  ],
+  "comparison": {
+    "matching": [
+      "backend/main.py",
+      "backend/src/state/engine.py",
+      "backend/src/persistence/db.py",
+      "backend/src/config/settings.py",
+      "backend/tests/test_experimentos.py",
+      "backend/src/evaluacion/recorrido.py",
+      "backend/src/experimentos/__init__.py",
+      "backend/src/experimentos/registro.py",
+      "backend/src/experimentos/almacen.py",
+      "backend/src/experimentos/informe.py",
+      "backend/src/experimentos/cartera.py"
+    ],
+    "different": [],
+    "missing_remote": []
+  }
+}
+D:\SACBinance\audit\2026-09-22\plan-evolucion-motores\fase5\revision-codex-2\estado-20260922T212120Z.json

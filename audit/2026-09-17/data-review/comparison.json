@@ -1,0 +1,153 @@
+{
+  "counts_delta": {
+    "outcomes": 346,
+    "signals": 229,
+    "alerts": 295
+  },
+  "newly_eligible": {
+    "n": 120,
+    "symbols": 97,
+    "first": "2026-09-15T18:24:01+00:00",
+    "last": "2026-09-16T18:48:01+00:00",
+    "touch32_n": 54,
+    "touch32_pct": 45.0,
+    "goal_before_sl_n": 29,
+    "goal_before_sl_pct": 24.166666666666668,
+    "goal_tie_n": 0,
+    "goal_after_sl_n": 25,
+    "goal_after_short_tp_n": 7,
+    "goal_before_sl_by_horizon_pct": {
+      "15": 0.0,
+      "30": 0.8333333333333334,
+      "60": 1.6666666666666667,
+      "120": 5.0,
+      "240": 10.833333333333334,
+      "360": 15.0,
+      "480": 17.5,
+      "1440": 24.166666666666668
+    },
+    "plan_order": {
+      "SL_FIRST": 77,
+      "NEITHER": 9,
+      "TP_FIRST": 34
+    },
+    "plan_tp_below32_n": 79,
+    "tp_median": 2.5244999999999997,
+    "sl_median": -1.2625,
+    "net_target_median": 2.025,
+    "cov_median": 0.9993,
+    "median_hours_success": 4.316440555555555,
+    "signal_result_n": 120,
+    "signal_status": {
+      "SL": 68,
+      "EXPIRED": 28,
+      "TP": 24
+    },
+    "signal_gross_mean": 0.02915833333333335,
+    "signal_net_scenario_mean": -0.47084166666666666,
+    "signal_close32_n": 12,
+    "signal_close32_pct": 10.0,
+    "plan24_net_flat_expiry": -0.5091916666666667,
+    "vol_mix": {
+      "MUY_VOLATIL": 27,
+      "MUY_TRANQUILA": 54,
+      "MOVIDA": 19,
+      "TRANQUILA": 20
+    },
+    "btc_mix": {
+      "BAJISTA": 120
+    }
+  },
+  "removed_eligible_ids": [],
+  "common_goal_labels_changed": 0,
+  "previous_cut": {
+    "n": 903,
+    "symbols": 227,
+    "first": "2026-09-11T23:04:00+00:00",
+    "last": "2026-09-15T17:46:00+00:00",
+    "touch32_n": 253,
+    "touch32_pct": 28.017718715393134,
+    "goal_before_sl_n": 166,
+    "goal_before_sl_pct": 18.383167220376524,
+    "goal_tie_n": 0,
+    "goal_after_sl_n": 87,
+    "goal_after_short_tp_n": 75,
+    "goal_before_sl_by_horizon_pct": {
+      "15": 0.4429678848283499,
+      "30": 0.9966777408637874,
+      "60": 2.6578073089700998,
+      "120": 5.869324473975637,
+      "240": 9.634551495016611,
+      "360": 13.732004429678849,
+      "480": 14.839424141749722,
+      "1440": 18.383167220376524
+    },
+    "plan_order": {
+      "TP_FIRST": 215,
+      "NEITHER": 63,
+      "SL_FIRST": 625
+    },
+    "plan_tp_below32_n": 624,
+    "tp_median": 2.324,
+    "sl_median": -1.166,
+    "net_target_median": 1.84,
+    "cov_median": 0.9979,
+    "median_hours_success": 3.708107361111111,
+    "signal_result_n": 903,
+    "signal_status": {
+      "TP": 200,
+      "EXPIRED": 143,
+      "SL": 560
+    },
+    "signal_gross_mean": -0.26500553709856034,
+    "signal_net_scenario_mean": -0.7650055370985603,
+    "signal_close32_n": 50,
+    "signal_close32_pct": 5.537098560354374,
+    "plan24_net_flat_expiry": -0.8462126245847176,
+    "vol_mix": {
+      "MUY_TRANQUILA": 372,
+      "MUY_VOLATIL": 161,
+      "MOVIDA": 166,
+      "TRANQUILA": 204
+    },
+    "btc_mix": {
+      "BAJISTA": 499,
+      "NEUTRAL": 266,
+      "ALCISTA": 138
+    }
+  },
+  "ruptures": {
+    "n": 56,
+    "first_utc": "2026-09-17T19:11:00+00:00",
+    "last_utc": "2026-09-17T19:37:05+00:00",
+    "oldest_minutes": 26.123933333333333,
+    "closed": 0,
+    "directions": {
+      "RUPTURA_BAJISTA": 31,
+      "RUPTURA_ALCISTA": 25
+    },
+    "returns_populated": {
+      "5": 39,
+      "15": 19,
+      "30": 0,
+      "60": 0,
+      "240": 0,
+      "1440": 0
+    },
+    "service": "ActiveState=active\nActiveEnterTimestamp=Thu 2026-09-17 19:09:16 UTC\nMainPID=1875036\n"
+  },
+  "config_coverage": {
+    "3dff943e60b0": {
+      "mature": 715,
+      "cov98": 636
+    },
+    "7ebc818e36e9": {
+      "mature": 1250,
+      "cov98": 1083
+    },
+    "fc1c5ef3ce25": {
+      "mature": 0,
+      "cov98": 0
+    }
+  }
+}

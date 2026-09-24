@@ -1,0 +1,40 @@
+{
+  "utc": "2026-09-22T06:39:28.396708+00:00",
+  "checks": [
+    {
+      "check": "backend",
+      "exit_code": 0,
+      "tail": [
+        "test_recupera_las_filas_abiertas_tras_un_reinicio (test_tf_rupture_tracker.MedicionTests.test_recupera_las_filas_abiertas_tras_un_reinicio) ... ok",
+        "test_registra_el_primer_toque_de_cada_barrera_y_no_lo_pisa (test_tf_rupture_tracker.MedicionTests.test_registra_el_primer_toque_de_cada_barrera_y_no_lo_pisa) ... ok",
+        "test_sin_relleno_la_entrada_del_retest_queda_vacia_no_en_cero (test_tf_rupture_tracker.MedicionTests.test_sin_relleno_la_entrada_del_retest_queda_vacia_no_en_cero) ... ok",
+        "test_una_vela_repetida_no_cuenta_dos_veces (test_tf_rupture_tracker.MedicionTests.test_una_vela_repetida_no_cuenta_dos_veces) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 182 tests in 1.303s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "check": "frontend",
+      "exit_code": 0,
+      "tail": [
+        "✔ a ceiling above the target is still reported, without the alarm (0.1657ms)",
+        "ℹ tests 47",
+        "ℹ suites 0",
+        "ℹ pass 47",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 258.4092"
+      ]
+    },
+    {
+      "check": "tipos",
+      "exit_code": 0,
+      "tail": []
+    }
+  ]
+}

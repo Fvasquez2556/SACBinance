@@ -1,0 +1,129 @@
+{
+  "captured_local_utc": "2026-09-22T01:02:42.219337+00:00",
+  "snapshot_utc": "2026-09-22T01:02:26.456000+00:00",
+  "snapshot_sha256": "18fdcfe15ce2f64f626341c835baff306f967c6db5abfe71526db66dce2b5076",
+  "exporter_sha256": "5a332441d6aca79fd3ff06ea2abf3da8175fe3ada98bd322744ed00418733ac3",
+  "totals": {
+    "signals": 6231,
+    "outcomes": 8364,
+    "alertas_emitidas": 8839,
+    "rupturas": 17670,
+    "rupturas_tf": 48240,
+    "notificacion_planes": 218,
+    "notificacion_eventos": 332
+  },
+  "schema_version": [
+    {
+      "value": "15"
+    }
+  ],
+  "remote_head": "f82bcffe734c6219fdf4eb5263e07ed96ad78419",
+  "local_head": "193e11349de201a30b2b37da6d0c2cdf0ff3cef8",
+  "service": "ActiveState=active\nActiveEnterTimestamp=Fri 2026-09-18 04:43:34 UTC\nMainPID=2012823",
+  "remote_file_sha256": {
+    "backend/main.py": "c8f230dcac6e42a780c8c778692db877b7cc9126e3a5c86b727311a560982eb1",
+    "backend/src/state/engine.py": "229f9c871f5d7ee41d79a004977ea48a515062c8a2edf25159409ab8dc27fcec",
+    "backend/src/state/active_alert.py": "8693f7537a767bbf5e28d32a0988502036432cf7a5a04177308b5c03e25234f3",
+    "backend/src/config/settings.py": "7b4bf9b4c2ca4c59e9eb3c356bc803dbf0eb7c0fe4f0921eac7899e31abe5820",
+    "backend/src/persistence/db.py": "6573053254153f20d16af848f350ac1f55a262ba2a52463049dad14bc344aa30",
+    "backend/src/analysis/ruptures.py": "000db98c1b2e85f293e30522ab4da1b12c5a2a8a360d1577c99b124b23d3e2fd",
+    "backend/src/analysis/rupture_tracker.py": "a52c5129579a3e364fe3c20177564cb7ad9144164ce977a2b47e6f278eaf4610",
+    "backend/src/analysis/tf_rupture.py": "39b161a27197733b4760459fb6ab0da2220e2e7496ece0e9d8d027e023d44839",
+    "backend/src/analysis/tf_rupture_tracker.py": "a2145faf5115b09d07b917e7d51fbc573e0beda1d3cc3f892337b5bd5ab60f48",
+    "backend/src/analysis/pair_report.py": "f6f2132d5f905e04d6f94ad0b1e8d504b0a5998f1c93239d258f2b86fc57d970",
+    "backend/src/analysis/trade_levels.py": "ec2508d8b3027df487d64a89adfbfca69d9539dd2a4a99b2459aa511339e7845",
+    "backend/src/analysis/signal_tracker.py": "3fc28bbb108e15d79aba6b391c5caf0cac4fb46b792b933bbe78043d16be1efe",
+    "backend/src/analysis/outcome_tracker.py": "b7506b1922f2c086e90cc7a833fc3e686d6f31394cc206112e4d41dc89ba4077",
+    "backend/src/notify/policy.py": "4004552f089c81e4406d296c73aa82c587aa461912157c1641c7282a8bf819e6",
+    "backend/src/notify/service.py": "ade8caaed3048c196c15ceeb7c03bc169c7c6ae726e2dfc359dd221851a3c18b",
+    "backend/src/api/routes.py": "13a27629d9c87a2d82c7c1f5991d3377ba0bb7266a3590fa965876e78c6f0468",
+    "frontend/src/components/SignalStats.tsx": "a02895b982ae128498325b53011160912e39a9b33fb9dc2969b43aa97d4cadc8",
+    "frontend/src/domain/analysis.ts": "09274b118673d52b55d9515c768daad6df62765f0946ac4501e849c6882a89d5"
+  },
+  "local_file_sha256": {
+    "backend/main.py": "c8f230dcac6e42a780c8c778692db877b7cc9126e3a5c86b727311a560982eb1",
+    "backend/src/state/engine.py": "229f9c871f5d7ee41d79a004977ea48a515062c8a2edf25159409ab8dc27fcec",
+    "backend/src/state/active_alert.py": "8693f7537a767bbf5e28d32a0988502036432cf7a5a04177308b5c03e25234f3",
+    "backend/src/config/settings.py": "7b4bf9b4c2ca4c59e9eb3c356bc803dbf0eb7c0fe4f0921eac7899e31abe5820",
+    "backend/src/persistence/db.py": "6573053254153f20d16af848f350ac1f55a262ba2a52463049dad14bc344aa30",
+    "backend/src/analysis/ruptures.py": "000db98c1b2e85f293e30522ab4da1b12c5a2a8a360d1577c99b124b23d3e2fd",
+    "backend/src/analysis/rupture_tracker.py": "a52c5129579a3e364fe3c20177564cb7ad9144164ce977a2b47e6f278eaf4610",
+    "backend/src/analysis/tf_rupture.py": "39b161a27197733b4760459fb6ab0da2220e2e7496ece0e9d8d027e023d44839",
+    "backend/src/analysis/tf_rupture_tracker.py": "1fd4b7a7a6105ac52bc7354a01ceeaeb8c1ae6398d4d8776ce4fcb00bc2ba076",
+    "backend/src/analysis/pair_report.py": "f6f2132d5f905e04d6f94ad0b1e8d504b0a5998f1c93239d258f2b86fc57d970",
+    "backend/src/analysis/trade_levels.py": "710cd62f6a5fc2051c47cf3dd778fd13e593252ac1d29f26492eb16e76ac126a",
+    "backend/src/analysis/signal_tracker.py": "3fc28bbb108e15d79aba6b391c5caf0cac4fb46b792b933bbe78043d16be1efe",
+    "backend/src/analysis/outcome_tracker.py": "9083bc4852692fc6dda0d934c938295a03d29314cf3a329e81fd74d3f29743f8",
+    "backend/src/notify/policy.py": "4004552f089c81e4406d296c73aa82c587aa461912157c1641c7282a8bf819e6",
+    "backend/src/notify/service.py": "ade8caaed3048c196c15ceeb7c03bc169c7c6ae726e2dfc359dd221851a3c18b",
+    "backend/src/api/routes.py": "8a5ed97912a8a0e2ca6f30458a4fe16a5edd82b7ec62ecbc90a83b111e9baa56",
+    "frontend/src/components/SignalStats.tsx": "a02895b982ae128498325b53011160912e39a9b33fb9dc2969b43aa97d4cadc8",
+    "frontend/src/domain/analysis.ts": "09274b118673d52b55d9515c768daad6df62765f0946ac4501e849c6882a89d5"
+  },
+  "different_local_remote": [
+    "backend/src/analysis/tf_rupture_tracker.py",
+    "backend/src/analysis/trade_levels.py",
+    "backend/src/analysis/outcome_tracker.py",
+    "backend/src/api/routes.py"
+  ],
+  "local_status": [
+    " M audit/2026-09-14/HANDOFF_MODELO_CONTINUACION_Y_CAIDA.md",
+    " M backend/main.py",
+    " M backend/src/analysis/trade_levels.py",
+    " M backend/src/api/routes.py",
+    " M backend/src/config/settings.py",
+    " M backend/src/data_ingestion/hydrator.py",
+    " M backend/src/notify/telegram.py",
+    " M backend/src/persistence/db.py",
+    " M backend/src/state/active_alert.py",
+    " M backend/src/state/engine.py",
+    " M frontend/index.html",
+    " M frontend/package.json",
+    " M frontend/src/components/Calculadora.tsx",
+    " M frontend/src/components/Dashboard.tsx",
+    " M frontend/src/components/Historial.tsx",
+    " M frontend/src/components/PairDetail.tsx",
+    " M frontend/src/components/PairRow.tsx",
+    " M frontend/src/components/SignalStats.tsx",
+    " M frontend/src/hooks/useNotifications.ts",
+    " M frontend/src/index.css",
+    " M frontend/src/types/index.ts",
+    " M frontend/vite.config.ts",
+    "?? audit/2026-09-16/",
+    "?? audit/2026-09-17/",
+    "?? audit/2026-09-21/",
+    "?? audit/2026-09-22/",
+    "?? backend/src/analysis/pair_report.py",
+    "?? backend/src/analysis/rupture_tracker.py",
+    "?? backend/src/analysis/ruptures.py",
+    "?? backend/src/analysis/tf_rupture.py",
+    "?? backend/src/analysis/tf_rupture_tracker.py",
+    "?? backend/src/notify/policy.py",
+    "?? backend/src/notify/service.py",
+    "?? backend/tests/",
+    "?? frontend/src/components/AnalisisPar.tsx",
+    "?? frontend/src/components/Dashboard.css",
+    "?? frontend/src/components/PairCard.tsx",
+    "?? frontend/src/components/ProbabilityContext.tsx",
+    "?? frontend/src/domain/",
+    "?? frontend/tests/"
+  ],
+  "source_content_comparison": {
+    "backend/src/analysis/tf_rupture_tracker.py": {
+      "same_text": true,
+      "difference": "CRLF/LF only"
+    },
+    "backend/src/analysis/trade_levels.py": {
+      "same_text": true,
+      "difference": "CRLF/LF only"
+    },
+    "backend/src/analysis/outcome_tracker.py": {
+      "same_text": true,
+      "difference": "CRLF/LF only"
+    },
+    "backend/src/api/routes.py": {
+      "same_text": true,
+      "difference": "CRLF/LF only"
+    }
+  }
+}

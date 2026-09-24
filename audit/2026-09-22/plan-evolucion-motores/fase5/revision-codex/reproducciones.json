@@ -1,0 +1,230 @@
+{
+  "huella": "418c45c46f47d38b",
+  "sha256": {
+    "backend/src/experimentos/almacen.py": "ef7f247435033cac47e14fa2a4dac108a55978bd10af874635c2d8d7868eac3c",
+    "backend/src/experimentos/registro.py": "441aa0639cae8e72be4306dc93cf690cdf299eb5ea27e1134556cd1e029f63c5",
+    "backend/src/evaluacion/recorrido.py": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285",
+    "backend/tests/test_experimentos.py": "7d7fd4baad7e65eb810ca259f9278a12eb1df82af37c5097a14adc929fe62f69",
+    "audit/2026-09-22/plan-evolucion-motores/fase5/REGISTRO_CONGELADO.md": "048adbab9afbf6e4bcb0c5db19a38eecb5297246835994b26fa1984bd9529f64"
+  },
+  "checks": [
+    {
+      "case": "stop_en_vela_de_entrada",
+      "expected": "STOP, -3.5 % neto",
+      "actual": {
+        "plan_id": 1,
+        "politica": "B2",
+        "huella": "418c45c46f47d38b",
+        "symbol": "TESTUSDT",
+        "ts_creado": 1790000040000,
+        "entrada": 98.5,
+        "objetivo": 106.0,
+        "stop": 95.545,
+        "tamano": 1.0000000000000007,
+        "ms_fill": 0,
+        "desenlace": "STOP",
+        "ms_desenlace": 0,
+        "resultado_pct": -3.5,
+        "resultado_r": -1.1667,
+        "mfe_pct": 8.629441624365475,
+        "mae_pct": -3.5532994923857864,
+        "n_velas": 60,
+        "cobertura": 1.0,
+        "completa": 1,
+        "ambiguo": 0,
+        "salto": 0,
+        "ts_evaluado": 1790003640000
+      },
+      "passes_invariant": true
+    },
+    {
+      "case": "fill_fuera_de_ventana",
+      "expected": "NO_LLENADO; sin ms_fill fuera de ventana",
+      "actual": {
+        "row": {
+          "plan_id": 1,
+          "politica": "B2",
+          "huella": "418c45c46f47d38b",
+          "symbol": "TESTUSDT",
+          "ts_creado": 1790000040000,
+          "entrada": 98.5,
+          "objetivo": 106.0,
+          "stop": 95.545,
+          "tamano": 1.0000000000000007,
+          "ms_fill": null,
+          "desenlace": "NO_LLENADO",
+          "ms_desenlace": null,
+          "resultado_pct": null,
+          "resultado_r": null,
+          "mfe_pct": null,
+          "mae_pct": null,
+          "n_velas": 0,
+          "cobertura": 1.0,
+          "completa": 1,
+          "ambiguo": 0,
+          "salto": 0,
+          "ts_evaluado": 1790003760000
+        },
+        "second_pass": {
+          "evaluados": 0,
+          "medidas": 0,
+          "pendientes": 0
+        },
+        "after_second_pass": {
+          "plan_id": 1,
+          "politica": "B2",
+          "huella": "418c45c46f47d38b",
+          "symbol": "TESTUSDT",
+          "ts_creado": 1790000040000,
+          "entrada": 98.5,
+          "objetivo": 106.0,
+          "stop": 95.545,
+          "tamano": 1.0000000000000007,
+          "ms_fill": null,
+          "desenlace": "NO_LLENADO",
+          "ms_desenlace": null,
+          "resultado_pct": null,
+          "resultado_r": null,
+          "mfe_pct": null,
+          "mae_pct": null,
+          "n_velas": 0,
+          "cobertura": 1.0,
+          "completa": 1,
+          "ambiguo": 0,
+          "salto": 0,
+          "ts_evaluado": 1790003760000
+        }
+      },
+      "passes_invariant": true
+    },
+    {
+      "case": "denominador_no_llenado",
+      "expected": "B2 presente; no_llenado=1, media_pct=NULL",
+      "actual": {
+        "stored": {
+          "plan_id": 1,
+          "politica": "B2",
+          "huella": "418c45c46f47d38b",
+          "symbol": "TESTUSDT",
+          "ts_creado": 1790000040000,
+          "entrada": 98.5,
+          "objetivo": 106.0,
+          "stop": 95.545,
+          "tamano": 1.0000000000000007,
+          "ms_fill": null,
+          "desenlace": "NO_LLENADO",
+          "ms_desenlace": null,
+          "resultado_pct": null,
+          "resultado_r": null,
+          "mfe_pct": null,
+          "mae_pct": null,
+          "n_velas": 0,
+          "cobertura": 1.0,
+          "completa": 1,
+          "ambiguo": 0,
+          "salto": 0,
+          "ts_evaluado": 1790003640000
+        },
+        "reported": {
+          "politica": "B2",
+          "elegibles": 1,
+          "resueltas": 0,
+          "objetivo": 0,
+          "stop": 0,
+          "vencido": 0,
+          "no_llenado": 1,
+          "sin_datos": 0,
+          "abiertas": 0,
+          "media_pct": null,
+          "media_r": null,
+          "pares": 1
+        }
+      },
+      "passes_invariant": true
+    },
+    {
+      "case": "sin_datos_no_es_perdida",
+      "expected": "sin retorno medible; no incluido como operacion resuelta",
+      "actual": {
+        "initial": {
+          "plan_id": 1,
+          "politica": "REF",
+          "huella": "418c45c46f47d38b",
+          "symbol": "TESTUSDT",
+          "ts_creado": 1790000040000,
+          "entrada": 100.0,
+          "objetivo": 106.0,
+          "stop": 97.0,
+          "tamano": 1.0,
+          "ms_fill": null,
+          "desenlace": "SIN_DATOS",
+          "ms_desenlace": null,
+          "resultado_pct": null,
+          "resultado_r": null,
+          "mfe_pct": null,
+          "mae_pct": null,
+          "n_velas": 0,
+          "cobertura": 0.0,
+          "completa": 0,
+          "ambiguo": 0,
+          "salto": 0,
+          "ts_evaluado": 1790003640000
+        },
+        "initial_summary_ref": {
+          "politica": "REF",
+          "elegibles": 1,
+          "resueltas": 0,
+          "objetivo": 0,
+          "stop": 0,
+          "vencido": 0,
+          "no_llenado": 0,
+          "sin_datos": 1,
+          "abiertas": 0,
+          "media_pct": null,
+          "media_r": null,
+          "pares": 1
+        },
+        "after_data_arrive": {
+          "plan_id": 1,
+          "politica": "REF",
+          "huella": "418c45c46f47d38b",
+          "symbol": "TESTUSDT",
+          "ts_creado": 1790000040000,
+          "entrada": 100.0,
+          "objetivo": 106.0,
+          "stop": 97.0,
+          "tamano": 1.0,
+          "ms_fill": null,
+          "desenlace": "SIN_DATOS",
+          "ms_desenlace": null,
+          "resultado_pct": null,
+          "resultado_r": null,
+          "mfe_pct": null,
+          "mae_pct": null,
+          "n_velas": 0,
+          "cobertura": 0.0167,
+          "completa": 0,
+          "ambiguo": 0,
+          "salto": 0,
+          "ts_evaluado": 1790003700000
+        },
+        "retry": {
+          "evaluados": 1,
+          "medidas": 11,
+          "pendientes": 1
+        }
+      },
+      "passes_invariant": true
+    },
+    {
+      "case": "objetivo_documentado_entrada_diferida",
+      "expected": "6 % bruto desde 98.5 => objetivo 104.41",
+      "actual": {
+        "entry": 98.5,
+        "tp": 106.0,
+        "tp_pct": 7.614213197969533
+      },
+      "passes_invariant": false
+    }
+  ]
+}

@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "id": "avisos-coti",
+      "title": "COTIUSDT tiene avisos registrados como enviados el 17 de septiembre",
+      "queries": [
+        {
+          "id": "alerta-principal",
+          "source": {
+            "label": "sacbinance.db · alertas emitidas",
+            "tables": [
+              {
+                "label": "alertas_emitidas"
+              }
+            ],
+            "sql": "SELECT * FROM alertas_emitidas WHERE symbol=? ORDER BY ts_ms",
+            "filters": [
+              "Parámetro symbol: COTIUSDT"
+            ],
+            "caveats": [
+              "Enviado refleja la confirmación registrada por el servidor; no acredita lectura ni notificación en el teléfono."
+            ],
+            "evidenceFlow": [
+              {
+                "kind": "validation",
+                "title": "Cruce entre alerta y señal",
+                "detail": "La alerta 2292 enlaza a la señal 3732 con entrada 0.01897 y estado de envío enviado."
+              }
+            ]
+          },
+          "capturedAt": "2026-09-17T14:27:15-06:00",
+          "reportingPeriod": "17 de septiembre de 2026; horas UTC−6",
+          "columns": [
+            {
+              "field": "fecha",
+              "label": "Fecha y hora (Guatemala)"
+            },
+            "symbol",
+            "entry",
+            "take_profit",
+            "stop_loss",
+            "telegram"
+          ],
+          "rows": [
+            {
+              "fecha": "2026-09-17T05:56:00-06:00",
+              "symbol": "COTIUSDT",
+              "entry": 0.01897,
+              "take_profit": 0.020106,
+              "stop_loss": 0.018402,
+              "telegram": "enviado"
+            }
+          ],
+          "preview": {
+            "kind": "partial",
+            "note": "Se muestra la alerta 2292 del 17-sep; la consulta original devolvió 19 avisos históricos de COTIUSDT.",
+            "totalRows": 19
+          }
+        },
+        {
+          "id": "avisos-ruptura",
+          "source": {
+            "label": "sacbinance.db · rupturas",
+            "tables": [
+              {
+                "label": "rupturas"
+              }
+            ],
+            "sql": "SELECT * FROM rupturas WHERE symbol=? ORDER BY ts_open",
+            "filters": [
+              "Parámetro symbol: COTIUSDT"
+            ],
+            "caveats": [
+              "telegram_detail puede reflejar el seguimiento más reciente; ambos eventos conservan el identificador del mensaje inicial."
+            ],
+            "evidenceFlow": [
+              {
+                "kind": "validation",
+                "title": "Comprobante de mensaje inicial",
+                "detail": "Los eventos 39 y 67 conservan telegram_message_id y estado enviado. No se publican los identificadores de Telegram."
+              }
+            ]
+          },
+          "capturedAt": "2026-09-17T14:27:15-06:00",
+          "reportingPeriod": "17 de septiembre de 2026; horas UTC−6",
+          "columns": [
+            {
+              "field": "fecha",
+              "label": "Fecha y hora (Guatemala)"
+            },
+            "direction",
+            "price_open",
+            "reason",
+            "telegram"
+          ],
+          "rows": [
+            {
+              "fecha": "2026-09-17T13:29:04-06:00",
+              "direction": "RUPTURA_ALCISTA",
+              "price_open": 0.02297,
+              "reason": "subida continua con impulso acelerando",
+              "telegram": "enviado"
+            },
+            {
+              "fecha": "2026-09-17T13:42:01-06:00",
+              "direction": "RUPTURA_BAJISTA",
+              "price_open": 0.02312,
+              "reason": "caída activa detectada por el sistema",
+              "telegram": "enviado"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "resultado-plan",
+      "title": "El seguimiento de la señal de las 05:56 registró TP a las 08:23",
+      "queries": [
+        {
+          "id": "signal-3732",
+          "source": {
+            "label": "sacbinance.db · señales",
+            "tables": [
+              {
+                "label": "signals"
+              }
+            ],
+            "sql": "SELECT * FROM signals WHERE symbol=? AND ts_open>=? ORDER BY ts_open",
+            "filters": [
+              "Parámetro symbol: COTIUSDT",
+              "Parámetro ts_open mínimo: 1789516800000 (16-sep-2026 00:00 UTC)"
+            ],
+            "caveats": [
+              "Es el resultado registrado por el seguimiento del plan, no una operación ejecutada en Binance."
+            ]
+          },
+          "capturedAt": "2026-09-17T14:27:15-06:00",
+          "reportingPeriod": "17 de septiembre de 2026; horas UTC−6",
+          "columns": [
+            "id",
+            "apertura",
+            "cierre",
+            "status",
+            "entry",
+            "take_profit",
+            "stop_loss",
+            {
+              "field": "result_pct",
+              "label": "Resultado bruto registrado (%)"
+            }
+          ],
+          "rows": [
+            {
+              "apertura": "2026-09-17T05:56:00-06:00",
+              "cierre": "2026-09-17T08:23:00-06:00",
+              "id": 3732,
+              "status": "TP",
+              "entry": 0.01897,
+              "take_profit": 0.020106,
+              "stop_loss": 0.018402,
+              "result_pct": 5.988
+            }
+          ],
+          "preview": {
+            "kind": "partial",
+            "note": "Se muestra la señal 3732, enlazada a la alerta enviada; la consulta devolvió dos señales desde el 16-sep UTC.",
+            "totalRows": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "marcos-sin-envio",
+      "title": "La lectura por marcos y las notificaciones usan circuitos distintos",
+      "queries": [
+        {
+          "id": "lectura-codigo",
+          "source": {
+            "label": "Código del analizador y del motor",
+            "files": [
+              {
+                "label": "pair_report.py"
+              },
+              {
+                "label": "tf_rupture_tracker.py"
+              },
+              {
+                "label": "engine.py"
+              },
+              {
+                "label": "telegram.py"
+              }
+            ],
+            "metricDefinitions": [
+              {
+                "label": "Circuitos de aviso",
+                "definition": "La consulta por marcos devuelve una lectura de estructura. TFRuptureShadow registra sus eventos en sombra; las señales y las rupturas cortas tienen sus propias rutas de Telegram."
+              }
+            ],
+            "evidenceFlow": [
+              {
+                "kind": "validation",
+                "title": "Ruta de publicación",
+                "detail": "construir_informe calcula y devuelve datos sin enviar mensajes. TFRuptureShadow.evaluar persiste el evento. El envío de rupturas cortas se realiza mediante _avisar_ruptura y el de señales mediante _quiza_avisar."
+              }
+            ]
+          },
+          "reportingPeriod": "Código inspeccionado el 17 de septiembre de 2026"
+        }
+      ]
+    }
+  ]
+}

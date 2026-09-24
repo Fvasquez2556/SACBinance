@@ -1,0 +1,500 @@
+{
+  "huella": "cef2ec54020c46ca",
+  "sha256": {
+    "backend\\src\\experimentos\\__init__.py": "d6ab3e58903b7997870fb3e717bb592073095cb60b486b4b71495250d79b5222",
+    "backend\\src\\experimentos\\almacen.py": "ef7f247435033cac47e14fa2a4dac108a55978bd10af874635c2d8d7868eac3c",
+    "backend\\src\\experimentos\\cartera.py": "3bc0809d60ed2a29106c42dc41f30293b378bbbab156467acb016f419c23d710",
+    "backend\\src\\experimentos\\informe.py": "c299d462dcc543e36d8ce05e571824f9fe79b19d966259a84b042cd5d4a32a9b",
+    "backend\\src\\experimentos\\registro.py": "9f8b8fceaa26d9b0135fef863c14ca537fdec603f271e62669132ab2f0a29568",
+    "backend\\src\\evaluacion\\recorrido.py": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285",
+    "backend\\tests\\test_experimentos.py": "d731260af290bcf3de8fc8892b8d35861b462f4251241413492de0f44bb31558",
+    "audit\\2026-09-22\\plan-evolucion-motores\\fase5\\REGISTRO_CONGELADO.md": "af285a769f2d1f1ccfcd97e5c497d5a52a0fdd35cc553ac3dfb511b0da752900"
+  },
+  "checks": [
+    {
+      "case": "R1_stop_del_fill",
+      "expected": "STOP -3.5%",
+      "actual": {
+        "plan_id": 1,
+        "politica": "B2",
+        "huella": "cef2ec54020c46ca",
+        "symbol": "TESTUSDT",
+        "ts_creado": 1790000040000,
+        "entrada": 98.5,
+        "objetivo": 106.0,
+        "stop": 95.545,
+        "tamano": 1.0000000000000007,
+        "ms_fill": 0,
+        "desenlace": "STOP",
+        "ms_desenlace": 0,
+        "resultado_pct": -3.5,
+        "resultado_r": -1.1667,
+        "mfe_pct": 8.629441624365475,
+        "mae_pct": -3.5532994923857864,
+        "n_velas": 60,
+        "cobertura": 1.0,
+        "completa": 1,
+        "ambiguo": 0,
+        "salto": 0,
+        "ts_evaluado": 1790003640000
+      },
+      "passes_invariant": true,
+      "group": "regresion"
+    },
+    {
+      "case": "R2_fill_fuera_de_ventana",
+      "expected": "NO_LLENADO, sin fill",
+      "actual": {
+        "plan_id": 1,
+        "politica": "B2",
+        "huella": "cef2ec54020c46ca",
+        "symbol": "TESTUSDT",
+        "ts_creado": 1790000040000,
+        "entrada": 98.5,
+        "objetivo": 106.0,
+        "stop": 95.545,
+        "tamano": 1.0000000000000007,
+        "ms_fill": null,
+        "desenlace": "NO_LLENADO",
+        "ms_desenlace": null,
+        "resultado_pct": null,
+        "resultado_r": null,
+        "mfe_pct": null,
+        "mae_pct": null,
+        "n_velas": 0,
+        "cobertura": 1.0,
+        "completa": 1,
+        "ambiguo": 0,
+        "salto": 0,
+        "ts_evaluado": 1790003760000
+      },
+      "passes_invariant": true,
+      "group": "regresion"
+    },
+    {
+      "case": "R4_denominador",
+      "expected": "1 elegible, 1 no llenada, media desconocida",
+      "actual": {
+        "politica": "B2",
+        "elegibles": 1,
+        "resueltas": 0,
+        "objetivo": 0,
+        "stop": 0,
+        "vencido": 0,
+        "no_llenado": 1,
+        "sin_datos": 0,
+        "abiertas": 0,
+        "media_pct": null,
+        "media_r": null,
+        "pares": 1
+      },
+      "passes_invariant": true,
+      "group": "regresion"
+    },
+    {
+      "case": "R3_recuperacion_de_datos",
+      "expected": "SIN_DATOS NULL -> OBJETIVO +5.5%",
+      "actual": {
+        "before": {
+          "plan_id": 1,
+          "politica": "REF",
+          "huella": "cef2ec54020c46ca",
+          "symbol": "TESTUSDT",
+          "ts_creado": 1790000040000,
+          "entrada": 100.0,
+          "objetivo": 106.0,
+          "stop": 97.0,
+          "tamano": 1.0,
+          "ms_fill": null,
+          "desenlace": "SIN_DATOS",
+          "ms_desenlace": null,
+          "resultado_pct": null,
+          "resultado_r": null,
+          "mfe_pct": null,
+          "mae_pct": null,
+          "n_velas": 0,
+          "cobertura": 0.0,
+          "completa": 0,
+          "ambiguo": 0,
+          "salto": 0,
+          "ts_evaluado": 1790003640000
+        },
+        "after": {
+          "plan_id": 1,
+          "politica": "REF",
+          "huella": "cef2ec54020c46ca",
+          "symbol": "TESTUSDT",
+          "ts_creado": 1790000040000,
+          "entrada": 100.0,
+          "objetivo": 106.0,
+          "stop": 97.0,
+          "tamano": 1.0,
+          "ms_fill": null,
+          "desenlace": "OBJETIVO",
+          "ms_desenlace": 0,
+          "resultado_pct": 5.5,
+          "resultado_r": 1.8333,
+          "mfe_pct": 7.000000000000006,
+          "mae_pct": -0.09999999999998899,
+          "n_velas": 60,
+          "cobertura": 1.0,
+          "completa": 1,
+          "ambiguo": 0,
+          "salto": 0,
+          "ts_evaluado": 1790003700000
+        },
+        "retry": {
+          "evaluados": 1,
+          "medidas": 11,
+          "pendientes": 1
+        }
+      },
+      "passes_invariant": true,
+      "group": "regresion"
+    },
+    {
+      "case": "R5_precio_absoluto_declarado",
+      "expected": "TP 106 y documento explica mismo precio objetivo",
+      "actual": {
+        "entry": 98.5,
+        "tp": 106.0
+      },
+      "passes_invariant": true,
+      "group": "regresion"
+    },
+    {
+      "case": "R6_huella_metodo_documento",
+      "expected": "hash de documento valido; cambio de metodo cambia huella",
+      "actual": {
+        "document_sha256": "af285a769f2d1f1ccfcd97e5c497d5a52a0fdd35cc553ac3dfb511b0da752900",
+        "expected_sha256": "af285a769f2d1f1ccfcd97e5c497d5a52a0fdd35cc553ac3dfb511b0da752900",
+        "method_changes_hash": true
+      },
+      "passes_invariant": true,
+      "group": "regresion"
+    },
+    {
+      "case": "N1_cola_tras_sin_datos",
+      "expected": "el cuarto plan con cobertura debe recibir turno",
+      "actual": {
+        "ids": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "passes": [
+          {
+            "evaluados": 3,
+            "medidas": 33,
+            "pendientes": 3
+          },
+          {
+            "evaluados": 3,
+            "medidas": 33,
+            "pendientes": 3
+          },
+          {
+            "evaluados": 3,
+            "medidas": 33,
+            "pendientes": 3
+          },
+          {
+            "evaluados": 3,
+            "medidas": 33,
+            "pendientes": 3
+          },
+          {
+            "evaluados": 3,
+            "medidas": 33,
+            "pendientes": 3
+          }
+        ],
+        "measured_ids": [
+          1,
+          2,
+          3
+        ],
+        "fourth": null
+      },
+      "passes_invariant": false,
+      "group": "nueva_revision"
+    },
+    {
+      "case": "N2_cierre_antes_de_entrada",
+      "expected": "1 posicion; cierre A posterior a su entrada; B solapa A",
+      "actual": {
+        "result": {
+          "escenario": {
+            "capital_inicial": 10.0,
+            "posiciones_max": 1,
+            "fraccion_por_posicion": 1.0,
+            "min_notional": 5.0,
+            "filtro": "DECISORIA",
+            "etiqueta": "10 USDT, una moneda a la vez, reinvirtiendo todo"
+          },
+          "politica": "B2",
+          "capital_inicial": 10.0,
+          "capital_final": 11.4735,
+          "n_operaciones": 2,
+          "n_oportunidades": 2,
+          "n_descartadas_por_ocupado": 0,
+          "ganadoras": 2,
+          "racha_perdedora_max": 0,
+          "caida_maxima_pct": 0.0,
+          "parada_por_minimo": false,
+          "ts_parada": null,
+          "retorno_pct": 14.73,
+          "tasa_acierto_pct": 100.0,
+          "ocupacion_pct": 100.0
+        },
+        "operations": [
+          {
+            "plan_id": 1,
+            "symbol": "AUSDT",
+            "abre_ms": 1790000640000,
+            "cierra_ms": 1790000160000,
+            "invertido": 10.0,
+            "resultado_pct": 7.1142,
+            "desenlace": "OBJETIVO",
+            "capital_despues": 10.7114
+          },
+          {
+            "plan_id": 2,
+            "symbol": "BUSDT",
+            "abre_ms": 1790000700000,
+            "cierra_ms": 1790000760000,
+            "invertido": 10.7114,
+            "resultado_pct": 7.1142,
+            "desenlace": "OBJETIVO",
+            "capital_despues": 11.4735
+          }
+        ],
+        "measured_a": {
+          "plan_id": 1,
+          "politica": "B2",
+          "huella": "cef2ec54020c46ca",
+          "symbol": "AUSDT",
+          "ts_creado": 1790000040000,
+          "entrada": 98.5,
+          "objetivo": 106.0,
+          "stop": 95.545,
+          "tamano": 1.0000000000000007,
+          "ms_fill": 600000,
+          "desenlace": "OBJETIVO",
+          "ms_desenlace": 120000,
+          "resultado_pct": 7.1142,
+          "resultado_r": 2.3714,
+          "mfe_pct": 8.629441624365475,
+          "mae_pct": -0.10152284263958977,
+          "n_velas": 50,
+          "cobertura": 1.0,
+          "completa": 1,
+          "ambiguo": 0,
+          "salto": 0,
+          "ts_evaluado": 1790006040000
+        }
+      },
+      "passes_invariant": false,
+      "group": "nueva_revision"
+    },
+    {
+      "case": "N2b_desencadenante_minuto_cero",
+      "expected": "no ocupar la hora completa al salir en la primera vela",
+      "actual": {
+        "operation": {
+          "plan_id": 1,
+          "symbol": "TESTUSDT",
+          "abre_ms": 1790000040000,
+          "cierra_ms": 1790003640000,
+          "invertido": 10.0,
+          "resultado_pct": 5.5,
+          "desenlace": "OBJETIVO",
+          "capital_despues": 10.55
+        },
+        "stored": {
+          "plan_id": 1,
+          "politica": "REF",
+          "huella": "cef2ec54020c46ca",
+          "symbol": "TESTUSDT",
+          "ts_creado": 1790000040000,
+          "entrada": 100.0,
+          "objetivo": 106.0,
+          "stop": 97.0,
+          "tamano": 1.0,
+          "ms_fill": null,
+          "desenlace": "OBJETIVO",
+          "ms_desenlace": 0,
+          "resultado_pct": 5.5,
+          "resultado_r": 1.8333,
+          "mfe_pct": 7.000000000000006,
+          "mae_pct": -0.09999999999998899,
+          "n_velas": 60,
+          "cobertura": 1.0,
+          "completa": 1,
+          "ambiguo": 0,
+          "salto": 0,
+          "ts_evaluado": 1790003640000
+        }
+      },
+      "passes_invariant": false,
+      "group": "nueva_revision"
+    },
+    {
+      "case": "N3_tamano_imposible_spot",
+      "expected": "con 10 invertidos, +5.5% neto -> 10.55, no posicion ficticia de 15",
+      "actual": {
+        "result": {
+          "escenario": {
+            "capital_inicial": 10.0,
+            "posiciones_max": 1,
+            "fraccion_por_posicion": 1.0,
+            "min_notional": 5.0,
+            "filtro": "DECISORIA",
+            "etiqueta": "10 USDT, una moneda a la vez, reinvirtiendo todo"
+          },
+          "politica": "C1",
+          "capital_inicial": 10.0,
+          "capital_final": 10.825,
+          "n_operaciones": 1,
+          "n_oportunidades": 1,
+          "n_descartadas_por_ocupado": 0,
+          "ganadoras": 1,
+          "racha_perdedora_max": 0,
+          "caida_maxima_pct": 0.0,
+          "parada_por_minimo": false,
+          "ts_parada": null,
+          "retorno_pct": 8.25,
+          "tasa_acierto_pct": 100.0,
+          "ocupacion_pct": 100.0
+        },
+        "operations": [
+          {
+            "plan_id": 1,
+            "symbol": "TESTUSDT",
+            "abre_ms": 1790000040000,
+            "cierra_ms": 1790003640000,
+            "invertido": 10.0,
+            "resultado_pct": 8.25,
+            "desenlace": "OBJETIVO",
+            "capital_despues": 10.825
+          }
+        ],
+        "stored": {
+          "plan_id": 1,
+          "politica": "C1",
+          "huella": "cef2ec54020c46ca",
+          "symbol": "TESTUSDT",
+          "ts_creado": 1790000040000,
+          "entrada": 100.0,
+          "objetivo": 106.0,
+          "stop": 98.0,
+          "tamano": 1.5,
+          "ms_fill": null,
+          "desenlace": "OBJETIVO",
+          "ms_desenlace": 0,
+          "resultado_pct": 8.25,
+          "resultado_r": 2.75,
+          "mfe_pct": 7.000000000000006,
+          "mae_pct": -0.09999999999998899,
+          "n_velas": 60,
+          "cobertura": 1.0,
+          "completa": 1,
+          "ambiguo": 0,
+          "salto": 0,
+          "ts_evaluado": 1790003640000
+        }
+      },
+      "passes_invariant": false,
+      "group": "nueva_revision"
+    },
+    {
+      "case": "N3b_fraccion_invertida",
+      "expected": "5 invertidos y 5 en efectivo, +5.5% -> 10.275",
+      "actual": {
+        "result": {
+          "escenario": {
+            "capital_inicial": 10.0,
+            "posiciones_max": 1,
+            "fraccion_por_posicion": 0.5,
+            "min_notional": 5.0,
+            "filtro": "DECISORIA",
+            "etiqueta": "10 USDT, una moneda a la vez, reinvirtiendo todo"
+          },
+          "politica": "REF",
+          "capital_inicial": 10.0,
+          "capital_final": 10.55,
+          "n_operaciones": 1,
+          "n_oportunidades": 1,
+          "n_descartadas_por_ocupado": 0,
+          "ganadoras": 1,
+          "racha_perdedora_max": 0,
+          "caida_maxima_pct": 0.0,
+          "parada_por_minimo": false,
+          "ts_parada": null,
+          "retorno_pct": 5.5,
+          "tasa_acierto_pct": 100.0,
+          "ocupacion_pct": 100.0
+        },
+        "operations": [
+          {
+            "plan_id": 1,
+            "symbol": "TESTUSDT",
+            "abre_ms": 1790000040000,
+            "cierra_ms": 1790003640000,
+            "invertido": 5.0,
+            "resultado_pct": 5.5,
+            "desenlace": "OBJETIVO",
+            "capital_despues": 10.55
+          }
+        ]
+      },
+      "passes_invariant": false,
+      "group": "nueva_revision"
+    },
+    {
+      "case": "N4_aprobacion_inferior_a_referencia",
+      "expected": "no aprobar como mejora si REF supera al rival en todos los pares",
+      "actual": {
+        "politica": "A1",
+        "descripcion": "objetivo fijo +2,7 % neto",
+        "exploracion": false,
+        "filtro": "DECISORIA",
+        "elegibles": 50,
+        "llenadas": 50,
+        "tasa_ejecucion": 100.0,
+        "medibles": 50,
+        "n_minimo": 50,
+        "dinero": {
+          "media": 2.7,
+          "ic_bajo": 2.7,
+          "ic_alto": 2.7,
+          "n": 50,
+          "pares": 50,
+          "umbral": 0.3,
+          "veredicto": "APROBADA"
+        },
+        "pareado_vs_ref": {
+          "media": -2.8,
+          "ic_bajo": -2.8,
+          "ic_alto": -2.8,
+          "n": 50,
+          "pares": 50
+        },
+        "habilidad": {
+          "media": 51.6129,
+          "ic_bajo": 51.6129,
+          "ic_alto": 51.6129,
+          "n": 50,
+          "pares": 50,
+          "umbral": 0.0,
+          "veredicto": "APROBADA"
+        },
+        "veredicto": "APROBADA",
+        "por_que": "gana dinero por encima del deslizamiento (+2.70 % en el peor caso del intervalo) y bate a su base geometrica (+51.61 pp)"
+      },
+      "passes_invariant": false,
+      "group": "nueva_revision"
+    }
+  ]
+}

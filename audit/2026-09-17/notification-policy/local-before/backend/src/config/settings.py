@@ -1,0 +1,482 @@
+"""
+Configuracion centralizada de SACBinance v3.
+
+Combina la logica adaptativa de v2 (z-scores por moneda, EWMA sigma) con el
+analisis macro de tendencia (pendiente MA por TF, gate con multiplicador de score).
+"""
+from functools import lru_cache
+from typing import List
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
+    )
+
+    # --- Binance ---
+    binance_rest_base: str = Field(default="https://api.binance.com")
+    binance_ws_raw: str = Field(default="wss://stream.binance.com:9443/ws")
+
+    # --- Universo ---
+    min_volume_24h: float = Field(default=1_000_000)
+    max_pairs_to_scan: int = Field(default=250)
+    universe_refresh_seconds: int = Field(default=3600)
+    # Cuanto tiene que cambiar el universo para que compense reconectar los dos
+    # WebSockets. Por debajo de esto solo se refresca el volumen en la base.
+    universe_min_churn: float = Field(default=0.05)
+    # --- Reparacion de huecos en las velas (F01) ---
+    # Los 239 pares tenian huecos internos: 47.249 minutos-par ausentes entre
+    # su primera y su ultima vela. Un hueco cambia que ocurre primero, si el
+    # SL o el TP, y ninguna ventana llegaba al 98% de cobertura.
+    reparacion_velas_seconds: int = Field(default=300)
+    reparacion_velas_umbral_min: int = Field(default=4)
+
+    # --- Hidratacion historica ---
+    history_days: int = Field(default=5)
+    hydration_concurrency: int = Field(default=20)  # requests simultaneos REST
+
+    # --- Buffers por TF ---
+    # Todos >= 160: analizar_tf() necesita 103 velas para la MA99. Los de
+    # 4h/1d antes eran 30/10 -> su tendencia nunca se calculaba (bug).
+    candle_buffer_1m: int = Field(default=320)   # ~5.3h de velas 1m
+    candle_buffer_5m: int = Field(default=350)   # ~29h de velas 5m
+    candle_buffer_15m: int = Field(default=260)  # ~65h de velas 15m
+    candle_buffer_1h: int = Field(default=180)   # ~7.5 dias de velas 1h
+    candle_buffer_4h: int = Field(default=180)   # ~30 dias de velas 4h
+    candle_buffer_1d: int = Field(default=180)   # 180 dias de velas 1d
+
+    # --- Scanner / shortlist (hereda de v2) ---
+    # La shortlist decide que pares reciben stream aggTrade (flujo agresor).
+    # Hasta ahora update_shortlist() no la llamaba NADIE: _shortlist quedaba
+    # vacia para siempre -> cero streams aggTrade -> flow_snap siempre default
+    # -> `confirmed` siempre False -> todo par capado a 79. Ahora hay un loop
+    # en main.py que la recalcula cada shortlist_refresh_seconds.
+    shortlist_max: int = Field(default=40)
+    shortlist_z_threshold: float = Field(default=2.0)
+    shortlist_refresh_seconds: int = Field(default=180)
+    shortlist_min_churn: float = Field(default=0.25)  # % de cambio para reconectar WS-A
+    price_tape_seconds: int = Field(default=360)
+
+    # --- Regularizador visual ---
+    regularizer_window: int = Field(default=8)
+    regularizer_deadband_pct: float = Field(default=0.20)
+
+    # --- Ruta provisional ---
+    live_min_interval: float = Field(default=1.0)
+    tick_interval: float = Field(default=4.0)
+
+    # --- Velas HTF en formacion (nuevo) ---
+    # Binance dibuja la vela 15m/1h EN FORMACION y recalcula sus indicadores
+    # tick a tick. Antes descartabamos k["x"]==False, asi que la tendencia 15m
+    # podia tener 15 min de antiguedad y la de 1h hasta 60 min: esa era la
+    # causa real del "desfase" contra la app, no la carga de CPU.
+    htf_live_enabled: bool = Field(default=True)
+    htf_live_min_interval: float = Field(default=3.0)   # recalculo por par/TF
+    htf_live_tfs: str = Field(default="15m,1h")
+
+    # --- Throttling de analisis pesado ---
+    # S/R sobre 1h y consolidacion sobre 15m no cambian en 60 segundos. Para
+    # pares no interesantes se recalculan cada heavy_interval en vez de en
+    # cada vela 1m de cada uno de los ~250 pares.
+    heavy_analysis_interval: float = Field(default=300.0)
+    engine_yield_every: int = Field(default=25)  # cede el event loop cada N velas
+
+    # --- Persistencia diferida ---
+    db_flush_interval: float = Field(default=5.0)
+    db_flush_max_pending: int = Field(default=500)
+
+    # --- Flujo agresor (aggTrade) ---
+    flow_min_trades: int = Field(default=8)
+
+    # --- Persistencia SQLite ---
+    # Relativo al directorio backend/ por defecto (portable Linux/Windows).
+    # Override con la variable de entorno DB_PATH en .env si se quiere otra ruta.
+    db_path: str = Field(default="data/sacbinance.db")
+    history_rolling_days: int = Field(default=30)     # retencion de symbol_states
+    log_retention_days: int = Field(default=14)       # retencion de analysis_log
+    prune_interval_minutes: int = Field(default=60)   # cada cuanto se purga
+    # --- Retencion de velas ---
+    # Estaba clavada a 3 dias para 1m/5m/15m, y esos 3 dias eran el techo de
+    # todo lo que se puede reconstruir despues. La revision del 11-sep lo
+    # midio: de 2.985 outcomes con ventana de 8h ya vencida, NINGUNO conservaba
+    # todas sus velas de 1m, y 1.720 no conservaban ninguna.
+    #
+    # Lo que hay que poder reconstruir marca el minimo: la ventana de
+    # evaluacion mas larga (24h) mas el calentamiento de features que la
+    # precede (500 velas de 1m = 8.3h) mas margen. Con eso, 3 dias no llegan ni
+    # para una sola cohorte, y para calibrar hacen falta varias.
+    #
+    # El coste es barato: ~283.000 velas de 1m al dia sobre 266 pares, que en
+    # disco son unos 17 MB diarios. 30 dias son ~500 MB.
+    klines_1m_retention_days: int = Field(default=30)
+    klines_htf_retention_days: int = Field(default=400)   # 1h/4h/1d, ~13 meses
+
+    # --- Estadistica adaptativa (hereda de v2) ---
+    ewma_alpha: float = Field(default=0.05)
+    sigma_min: float = Field(default=0.0008)
+    warmup_candles: int = Field(default=20)
+
+    # --- FSM (en unidades de sigma, hereda de v2) ---
+    drop_z: float = Field(default=-2.2)
+    drop_window: int = Field(default=2)
+    bottoming_decel: float = Field(default=0.4)
+    valley_stabilize_candles: int = Field(default=3)
+    valley_band_sigma: float = Field(default=1.0)
+    rise_z: float = Field(default=2.0)
+    rise_window: int = Field(default=3)
+    blowoff_z: float = Field(default=4.5)
+    blowoff_vol_ratio: float = Field(default=3.0)
+    neutral_decay_candles: int = Field(default=5)
+
+    # --- Macro gate (NUEVO en v3) ---
+    # Pesos de cada TF para la tendencia global (deben sumar 1.0)
+    macro_weight_1d: float = Field(default=0.35)
+    macro_weight_4h: float = Field(default=0.30)
+    macro_weight_1h: float = Field(default=0.25)
+    macro_weight_15m: float = Field(default=0.10)
+
+    # Umbral de slope (% cambio en N periodos) para clasificar ALCISTA/BAJISTA
+    slope_alcista: float = Field(default=0.15)   # >+0.15% = ALCISTA
+    slope_bajista: float = Field(default=-0.15)  # <-0.15% = BAJISTA
+    slope_lookback: int = Field(default=3)       # ultimos N cierres para slope
+
+    # Multiplicadores del gate sobre el score base
+    gate_bajista_rising_mult: float = Field(default=0.10)   # RISING + macro bajista = casi suprimido
+    gate_bajista_valley_mult: float = Field(default=0.40)   # VALLEY + macro bajista = vigilar
+    gate_alcista_rising_mult: float = Field(default=1.30)   # RISING + macro alcista = amplificado
+    gate_alcista_valley_mult: float = Field(default=1.20)   # VALLEY + macro alcista
+    gate_neutral_score_floor: int = Field(default=75)       # umbral mas alto cuando macro neutral
+    gate_bajista_score_floor: int = Field(default=85)       # ir contra la macro: lo mas exigente
+
+    # --- Consolidacion (ATR adaptativo) ---
+    atr_period: int = Field(default=14)
+    atr_percentil_consolidacion: int = Field(default=20)    # ATR% < P20 = compresion
+    consolidacion_min_velas_4h: int = Field(default=4)
+    consolidacion_min_velas_1h: int = Field(default=2)
+    consolidacion_min_velas_15m: int = Field(default=2)
+
+    # --- Breakout ---
+    breakout_vol_mult: float = Field(default=1.5)   # volumen > X× SMA para breakout
+    breakout_score_min: int = Field(default=70)     # score minimo para BREAKOUT_INCIPIENTE
+    breakout_cross_lookback: int = Field(default=6) # velas 1m para detectar el cruce de MA99
+
+    # --- Niveles de trading (entry / take profit / stop loss) ---
+    swing_lookback_15m: int = Field(default=12)     # velas 15m para el swing low estructural
+    sl_buffer_atr: float = Field(default=0.3)       # buffer (×ATR) por debajo del swing low
+    sl_atr_mult: float = Field(default=2.0)         # SL fallback = entry - N×ATR
+    rr_target: float = Field(default=2.0)           # ratio beneficio/riesgo objetivo
+    max_risk_pct: float = Field(default=6.0)        # riesgo maximo aceptable (% del entry)
+    min_risk_atr: float = Field(default=1.5)        # riesgo minimo = N×ATR (evita SL pegado)
+    # El stop tiene que quedar fuera del ruido del par, no solo despegado del
+    # precio. Con min_risk_atr=0.5 se emitieron stops de 0.07%: dentro del
+    # spread. Ver _ruido_pullback_pct en trade_levels.py.
+    sl_ruido_tramo_1m: int = Field(default=60)      # ventana movil (min) del retroceso tipico
+    sl_ruido_paso_1m: int = Field(default=10)       # cada cuantas velas se muestrea
+    sl_ruido_mult: float = Field(default=1.0)       # margen sobre ese retroceso
+    objetivo_operador_pct: float = Field(default=3.2)  # a donde apuntas tu, no el sistema
+    # Comision de ida y vuelta mas deslizamiento. El TP que ofrece el sistema
+    # es BRUTO: cobrarlo no es ganar esto. El 61.6% de las señales ofrecia
+    # menos de 3.2% ANTES de descontar nada.
+    coste_operacion_pct: float = Field(default=0.5)
+    # Si es True, una señal que no puede dar el objetivo NETO no se emite: se
+    # veta y se mide en sombra. En False solo se marca. Arranca en False
+    # porque activarlo recorta la produccion ~60% y eso es una decision, no un
+    # arreglo.
+    exigir_objetivo_operador: bool = Field(default=False)
+
+    # --- Informe por marco temporal (consulta manual de un par) ---
+    # El tablero clasifica la ruptura sobre la FSM de 1m: es una lectura de un
+    # solo marco. Este informe repite la lectura en cada TF por separado para
+    # ver si el movimiento de 1m va a favor o en contra de los marcos largos.
+    # Es una lectura nueva, sin medicion propia todavia: no decide nada del
+    # tablero ni de los avisos.
+    informe_tfs: str = Field(default="5m,15m,1h,4h")
+    # Velas hacia atras que definen "antes de la ruptura". El nivel se busca
+    # sobre la ventana que termina ahi, no sobre la vela actual: si se buscara
+    # con el precio de ahora, un nivel ya roto aparece como soporte y la
+    # ruptura se vuelve invisible justo cuando acaba de ocurrir.
+    informe_ruptura_lookback: int = Field(default=6)
+    # Cierres mas alla del nivel para llamarla confirmada. Con 1 basta una
+    # mecha; el resto se publica como "en curso, sin confirmar".
+    informe_ruptura_confirm_velas: int = Field(default=2)
+    # Ancho maximo del rango de entrada (% del precio). El rango va del nivel
+    # roto al precio actual: si el precio ya se fue muy lejos del nivel, el
+    # rango entero dejaria de ser una entrada y pasaria a ser una apuesta.
+    informe_rango_max_pct: float = Field(default=3.0)
+    # Cache del informe por par. Una consulta a un par que no esta en el
+    # universo son 5 peticiones REST a Binance; sin cache, recargar la pantalla
+    # las repite todas.
+    informe_cache_seconds: int = Field(default=20)
+
+    # --- Sombra de rupturas por marco ---
+    # Se registran y se miden, no se publican: ni tablero, ni Telegram, ni
+    # scoring. Es para poder pasarlas algun dia por las tres puertas sobre
+    # señales nuevas, que es lo que ninguna de estas lecturas tiene todavia.
+    sombra_tf_enabled: bool = Field(default=True)
+    # Cooldown en velas DEL PROPIO marco: 6 son 30 min en 5m y un dia en 4h.
+    # En minutos serviria a un marco y no al otro.
+    sombra_tf_cooldown_velas: int = Field(default=6)
+
+    # --- Clasificacion de estado visible (filtro de contexto) ---
+    # "TOCÓ FONDO" / "CONSOLIDANDO" solo si el precio esta en la zona baja del
+    # rango 15m. Por encima de esto, un dip de 1m es un pullback, no un fondo.
+    toco_fondo_max_pos: float = Field(default=0.40)   # 0=minimo del rango, 1=maximo
+    rango_lookback_15m: int = Field(default=50)       # velas 15m para medir el rango
+
+    # --- Persistencia visual del dashboard ---
+    # Una moneda que deja de ser interesante no desaparece de golpe: sigue
+    # visible "perdiendo fuerza" durante este tiempo.
+    dashboard_retention_minutes: int = Field(default=20)
+
+    # --- Niveles de alerta (score 0-100) ---
+    tier_vigilancia: int = Field(default=60)
+    tier_moderada: int = Field(default=70)
+    tier_fuerte: int = Field(default=80)
+    tier_extra: int = Field(default=90)
+    score_min_dashboard: int = Field(default=60)
+
+    # --- Gate BTC (regimen global) ---
+    btc_symbol: str = Field(default="BTCUSDT")
+    btc_bajista_mult: float = Field(default=0.55)   # penaliza señales alcistas si BTC bajista
+    btc_alcista_mult: float = Field(default=1.10)   # leve amplificacion si BTC alcista
+
+    # --- Auto-evaluacion de señales ---
+    signal_expiry_hours: int = Field(default=12)    # cierra como EXPIRED tras N horas
+
+    # --- Fuerza del impulso (derivada, no magnitud) ---
+    # El score mide cuanto subio; esto mide si SIGUE subiendo. Se compara la
+    # mitad reciente de la ventana contra la previa en 1m / 3m / 5m.
+    impulso_min_velas: int = Field(default=40)
+    impulso_ventana_1m: int = Field(default=12)   # 12 min
+    impulso_ventana_3m: int = Field(default=10)   # 30 min
+    impulso_ventana_5m: int = Field(default=8)    # 40 min
+    impulso_peso_1m: float = Field(default=0.25)  # rapido pero ruidoso
+    impulso_peso_3m: float = Field(default=0.40)
+    impulso_peso_5m: float = Field(default=0.35)
+
+    # Umbrales de fase. Se exigen DOS señales flojas de tres para declarar
+    # DESACELERANDO: una sola es ruido de una vela suelta.
+    impulso_acel_min: float = Field(default=0.75)     # bajo esto, pierde ritmo
+    impulso_acel_fuerte: float = Field(default=1.25)  # sobre esto, acelera
+    impulso_cuerpo_min: float = Field(default=0.80)   # cuerpos encogiendo
+    impulso_vol_min: float = Field(default=0.75)      # volumen secandose
+    impulso_rsi_techo: float = Field(default=78.0)
+    impulso_lookback_consumido: int = Field(default=60)   # velas 1m
+    impulso_consumido_penaliza: float = Field(default=4.0)   # % desde el minimo
+    impulso_consumido_agotado: float = Field(default=12.0)   # % = ya es tarde
+
+    # --- Alertas congeladas (ciclo de vida propio) ---
+    # Una alerta se emite UNA vez con entry/TP/SL fijos. No se recalcula ni se
+    # re-emite mas arriba: eso era perseguir el precio, no confirmar la señal.
+    alerta_congelada_enabled: bool = Field(default=True)
+    # Velas 1m seguidas con impulso degradado antes de marcarla en declive
+    alerta_velas_declive: int = Field(default=3)
+    # Minutos que sigue visible en "PERDIENDO FUERZA" antes de retirarse
+    alerta_minutos_declive: int = Field(default=10)
+    # Vida maxima de una alerta sin desenlace
+    alerta_vida_horas: int = Field(default=6)
+    # Si el TP congelado queda por debajo de la meta fija (+3.2%), tocarlo no
+    # termina la tesis: se observa este tiempo si el precio logra extenderse
+    # por encima. Evita resetear una continuacion solo porque el TP calculado
+    # por R:R era corto.
+    alerta_tp_corto_extension_horas: int = Field(default=4)
+    # Espera antes de admitir una alerta nueva del mismo par
+    alerta_recooldown_minutos: int = Field(default=45)
+    # Recorrido maximo ya consumido para admitir una alerta NUEVA. Es una
+    # puerta distinta de la fase: en el caso COTI del 4-sep el impulso seguia
+    # vivo a las 11:13 (el techo no llego hasta las 11:17), pero el movimiento
+    # ya llevaba un 4.2% recorrido — entrar ahi es perseguir, no anticipar.
+    # Para MANTENER viva una alerta ya emitida no se aplica: solo la fase.
+    alerta_consumido_max: float = Field(default=3.5)
+
+    # --- Seguimiento: la señal no se borra, cambia de estado ---
+    # Una alerta emitida a las 09:00 desaparecia a las 13:00 y con ella toda
+    # su historia. Ahora vive la ventana entera y lo que cae es su
+    # probabilidad medida de llegar a la meta.
+    seguimiento_horas: int = Field(default=24)        # igual que outcome_window
+    seguimiento_valle_minutos: int = Field(default=15)  # sin minimo nuevo -> EN_VALLE
+    seguimiento_rebote_pct: float = Field(default=1.0)  # sobre el suelo -> RECUPERANDO
+    # Cuantas alertas en seguimiento caben en el tablero. Con ~500 señales al
+    # dia y ventana de 24h hay unas 460 abiertas a la vez: enseñarlas todas
+    # haria el tablero inservible. Se quedan las mas cerca de su meta.
+    seguimiento_max_filas: int = Field(default=25)
+    # Entrada alternativa: el nivel al que esperar un retroceso antes de
+    # entrar. Medido en research/esperar_retroceso.py: entrando ahi el
+    # rendimiento POR OPERACION sube de +0.54% a +0.87% con stop del 2%, pero
+    # solo se ejecuta el 42% de las veces. Conviene si lo que limita es el
+    # capital, no las oportunidades. Se probo hacerlo proporcional al par
+    # (retroceso_dinamico.py) y no aporta nada sobre el numero fijo.
+    retroceso_entrada_pct: float = Field(default=1.8)
+
+    # --- Avisos de BAJADA ---
+    # Escalones bajo el entry congelado que disparan aviso, una vez cada uno.
+    # De 1391 senales cerradas, 217 subieron >=2.2% y despues cayeron al SL:
+    # saber que una alerta viva se esta dando la vuelta importa tanto como
+    # saber que nacio. El SL propio de la senal avisa aparte.
+    aviso_bajada_pct: str = Field(default="0.4,0.9,1.8")
+
+    # --- Avisos por Telegram ---
+    # El token y el chat_id NO van aqui: se ponen en backend/.env, que no esta
+    # en git. Un token en el codigo es un token publicado.
+    telegram_enabled: bool = Field(default=False)
+    telegram_token: str = Field(default="")
+    telegram_chat_id: str = Field(default="")
+    # Rupturas cortas se notifican y se siguen en un hilo independiente de las
+    # alertas TP/SL. El cooldown es por par y direccion, no global.
+    telegram_rupturas_enabled: bool = Field(default=True)
+    telegram_ruptura_cooldown_min: int = Field(default=60)
+    telegram_ruptura_hitos_min: str = Field(default="15,60,240,1440")
+    # Criterio de aviso. Con ~460 señales al dia, avisar de todas equivale a no
+    # avisar de ninguna: se silencia el primer dia. Estos filtros lo bajan a
+    # ~15 diarios (research/volumen_avisos.py) y son los que tienen respaldo.
+    aviso_solo_confirmado: bool = Field(default=True)   # exige rebote >=1%
+    aviso_score_min: int = Field(default=75)
+    aviso_vol24h_min: float = Field(default=2_000_000)
+    aviso_cooldown_min: int = Field(default=45)   # por par, evita repetir
+
+    # --- Patron validado: "viene de caer" ---
+    # research/marea_ingredientes.py, 7-sep-2026: una caida >=2% en los 40
+    # minutos previos lleva a +3.2% en 3h el 30.1% de las veces contra 13.1%
+    # de base (n=1673). Los parametros replican la medicion; cambiarlos
+    # invalida el respaldo.
+    retroceso_velas_zona: int = Field(default=8)      # velas 1m donde se busca el suelo
+    retroceso_lookback: int = Field(default=40)       # velas 1m previas para el pico
+    retroceso_caida_min: float = Field(default=2.0)   # caida minima, %
+    # Confirmacion: rebote minimo desde el suelo para el nivel fuerte del
+    # patron. 24.4% cobrable contra 19.5% sin el (n=960 de 1737).
+    retroceso_rebote_min: float = Field(default=1.0)  # % sobre el suelo
+
+    # --- Base corta post-caida ("flush -> base -> reclaim") ---
+    # compression.py mira 96 velas de 15m (24h) y se pierde las bases de una
+    # hora. Estos parametros salen de medir CHIPUSDT el 5-sep: caida -2.93%
+    # en 32 min, base de 56 min con rango 3.01% y volumen al 61%, ruptura del
+    # techo con volumen 3.9x.
+    base_lookback_velas: int = Field(default=180)     # 3h de velas 1m
+    base_min_velas: int = Field(default=20)           # base minima
+    base_max_velas: int = Field(default=90)           # base maxima
+    base_rango_max_pct: float = Field(default=3.5)    # ancho maximo de la base
+    base_caida_min_velas: int = Field(default=10)     # historial previo minimo
+    base_caida_min_pct: float = Field(default=2.0)    # caida previa minima
+    base_vol_dryup_max: float = Field(default=0.85)   # vol base / vol caida
+    base_ruptura_vol_min: float = Field(default=2.0)  # volumen en la ruptura
+    base_max_sobre_techo_pct: float = Field(default=1.0)  # si no, llega tarde
+    base_score_min: int = Field(default=60)
+
+    # --- Medicion de outcomes (camino completo de cada señal) ---
+    # A diferencia de signal_expiry_hours, esta ventana NO cierra la señal:
+    # sigue el precio pase lo que pase con TP/SL, para poder responder que
+    # hizo despues de tocar el stop.
+    outcome_window_hours: int = Field(default=24)
+    # Retroceso (%) a partir del cual el camino deja de considerarse "directo"
+    forma_dip_umbral: float = Field(default=1.0)
+
+    # --- Sombra: entrar en el hoyo en vez de en la señal ---
+    # Entrar al precio de la señal da -0.26%/op con el intervalo entero en
+    # negativo (1347 señales). Esto mide la alternativa de Felix: esperar a que
+    # el precio baje cerca del stop y entrar ahi, con el mismo TP. Solo mide.
+    hoyo_margen_pct: float = Field(default=0.5)   # cuanto por encima del SL se entra
+    hoyo_stop_c2: float = Field(default=2.0)      # stop fijo de la regla C2
+    hoyo_stop_c3: float = Field(default=3.0)      # stop fijo de la regla C3
+    hoyo_rapido_min: int = Field(default=60)      # bajar al hoyo en menos = "rapido"
+    hoyo_sl_ancho: float = Field(default=2.0)     # |sl_pct| a partir de ahi = "ancho"
+
+    # --- Deteccion de fakeout ---
+    fakeout_lookback_candles: int = Field(default=15)   # velas 1m tras breakout
+    fakeout_penalty_minutes: int = Field(default=30)    # duracion de la penalizacion
+
+    # --- Soporte / resistencia ---
+    sr_pivot_window: int = Field(default=3)         # velas a cada lado para un pivote
+    sr_cluster_pct: float = Field(default=0.6)      # % para agrupar pivotes en un nivel
+    sr_min_touches: int = Field(default=2)          # toques minimos para validar un nivel
+    sr_max_levels: int = Field(default=6)           # niveles a conservar por lado
+    sr_apoyo_pct: float = Field(default=1.0)        # % para considerar el precio pegado a un nivel
+
+    # --- Ancla diaria fija (00:00 UTC) ---
+    # Reemplaza la ventana rolling 24h de Binance, cuyo denominador se mueve
+    # solo y hace que el % cambie aunque el precio no haga nada.
+    daily_anchor_enabled: bool = Field(default=True)
+
+    # --- ALERTA A: tendencia sostenida (grind) ---
+    grind_window_15m: int = Field(default=16)          # 16 velas 15m = 4 horas
+    grind_r2_min: float = Field(default=0.70)          # que tan "recta" la subida
+    grind_slope_min_pct_h: float = Field(default=0.25) # minimo %/hora
+    grind_slope_max_pct_h: float = Field(default=3.0)  # por encima ya es ignicion
+    grind_max_pullback_pct: float = Field(default=2.5) # retroceso maximo tolerado
+    grind_min_above_ema: float = Field(default=0.70)   # % de cierres sobre EMA25
+    grind_score_min: int = Field(default=65)
+
+    # --- ALERTA B: ignicion (explosion) ---
+    ignition_window_1m: int = Field(default=5)
+    ignition_roc_min_pct: float = Field(default=1.2)
+    ignition_vol_mult: float = Field(default=2.5)
+    ignition_z_min: float = Field(default=2.0)
+    ignition_rsi_max: float = Field(default=82.0)
+    ignition_max_consumido_pct: float = Field(default=6.0)
+    ignition_pct_dia_alto: float = Field(default=12.0)  # % desde open diario ya "caro"
+    ignition_score_min: int = Field(default=70)
+
+    # --- CAPA 1: compresion con contracciones progresivas ---
+    compresion_window: int = Field(default=96)          # 96 velas 15m = 24h
+    compresion_pivot_k: int = Field(default=2)          # fractal: k velas a cada lado
+    compresion_atr_period: int = Field(default=14)
+    compresion_atr_percentil_max: int = Field(default=35)
+    compresion_min_contracciones: int = Field(default=2)
+    compresion_max_contracciones: int = Field(default=5)
+    compresion_min_profundidad_pct: float = Field(default=0.8)
+    compresion_ratio_max: float = Field(default=0.85)   # progresiva: cada una < anterior
+    compresion_half_min: float = Field(default=0.30)    # "regla de la mitad"
+    compresion_half_max: float = Field(default=0.70)
+    compresion_rango_max_pct: float = Field(default=12.0)
+    compresion_vol_dryup_max: float = Field(default=0.75)
+    compresion_cerca_pivot_pct: float = Field(default=1.5)
+    compresion_base_velas: int = Field(default=20)
+    compresion_score_min: int = Field(default=60)
+
+    # --- CAPA 1: taxonomia ---
+    # % desde el ancla diaria por debajo del cual una base se considera
+    # "post-caida" y no acumulacion tranquila
+    taxonomia_caida_dia_pct: float = Field(default=-3.0)
+
+    # Cooldown por par y por tipo de alerta (evita spam de la misma senal)
+    alert_cooldown_minutes: int = Field(default=30)
+
+    # --- API ---
+    api_host: str = Field(default="0.0.0.0")
+    api_port: int = Field(default=8000)
+    cors_origins: str = Field(default="http://localhost:5173,http://127.0.0.1:5173")
+
+    log_level: str = Field(default="INFO")
+
+    @property
+    def informe_tfs_list(self) -> List[str]:
+        validos = ("1m", "5m", "15m", "1h", "4h", "1d")
+        return [t.strip() for t in self.informe_tfs.split(",")
+                if t.strip() in validos]
+
+    @property
+    def htf_live_tfs_list(self) -> List[str]:
+        return [t.strip() for t in self.htf_live_tfs.split(",") if t.strip()]
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def telegram_ruptura_hitos_list(self) -> List[int]:
+        values = []
+        for raw in self.telegram_ruptura_hitos_min.split(","):
+            try:
+                minutos = int(raw.strip())
+            except ValueError:
+                continue
+            if 0 < minutos <= 1440:
+                values.append(minutos)
+        return sorted(set(values))
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()

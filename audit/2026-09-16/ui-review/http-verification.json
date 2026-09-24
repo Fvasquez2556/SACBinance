@@ -1,0 +1,13 @@
+{
+  "html_status": 200,
+  "/assets/index-Dv3PfEKw.js": "6b320ccef5ea9711f6f98807cef3c6bd7c8ccfdc32eca5f455771e5529aa3254",
+  "/assets/index-C3WCyZTk.css": "15b396c90fd3bd2a2b187308e042e75723f26b7776788ccd456edf2606e5b7ce",
+  "history_contract": [
+    "ms_tp",
+    "ms_sl",
+    "ms_meta",
+    "cobertura_velas",
+    "strategy_version",
+    "reward_neto_pct"
+  ]
+}

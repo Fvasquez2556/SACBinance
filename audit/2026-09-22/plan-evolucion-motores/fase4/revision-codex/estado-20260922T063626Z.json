@@ -1,0 +1,443 @@
+{
+  "utc": "2026-09-22T06:36:27.685029+00:00",
+  "files": {
+    "backend/src/episodios/registro.py": {
+      "sha256": "5b99ac1c435ad81b8e47493b64c2dba3e2d6419426521d54c8fce9729c0c84cb",
+      "normalized": "2e1ca02c981446b1a8f55f3129a8c5488fb40432c2e4ca4cafe89ecd39e27799",
+      "mtime_utc": "2026-09-22T02:18:46.423867+00:00",
+      "local_sha256": "5b99ac1c435ad81b8e47493b64c2dba3e2d6419426521d54c8fce9729c0c84cb"
+    },
+    "backend/src/episodios/__init__.py": {
+      "sha256": "47beb7ef197ac2cf5c86cb8ce8c2e7cc892daacd2cfb4c79d27c9d264358e0be",
+      "normalized": "47beb7ef197ac2cf5c86cb8ce8c2e7cc892daacd2cfb4c79d27c9d264358e0be",
+      "mtime_utc": "2026-09-22T02:18:46.389867+00:00",
+      "local_sha256": "47beb7ef197ac2cf5c86cb8ce8c2e7cc892daacd2cfb4c79d27c9d264358e0be"
+    },
+    "backend/src/evaluacion/recorrido.py": {
+      "sha256": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285",
+      "normalized": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285",
+      "mtime_utc": "2026-09-22T02:57:21.966023+00:00",
+      "local_sha256": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285"
+    },
+    "backend/src/evaluacion/almacen.py": {
+      "sha256": "00d30ddf71f8994ae60b6936d854d1156d6c873e9a6e3a6702cefe949a266853",
+      "normalized": "a9d4f72c32d0367414e07e4fc66ab95c7db11a0afccec98a267bd5b89f4c9406",
+      "mtime_utc": "2026-09-22T04:08:23.429559+00:00",
+      "local_sha256": "00d30ddf71f8994ae60b6936d854d1156d6c873e9a6e3a6702cefe949a266853"
+    },
+    "backend/src/evaluacion/__init__.py": {
+      "sha256": "4cfdfdddc62b0fc3a1e175c6d1abfbfd626af1ee6c129b76c2a5800ebf9ed8e3",
+      "normalized": "4cfdfdddc62b0fc3a1e175c6d1abfbfd626af1ee6c129b76c2a5800ebf9ed8e3",
+      "mtime_utc": "2026-09-22T02:57:21.931023+00:00",
+      "local_sha256": "4cfdfdddc62b0fc3a1e175c6d1abfbfd626af1ee6c129b76c2a5800ebf9ed8e3"
+    },
+    "backend/src/evaluacion/adaptadores.py": {
+      "sha256": "4f99ff9a8a8b63583348c2d7e1826e59c8d55577facb8240752cd8ef32e65fd2",
+      "normalized": "4f99ff9a8a8b63583348c2d7e1826e59c8d55577facb8240752cd8ef32e65fd2",
+      "mtime_utc": "2026-09-22T02:57:22.027023+00:00",
+      "local_sha256": "4f99ff9a8a8b63583348c2d7e1826e59c8d55577facb8240752cd8ef32e65fd2"
+    },
+    "backend/src/operaciones/diario.py": {
+      "sha256": "3bd3facc4d83995e42ef0cc8ff7f04cb51be011ecbb5812f9bd8702b0d7b824f",
+      "normalized": "3bd3facc4d83995e42ef0cc8ff7f04cb51be011ecbb5812f9bd8702b0d7b824f",
+      "mtime_utc": "2026-09-22T03:26:10.324372+00:00",
+      "local_sha256": "3bd3facc4d83995e42ef0cc8ff7f04cb51be011ecbb5812f9bd8702b0d7b824f"
+    },
+    "backend/src/operaciones/__init__.py": {
+      "sha256": "6a73d01b7a829b03e0fc4b1567b360bac65db44ce52890507be22eabf67896d3",
+      "normalized": "6a73d01b7a829b03e0fc4b1567b360bac65db44ce52890507be22eabf67896d3",
+      "mtime_utc": "2026-09-22T03:26:10.290372+00:00",
+      "local_sha256": "6a73d01b7a829b03e0fc4b1567b360bac65db44ce52890507be22eabf67896d3"
+    },
+    "backend/src/motores/continuacion.py": {
+      "sha256": "48b82b450e7dfd0eca3d5d6834a03d3c00e6c7694459c55cf749d0205027dda3",
+      "normalized": "7362f65a197d3152ba38b9349b41b1d6965ae7bbc7849db5096a6fc0d74317a9",
+      "mtime_utc": "2026-09-22T06:29:51.500750+00:00",
+      "local_sha256": "48b82b450e7dfd0eca3d5d6834a03d3c00e6c7694459c55cf749d0205027dda3"
+    },
+    "backend/src/motores/caida.py": {
+      "sha256": "b00a9751adec46e13215561d356aaa258b325c995cd0d222add761aafd654a5a",
+      "normalized": "24e996cccf1315c24038fe88f7d6c9991f4b1bcf36cb7be3c7a242101ee03678",
+      "mtime_utc": "2026-09-22T06:29:51.527750+00:00",
+      "local_sha256": "b00a9751adec46e13215561d356aaa258b325c995cd0d222add761aafd654a5a"
+    },
+    "backend/src/motores/almacen.py": {
+      "sha256": "ae0f428422d68a4beb6b4647d42ea62a0cf6e999432354cc0fc36a2451127737",
+      "normalized": "ae0f428422d68a4beb6b4647d42ea62a0cf6e999432354cc0fc36a2451127737",
+      "mtime_utc": "2026-09-22T06:29:51.554750+00:00",
+      "local_sha256": "ae0f428422d68a4beb6b4647d42ea62a0cf6e999432354cc0fc36a2451127737"
+    },
+    "backend/src/motores/servicio.py": {
+      "sha256": "75ec784121817dbe8c04b9fa627237d631260af38289e6793c43ace2c7497229",
+      "normalized": "50fe1cdc2e2a607c45118565b32c1a22a9c39ce23ff0d15159838e1dca375625",
+      "mtime_utc": "2026-09-22T06:29:51.578750+00:00",
+      "local_sha256": "75ec784121817dbe8c04b9fa627237d631260af38289e6793c43ace2c7497229"
+    },
+    "backend/src/motores/contrato.py": {
+      "sha256": "dd80b259ad0a5b26d75b0128336d30032a92dbbd4e59a911ba986441ad48c43e",
+      "normalized": "4e6b342c1d29166558d2d256a29ea679c708673c55e64f68ff64fa713ad4da0b",
+      "mtime_utc": "2026-09-22T06:29:51.473750+00:00",
+      "local_sha256": "dd80b259ad0a5b26d75b0128336d30032a92dbbd4e59a911ba986441ad48c43e"
+    },
+    "backend/src/motores/__init__.py": {
+      "sha256": "1804cae22474ef1e73281962b32200a530010338776ad86b93ac9c033429c489",
+      "normalized": "1804cae22474ef1e73281962b32200a530010338776ad86b93ac9c033429c489",
+      "mtime_utc": "2026-09-22T06:29:51.451750+00:00",
+      "local_sha256": "1804cae22474ef1e73281962b32200a530010338776ad86b93ac9c033429c489"
+    },
+    "backend/main.py": {
+      "sha256": "9a00471d50f6b0cb712f17a946168005ff2b40019a1b4810cff5d3b7dc41c9bf",
+      "normalized": "bb798fd09b972fc579f08a40d2906ec76deea89c90bb7ebdc4a567a719b08fdb",
+      "mtime_utc": "2026-09-22T06:29:53.711753+00:00",
+      "local_sha256": "9a00471d50f6b0cb712f17a946168005ff2b40019a1b4810cff5d3b7dc41c9bf"
+    },
+    "backend/src/persistence/db.py": {
+      "sha256": "3bb0acc42c823ea4259595499f12ae53d5cf209c0385a7649543953001b3dec2",
+      "normalized": "9190e42bcb40431fbc3609aad4aff473df0125c877f0e4d773f638301a540dfd",
+      "mtime_utc": "2026-09-22T06:29:52.834752+00:00",
+      "local_sha256": "3bb0acc42c823ea4259595499f12ae53d5cf209c0385a7649543953001b3dec2"
+    },
+    "backend/src/state/engine.py": {
+      "sha256": "8bf4878459f42ad018b9a0b91c33c2fc2e2919670852f3b7af63475c1c3caf1d",
+      "normalized": "3e71d5113fcb5c1d32f9b201c218ae8f6ad638a3ceb07edae7fa56dd27e418b1",
+      "mtime_utc": "2026-09-22T06:29:52.425751+00:00",
+      "local_sha256": "8bf4878459f42ad018b9a0b91c33c2fc2e2919670852f3b7af63475c1c3caf1d"
+    },
+    "backend/src/config/settings.py": {
+      "sha256": "8fcb2d3609cf7b580d6bb4eb87c2200dbe7b4420ef22658219a5dc9fc244dc7f",
+      "normalized": "afdce34a1ad9dc57e23412263063d1d2d7fd285dd8735078065b0f5b6a74e74b",
+      "mtime_utc": "2026-09-22T06:29:53.297752+00:00",
+      "local_sha256": "8fcb2d3609cf7b580d6bb4eb87c2200dbe7b4420ef22658219a5dc9fc244dc7f"
+    },
+    "backend/src/api/routes.py": {
+      "sha256": "d20855e7547198e3b735f83a1d421c04966ccc40b44f18cf67536d524f229c24",
+      "normalized": "c6f22466757d463189e7ae81ae01591bd13d7b6ff02202881cacc0d20651b40e",
+      "mtime_utc": "2026-09-22T03:26:56.932431+00:00",
+      "local_sha256": "d20855e7547198e3b735f83a1d421c04966ccc40b44f18cf67536d524f229c24"
+    },
+    "backend/src/state/active_alert.py": {
+      "sha256": "004806e2e4e24eab5c53a36ca05fd0763cfcaec76bbe05a36418ccef4eacbfdf",
+      "normalized": "7c2399e8e89641c74aafee28a36e6c4e04532781f350fb68917844adb9c35c51",
+      "mtime_utc": "2026-09-22T05:58:14.742225+00:00",
+      "local_sha256": "004806e2e4e24eab5c53a36ca05fd0763cfcaec76bbe05a36418ccef4eacbfdf"
+    },
+    "frontend/dist/index.html": {
+      "sha256": "04f0e9db378b660a4623db621c7a969ccb59016beb26e9ffc7f285c78cebbcad",
+      "normalized": "04f0e9db378b660a4623db621c7a969ccb59016beb26e9ffc7f285c78cebbcad",
+      "mtime_utc": "2026-09-22T05:58:16.753227+00:00",
+      "local_sha256": "04f0e9db378b660a4623db621c7a969ccb59016beb26e9ffc7f285c78cebbcad"
+    },
+    "backend/tests/test_episodios.py": {
+      "sha256": "203fb8058939905faa45bea73c599ae0d0a56c18796dc81dcf80b5a8d7354f0c",
+      "normalized": "4ff01bb3467d5aa4d734066729441f6d9156965c8d60f97ca5d38f92c05b3fd0",
+      "mtime_utc": "2026-09-22T02:57:22.564023+00:00",
+      "local_sha256": "203fb8058939905faa45bea73c599ae0d0a56c18796dc81dcf80b5a8d7354f0c"
+    },
+    "backend/tests/test_recorrido.py": {
+      "sha256": "a14fc1f8029628ab50b0283b4da60abd1617d26c5681fa7173eb8d82c9b46896",
+      "normalized": "32ee15a68ea7ddd8bd7bd2a90e3d239c7f70c9a58f9815bad8a2e09c9f9f6b9b",
+      "mtime_utc": "2026-09-22T04:08:23.884560+00:00",
+      "local_sha256": "a14fc1f8029628ab50b0283b4da60abd1617d26c5681fa7173eb8d82c9b46896"
+    },
+    "backend/tests/test_niveles_visibles.py": {
+      "sha256": "e3b8df3c785f6fc13ce166e97575e413bbaaa34765a180329dd84e6adc7b5937",
+      "normalized": "27295197ef5e440c03b96b0781365fcaaea89dbac116aa05c341eafee666d9d3",
+      "mtime_utc": "2026-09-22T05:58:16.123226+00:00",
+      "local_sha256": "e3b8df3c785f6fc13ce166e97575e413bbaaa34765a180329dd84e6adc7b5937"
+    },
+    "backend/tests/test_operaciones.py": {
+      "sha256": "a399859a561983796eef8d2794f580a2c6fcc82330a07a77586218ca3a92e003",
+      "normalized": "a399859a561983796eef8d2794f580a2c6fcc82330a07a77586218ca3a92e003",
+      "mtime_utc": "2026-09-22T03:26:58.468433+00:00",
+      "local_sha256": "a399859a561983796eef8d2794f580a2c6fcc82330a07a77586218ca3a92e003"
+    },
+    "backend/tests/test_tf_rupture_tracker.py": {
+      "sha256": "5507c64566865f2c65f184eddbdf3153367b9a1bf825a564065cc8a0dacf92c9",
+      "normalized": "5507c64566865f2c65f184eddbdf3153367b9a1bf825a564065cc8a0dacf92c9",
+      "mtime_utc": "2026-09-17T20:14:49+00:00",
+      "local_sha256": "5507c64566865f2c65f184eddbdf3153367b9a1bf825a564065cc8a0dacf92c9"
+    },
+    "backend/tests/test_pair_report.py": {
+      "sha256": "248328dc610d748bb0d40713ebb6789b41772c12cb2fdc4e026d02c2d13e1912",
+      "normalized": "248328dc610d748bb0d40713ebb6789b41772c12cb2fdc4e026d02c2d13e1912",
+      "mtime_utc": "2026-09-17T20:14:49+00:00",
+      "local_sha256": "248328dc610d748bb0d40713ebb6789b41772c12cb2fdc4e026d02c2d13e1912"
+    },
+    "backend/tests/test_tf_estadistica.py": {
+      "sha256": "18de24ebce95f9f3a4283cd4480f7f219fe86a9f6ecb785606c9f22dcb180760",
+      "normalized": "a36e4f9cecb7a3a85432be213d412c2b275eb9cb137ff995c2cb68096be071f5",
+      "mtime_utc": "2026-09-22T04:25:40.627882+00:00",
+      "local_sha256": "18de24ebce95f9f3a4283cd4480f7f219fe86a9f6ecb785606c9f22dcb180760"
+    },
+    "backend/tests/test_rupture_tracker.py": {
+      "sha256": "7c86f755a2b38517f82d6dd8dd2cef8d23ccbfd7d687587953c46565509daab5",
+      "normalized": "7c86f755a2b38517f82d6dd8dd2cef8d23ccbfd7d687587953c46565509daab5",
+      "mtime_utc": "2026-09-17T19:08:26.831451+00:00",
+      "local_sha256": "7c86f755a2b38517f82d6dd8dd2cef8d23ccbfd7d687587953c46565509daab5"
+    },
+    "backend/tests/test_active_alert.py": {
+      "sha256": "5b0a70cc0ed46ebb528c68d0f010c7dca9e8fde15d4802a62eb4883d028d56f5",
+      "normalized": "5b0a70cc0ed46ebb528c68d0f010c7dca9e8fde15d4802a62eb4883d028d56f5",
+      "mtime_utc": "2026-09-14T20:26:53.604548+00:00",
+      "local_sha256": "5b0a70cc0ed46ebb528c68d0f010c7dca9e8fde15d4802a62eb4883d028d56f5"
+    },
+    "backend/tests/test_referencias.py": {
+      "sha256": "eef07ff2df51ce7b91168c3458e8cade630feb629a7ef2692afb72965518131b",
+      "normalized": "eef07ff2df51ce7b91168c3458e8cade630feb629a7ef2692afb72965518131b",
+      "mtime_utc": "2026-09-22T03:13:33.194387+00:00",
+      "local_sha256": "eef07ff2df51ce7b91168c3458e8cade630feb629a7ef2692afb72965518131b"
+    },
+    "backend/tests/test_motores.py": {
+      "sha256": "6522d45feb9321e3174bfe63413b3c2bce84332d47fbe7cc1e9b2a2baed4b721",
+      "normalized": "341e309b8ec26ac78dc18fa155b90a7ff977ae3eba13c61c043d032fff7534f7",
+      "mtime_utc": "2026-09-22T06:32:36.955971+00:00",
+      "local_sha256": "6522d45feb9321e3174bfe63413b3c2bce84332d47fbe7cc1e9b2a2baed4b721"
+    },
+    "backend/tests/test_notification_policy.py": {
+      "sha256": "0605352ba384012337adaec72575c34ee56eb5437dac48b4eae924e73a409da1",
+      "normalized": "0605352ba384012337adaec72575c34ee56eb5437dac48b4eae924e73a409da1",
+      "mtime_utc": "2026-09-18T04:40:56.168240+00:00",
+      "local_sha256": "0605352ba384012337adaec72575c34ee56eb5437dac48b4eae924e73a409da1"
+    }
+  },
+  "service": "ActiveState=active\nSubState=running\nMainPID=3406821\nNRestarts=8\nExecMainStartTimestamp=Tue 2026-09-22 06:33:17 UTC\nStandardOutput=append\nStandardError=append\n",
+  "status": {
+    "http": 200,
+    "data": {
+      "status": "activo",
+      "total_pairs": 250,
+      "state_distribution": {
+        "NEUTRAL": 188,
+        "SUBIENDO": 59,
+        "CAYENDO": 3
+      },
+      "tier_distribution": {
+        "FUERTE": 29,
+        "VIGILANCIA": 7,
+        "MODERADA": 19
+      },
+      "interesting": 55
+    }
+  },
+  "operaciones": {
+    "http": 200,
+    "data": {
+      "n": 0,
+      "resumen": {
+        "por_tipo": [],
+        "moneda_por_tipo": [],
+        "abiertas": 0
+      }
+    }
+  },
+  "schema": [
+    {
+      "key": "version",
+      "value": "19"
+    }
+  ],
+  "tables": {
+    "episodios": 188,
+    "planes": 403,
+    "plan_recorrido": 403,
+    "plan_horizontes": 2541,
+    "operaciones": 0,
+    "operacion_eventos": 0,
+    "motor_lecturas": 240,
+    "motor_transiciones": 0,
+    "motor_estado": 0
+  },
+  "alerts_new": [
+    {
+      "n": 403,
+      "missing_plan": 0,
+      "missing_episode": 0,
+      "missing_signal": 306
+    }
+  ],
+  "orphans": [
+    {
+      "n": 0
+    }
+  ],
+  "replay_comparison": [
+    {
+      "legado": "SL",
+      "nuevo": "STOP",
+      "n": 2
+    }
+  ],
+  "episodes": [
+    {
+      "fase": "ABIERTO",
+      "motivo_cierre": null,
+      "n": 160
+    },
+    {
+      "fase": "CERRADO",
+      "motivo_cierre": "ANCLA",
+      "n": 8
+    },
+    {
+      "fase": "CERRADO",
+      "motivo_cierre": "DESENLACE:SL",
+      "n": 18
+    },
+    {
+      "fase": "CERRADO",
+      "motivo_cierre": "DESENLACE:TP",
+      "n": 2
+    }
+  ],
+  "replay": [
+    {
+      "n": 403,
+      "complete": 0,
+      "resolved": 87,
+      "min_eval": 1790058953969,
+      "max_eval": 1790058984253
+    }
+  ],
+  "motor_lecturas": [
+    {
+      "first": 1790058872452,
+      "last": 1790058963460,
+      "symbols": 118
+    }
+  ],
+  "motor_groups": [
+    {
+      "motor": "caida",
+      "veredicto": "SIN_TESIS",
+      "origen": "ALERTA",
+      "n": 13
+    },
+    {
+      "motor": "caida",
+      "veredicto": "SIN_TESIS",
+      "origen": "MUESTRA",
+      "n": 12
+    },
+    {
+      "motor": "caida",
+      "veredicto": "SIN_TESIS",
+      "origen": "TRANSICION",
+      "n": 93
+    },
+    {
+      "motor": "caida",
+      "veredicto": "SIN_TESIS",
+      "origen": "VETO",
+      "n": 2
+    },
+    {
+      "motor": "continuacion",
+      "veredicto": "CANDIDATO",
+      "origen": "ALERTA",
+      "n": 1
+    },
+    {
+      "motor": "continuacion",
+      "veredicto": "ESPERAR",
+      "origen": "ALERTA",
+      "n": 1
+    },
+    {
+      "motor": "continuacion",
+      "veredicto": "ESPERAR",
+      "origen": "MUESTRA",
+      "n": 2
+    },
+    {
+      "motor": "continuacion",
+      "veredicto": "ESPERAR",
+      "origen": "TRANSICION",
+      "n": 40
+    },
+    {
+      "motor": "continuacion",
+      "veredicto": "ESPERAR",
+      "origen": "VETO",
+      "n": 2
+    },
+    {
+      "motor": "continuacion",
+      "veredicto": "SIN_TESIS",
+      "origen": "ALERTA",
+      "n": 11
+    },
+    {
+      "motor": "continuacion",
+      "veredicto": "SIN_TESIS",
+      "origen": "MUESTRA",
+      "n": 10
+    },
+    {
+      "motor": "continuacion",
+      "veredicto": "SIN_TESIS",
+      "origen": "TRANSICION",
+      "n": 53
+    }
+  ],
+  "motor_transiciones": [
+    {
+      "first": null,
+      "last": null,
+      "symbols": 0
+    }
+  ],
+  "motor_estado": [
+    {
+      "first": null,
+      "last": null,
+      "symbols": 0
+    }
+  ],
+  "plan_times": [
+    {
+      "first": 1790043840424,
+      "last": 1790058966254
+    }
+  ],
+  "flags_explicit_in_env": {},
+  "comparison": {
+    "exact": [
+      "backend/src/episodios/registro.py",
+      "backend/src/episodios/__init__.py",
+      "backend/src/evaluacion/recorrido.py",
+      "backend/src/evaluacion/almacen.py",
+      "backend/src/evaluacion/__init__.py",
+      "backend/src/evaluacion/adaptadores.py",
+      "backend/src/operaciones/diario.py",
+      "backend/src/operaciones/__init__.py",
+      "backend/src/motores/continuacion.py",
+      "backend/src/motores/caida.py",
+      "backend/src/motores/almacen.py",
+      "backend/src/motores/servicio.py",
+      "backend/src/motores/contrato.py",
+      "backend/src/motores/__init__.py",
+      "backend/main.py",
+      "backend/src/persistence/db.py",
+      "backend/src/state/engine.py",
+      "backend/src/config/settings.py",
+      "backend/src/api/routes.py",
+      "backend/src/state/active_alert.py",
+      "frontend/dist/index.html",
+      "backend/tests/test_episodios.py",
+      "backend/tests/test_recorrido.py",
+      "backend/tests/test_niveles_visibles.py",
+      "backend/tests/test_operaciones.py",
+      "backend/tests/test_tf_rupture_tracker.py",
+      "backend/tests/test_pair_report.py",
+      "backend/tests/test_tf_estadistica.py",
+      "backend/tests/test_rupture_tracker.py",
+      "backend/tests/test_active_alert.py",
+      "backend/tests/test_referencias.py",
+      "backend/tests/test_motores.py",
+      "backend/tests/test_notification_policy.py"
+    ],
+    "line_endings_only": [],
+    "different": [],
+    "missing_local": []
+  }
+}

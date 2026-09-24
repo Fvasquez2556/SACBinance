@@ -1,0 +1,265 @@
+
+== Plan enviado a Telegram (n=229)
+  tp_pct  mediana 6.72  p10 3.92 p90 10.61
+  sl_pct  mediana 3.36  p10 1.96 p90 5.30
+  TP≥3.2%: 225 (98%)
+  umbral cerca-SL mediana -2.69% bajo entrada
+
+== Todas las señales (n=4513)
+  tp_pct  mediana 2.85  p10 1.33 p90 7.79
+  sl_pct  mediana 1.42  p10 0.67 p90 3.90
+  TP≥3.2%: 1935 (43%)
+  umbral cerca-SL mediana -1.14% bajo entrada
+
+########## TELEGRAM · objetivo TP ##########
+
+--- A_LIMPIA: 23 (10.0%) — Llega al objetivo sin sobresaltos (retroceso ≤1% y nunca cerca del SL)
+   horas hasta TP: mediana 2.3 | retroceso previo mediana -0.28%
+    KORUBUSDT      11-Sep 12:37  TP  2.62%  SL -1.31%  mfe   3.52  mae  -0.48  tTP   0.33  tSL   None  t3.2   0.35 score 79 SUBIENDO
+    TREEUSDT       12-Sep 13:10  TP  5.05%  SL -2.52%  mfe   5.72  mae  -3.20  tTP   1.08  tSL  11.17  t3.2   0.13 score 79 SUBIENDO
+    MSTRBUSDT      17-Sep 13:54  TP  2.18%  SL -1.08%  mfe   2.65  mae  -1.48  tTP   0.55  tSL   1.27  t3.2   None score 79 BREAKOUT_INCIPIENTE
+    ZAMAUSDT       18-Sep 07:00  TP  5.10%  SL -2.55%  mfe  18.52  mae  -0.55  tTP   0.67  tSL   None  t3.2   0.62 score 83 SUBIENDO
+    ETCUSDT        18-Sep 11:33  TP  3.87%  SL -1.93%  mfe   4.17  mae  -0.76  tTP   8.32  tSL   None  t3.2    5.0 score 86 SUBIENDO
+    ETHFIUSDT      18-Sep 11:34  TP  8.50%  SL -4.25%  mfe   9.22  mae  -0.91  tTP   6.32  tSL   None  t3.2   1.98 score 86 SUBIENDO
+    LINKUSDT       18-Sep 12:34  TP  4.52%  SL -2.26%  mfe   4.83  mae  -0.67  tTP   7.42  tSL   None  t3.2   2.83 score 86 SUBIENDO
+    MORPHOUSDT     18-Sep 21:54  TP  7.50%  SL -3.75%  mfe  17.75  mae   0.04  tTP   2.58  tSL   None  t3.2   1.07 score 83 SUBIENDO
+    THETAUSDT      19-Sep 00:02  TP  7.86%  SL -3.93%  mfe   8.63  mae  -0.67  tTP   6.95  tSL   None  t3.2   2.73 score 82 SUBIENDO
+    AVAXUSDT       19-Sep 06:35  TP  8.03%  SL -4.02%  mfe  15.83  mae  -0.31  tTP   3.95  tSL   None  t3.2   2.28 score 81 SUBIENDO
+    VETUSDT        19-Sep 06:35  TP  7.32%  SL -3.66%  mfe   7.64  mae  -0.06  tTP   0.92  tSL   None  t3.2   0.23 score 83 SUBIENDO
+    FILUSDT        19-Sep 08:05  TP  5.59%  SL -2.79%  mfe  18.12  mae   0.05  tTP   8.55  tSL   None  t3.2   3.68 score 82 SUBIENDO
+    STXUSDT        19-Sep 10:08  TP  9.25%  SL -4.63%  mfe  11.60  mae  -0.20  tTP   1.77  tSL   None  t3.2   1.08 score 86 SUBIENDO
+    ONDOUSDT       19-Sep 12:04  TP  4.98%  SL -2.49%  mfe   7.67  mae  -0.22  tTP   2.36  tSL   None  t3.2   0.66 score 77 SUBIENDO
+    SEIUSDT        20-Sep 16:31  TP  5.46%  SL -2.73%  mfe  15.13  mae  -0.02  tTP   0.48  tSL   None  t3.2   0.37 score 86 SUBIENDO
+    SUSDT          20-Sep 16:31  TP  7.07%  SL -3.54%  mfe  21.36  mae  -0.69  tTP   0.52  tSL   None  t3.2   0.25 score 86 SUBIENDO
+    MIRAUSDT       20-Sep 17:33  TP  8.43%  SL -4.22%  mfe  13.81  mae  -0.59  tTP   8.48  tSL   None  t3.2   6.45 score 86 SUBIENDO
+    GENIUSUSDT     20-Sep 18:09  TP  5.28%  SL -2.64%  mfe  11.35  mae  -0.17  tTP   0.92  tSL   None  t3.2    0.4 score 86 SUBIENDO
+    TUSDT          20-Sep 18:59  TP  4.23%  SL -2.12%  mfe   5.16  mae  -1.39  tTP   5.02  tSL   None  t3.2   5.02 score 79 SUBIENDO
+    LDOUSDT        20-Sep 19:03  TP  6.59%  SL -3.29%  mfe   8.47  mae  -0.53  tTP   5.85  tSL   None  t3.2   3.47 score 86 SUBIENDO
+    XPLUSDT        21-Sep 02:38  TP  3.73%  SL -1.86%  mfe  12.75  mae  -0.57  tTP   0.25  tSL   None  t3.2   0.22 score 86 SUBIENDO
+    ARBUSDT        21-Sep 08:24  TP  6.05%  SL -3.02%  mfe  15.36  mae  -0.14  tTP    2.3  tSL   None  t3.2   0.87 score 95 SUBIENDO
+    LTCUSDT        21-Sep 11:33  TP  5.02%  SL -2.51%  mfe   5.24  mae  -0.92  tTP   1.63  tSL   None  t3.2   1.03 score 86 SUBIENDO
+
+--- B_ROZO_SL: 8 (3.5%) — Roza el SL (≤20% de margen) y aun así llega al objetivo
+   horas hasta TP: mediana 4.84 | retroceso previo mediana -2.24%
+    RAYUSDT        10-Sep 23:49  TP  7.27%  SL -3.64%  mfe  22.86  mae  -2.96  tTP    1.3  tSL   None  t3.2   0.98 score 79 SUBIENDO
+    MINAUSDT       17-Sep 10:28  TP  3.98%  SL -1.99%  mfe   7.07  mae  -1.71  tTP   4.82  tSL   None  t3.2   3.97 score 79 SUBIENDO
+    ATOMUSDT       18-Sep 15:49  TP  4.57%  SL -2.28%  mfe   5.32  mae  -2.13  tTP  11.05  tSL   None  t3.2    8.5 score 86 SUBIENDO
+    ALLOUSDT       19-Sep 08:04  TP  4.17%  SL -2.08%  mfe   9.29  mae  -2.07  tTP   4.87  tSL   None  t3.2   4.75 score 78 SUBIENDO
+    IOSTUSDT       20-Sep 04:37  TP  8.23%  SL -4.12%  mfe  10.09  mae  -3.67  tTP   2.48  tSL   None  t3.2   2.38 score 86 SUBIENDO
+    STRKUSDT       20-Sep 15:17  TP  6.56%  SL -3.28%  mfe   9.91  mae  -3.26  tTP   2.77  tSL   None  t3.2   0.82 score 83 SUBIENDO
+    MITOUSDT       20-Sep 22:56  TP  4.06%  SL -2.03%  mfe   4.66  mae  -1.70  tTP    5.4  tSL   None  t3.2    4.9 score 83 SUBIENDO
+    POLUSDT        21-Sep 04:17  TP  5.05%  SL -2.53%  mfe   5.63  mae  -2.35  tTP   7.57  tSL   None  t3.2   6.67 score 86 SUBIENDO
+
+--- C_RETROCESO_MEDIO: 27 (11.8%) — Llega al objetivo con retroceso intermedio (>1%, sin rozar el SL)
+   horas hasta TP: mediana 4.92 | retroceso previo mediana -1.56%
+    BERAUSDT       12-Sep 21:04  TP  3.00%  SL -1.50%  mfe   7.54  mae  -3.72  tTP   4.13  tSL   6.23  t3.2   4.17 score 79 SUBIENDO
+    牛来USDT         13-Sep 01:18  TP  7.65%  SL -3.82%  mfe  19.34  mae -12.43  tTP   0.63  tSL   8.13  t3.2   0.53 score 76 SUBIENDO
+    REZUSDT        13-Sep 05:24  TP 10.77%  SL -5.39%  mfe  42.33  mae  -3.51  tTP   2.62  tSL   None  t3.2   1.98 score 79 TOCÓ_FONDO
+    SAGAUSDT       14-Sep 09:41  TP  8.88%  SL -4.44%  mfe  10.27  mae  -2.58  tTP   11.2  tSL   None  t3.2   8.87 score 79 SUBIENDO
+    REDUSDT        14-Sep 16:03  TP  6.46%  SL -3.23%  mfe   9.30  mae  -2.16  tTP  10.03  tSL   None  t3.2   8.87 score 78 SUBIENDO
+    ARBUSDT        16-Sep 16:07  TP  6.72%  SL -3.36%  mfe   7.72  mae  -2.41  tTP   7.45  tSL   None  t3.2   2.58 score 79 TOCÓ_FONDO
+    COTIUSDT       17-Sep 11:56  TP  5.99%  SL -2.99%  mfe  39.91  mae  -1.37  tTP   2.43  tSL   None  t3.2   2.12 score 79 SUBIENDO
+    JUPUSDT        18-Sep 09:20  TP  6.27%  SL -3.13%  mfe   6.39  mae  -1.33  tTP  10.95  tSL   None  t3.2   5.43 score 86 SUBIENDO
+    ADAUSDT        18-Sep 14:47  TP  4.11%  SL -2.06%  mfe   6.62  mae  -1.27  tTP   11.2  tSL   None  t3.2   9.38 score 86 SUBIENDO
+    SYNUSDT        18-Sep 18:10  TP 11.01%  SL -5.50%  mfe  34.99  mae  -2.09  tTP   3.45  tSL   None  t3.2   2.98 score 86 SUBIENDO
+    HEIUSDT        18-Sep 20:22  TP  7.59%  SL -3.79%  mfe  32.72  mae  -1.92  tTP  10.75  tSL   None  t3.2   3.77 score 77 SUBIENDO
+    ESPUSDT        19-Sep 05:21  TP  7.33%  SL -3.66%  mfe  26.03  mae  -1.53  tTP   0.82  tSL   None  t3.2    0.7 score 85 SUBIENDO
+    ALGOUSDT       19-Sep 18:15  TP  6.63%  SL -3.31%  mfe   8.87  mae  -1.77  tTP    6.6  tSL   None  t3.2   5.27 score 81 SUBIENDO
+    INJUSDT        19-Sep 21:46  TP  5.12%  SL -2.56%  mfe   5.26  mae  -6.85  tTP   1.32  tSL    5.2  t3.2   1.12 score 86 SUBIENDO
+    ALGOUSDT       20-Sep 04:39  TP  9.73%  SL -4.86%  mfe  11.56  mae  -2.14  tTP  10.57  tSL   None  t3.2   8.45 score 83 SUBIENDO
+    MINAUSDT       20-Sep 07:04  TP  4.84%  SL -2.42%  mfe  11.72  mae  -1.73  tTP   9.48  tSL   None  t3.2   8.75 score 86 SUBIENDO
+    ONDOUSDT       20-Sep 08:04  TP  3.88%  SL -1.94%  mfe   6.03  mae  -1.25  tTP   8.28  tSL   None  t3.2   8.05 score 82 SUBIENDO
+    SUIUSDT        20-Sep 12:06  TP  4.54%  SL -2.27%  mfe  11.71  mae  -1.20  tTP   4.43  tSL   None  t3.2   4.02 score 86 SUBIENDO
+    PROVEUSDT      21-Sep 01:24  TP  8.14%  SL -4.07%  mfe  22.59  mae  -2.12  tTP   3.18  tSL   None  t3.2   2.38 score 86 SUBIENDO
+    APTUSDT        21-Sep 04:41  TP  3.72%  SL -1.86%  mfe   6.17  mae  -1.47  tTP   1.92  tSL   None  t3.2   1.78 score 85 SUBIENDO
+    ACEUSDT        21-Sep 05:19  TP  4.54%  SL -2.27%  mfe  11.28  mae  -1.11  tTP   4.05  tSL   None  t3.2   3.18 score 86 SUBIENDO
+    XPLUSDT        21-Sep 05:23  TP  9.16%  SL -4.58%  mfe   9.71  mae  -3.25  tTP   7.15  tSL   None  t3.2    4.4 score 81 SUBIENDO
+    ORDIUSDT       21-Sep 06:48  TP  6.55%  SL -3.28%  mfe   8.27  mae  -1.61  tTP   9.47  tSL   None  t3.2   4.27 score 79 SUBIENDO
+    LPTUSDT        21-Sep 08:51  TP  4.63%  SL -2.31%  mfe   4.98  mae  -1.42  tTP   8.61  tSL   None  t3.2    8.3 score 83 SUBIENDO
+    INTCBUSDT      21-Sep 09:27  TP  4.87%  SL -2.44%  mfe   8.17  mae  -1.06  tTP   4.92  tSL   None  t3.2   4.05 score 86 SUBIENDO
+    FETUSDT        21-Sep 10:30  TP  8.28%  SL -4.14%  mfe   8.53  mae  -1.56  tTP    3.5  tSL   None  t3.2   2.38 score 86 SUBIENDO
+    EPICUSDT       21-Sep 17:50  TP  6.49%  SL -3.24%  mfe   6.97  mae  -1.95  tTP   2.52  tSL   None  t3.2   1.12 score 86 SUBIENDO
+
+--- D_SL_Y_LUEGO_OBJ: 8 (3.5%) — Toca el SL y después alcanza el objetivo
+   exceso bajo SL mediana -1.11% | horas SL→TP mediana 5.85
+   exceso ≤0.5%: 2 | 0.5–1%: 1 | >1%: 5
+    ETHFIUSDT      11-Sep 08:25  TP  5.76%  SL -2.88%  mfe   6.73  mae  -9.50  tTP   8.97  tSL   1.27  t3.2   7.32 score 79 TOCÓ_FONDO
+    牛来USDT         17-Sep 17:11  TP  8.78%  SL -4.39%  mfe  14.56  mae  -5.39  tTP   10.7  tSL    4.6  t3.2  10.05 score 79 TOCÓ_FONDO
+    TAOUSDT        19-Sep 03:22  TP  4.68%  SL -2.34%  mfe   5.80  mae  -2.75  tTP   7.72  tSL   1.25  t3.2   6.42 score 95 SUBIENDO
+    INJUSDT        20-Sep 09:47  TP  3.83%  SL -1.91%  mfe   4.11  mae  -3.05  tTP   6.55  tSL    1.5  t3.2   6.38 score 86 SUBIENDO
+    GENIUSUSDT     20-Sep 14:11  TP  6.76%  SL -3.38%  mfe  10.50  mae  -4.86  tTP   5.03  tSL   1.03  t3.2    4.5 score 86 SUBIENDO
+    HOMEUSDT       21-Sep 02:38  TP  3.83%  SL -1.92%  mfe   7.84  mae  -2.71  tTP   3.57  tSL   1.48  t3.2   3.53 score 85 SUBIENDO
+    CUSDT          21-Sep 05:47  TP  6.52%  SL -3.26%  mfe   8.80  mae  -4.97  tTP   8.73  tSL    3.1  t3.2   0.48 score 83 SUBIENDO
+    VETUSDT        21-Sep 15:11  TP  4.45%  SL -2.23%  mfe   4.46  mae  -2.54  tTP   8.68  tSL   2.62  t3.2   7.03 score 85 SUBIENDO
+
+--- E_SL_SIN_RETORNO: 41 (17.9%) — Toca el SL y no vuelve ni al +0,4% sobre la entrada
+   horas hasta SL mediana 4.12 | rebote posterior mediana -1.42% | caida total mediana -5.46%
+    SYRUPUSDT      11-Sep 16:06  TP  3.47%  SL -1.74%  mfe   0.52  mae  -6.38  tTP   None  tSL    0.2  t3.2   None score 79 SUBIENDO
+    JTOUSDT        11-Sep 16:09  TP  4.17%  SL -2.08%  mfe   0.48  mae  -4.34  tTP   None  tSL   1.08  t3.2   None score 79 SUBIENDO
+    CHZUSDT        12-Sep 04:25  TP 10.13%  SL -5.06%  mfe   2.18  mae  -6.07  tTP   None  tSL   4.12  t3.2   None score 79 SUBIENDO
+    MARSCOINUSDT   13-Sep 03:38  TP  7.23%  SL -3.62%  mfe   5.91  mae -10.87  tTP   None  tSL   5.73  t3.2   2.77 score 79 TOCÓ_FONDO
+    TREEUSDT       13-Sep 07:47  TP  5.43%  SL -2.71%  mfe   2.81  mae  -6.05  tTP   None  tSL   2.68  t3.2   None score 79 SUBIENDO
+    牛来USDT         13-Sep 09:40  TP 10.35%  SL -5.18%  mfe   2.04  mae -11.29  tTP   None  tSL   3.17  t3.2   None score 79 TOCÓ_FONDO
+    KAVAUSDT       13-Sep 15:34  TP 10.65%  SL -5.33%  mfe   1.01  mae  -6.56  tTP   None  tSL   2.18  t3.2   None score 79 TOCÓ_FONDO
+    ARUSDT         14-Sep 03:15  TP  8.51%  SL -4.26%  mfe   0.24  mae  -4.62  tTP   None  tSL   2.15  t3.2   None score 79 SUBIENDO
+    GLMUSDT        14-Sep 03:29  TP  6.77%  SL -3.39%  mfe   1.66  mae  -8.80  tTP   None  tSL    3.5  t3.2   None score 79 SUBIENDO
+    SENTUSDT       14-Sep 20:48  TP  8.91%  SL -4.46%  mfe   2.83  mae  -7.35  tTP   None  tSL   7.52  t3.2   None score 86 SUBIENDO
+    牛来USDT         14-Sep 21:12  TP  6.68%  SL -3.34%  mfe   3.28  mae -12.10  tTP   None  tSL   5.12  t3.2   2.93 score 79 SUBIENDO
+    IOTAUSDT       14-Sep 21:44  TP  3.82%  SL -1.91%  mfe   0.69  mae  -3.69  tTP   None  tSL   2.87  t3.2   None score 75 TOCÓ_FONDO
+    牛来USDT         14-Sep 22:53  TP  5.76%  SL -2.88%  mfe   4.02  mae -11.47  tTP   None  tSL   3.43  t3.2   1.22 score 79 SUBIENDO
+    WAXPUSDT       15-Sep 03:22  TP  8.48%  SL -4.24%  mfe   0.00  mae  -6.19  tTP   None  tSL   2.02  t3.2   None score 76 SUBIENDO
+    QKCUSDT        15-Sep 08:19  TP  4.86%  SL -2.43%  mfe   3.00  mae  -4.71  tTP   None  tSL    7.7  t3.2   None score 79 TOCÓ_FONDO
+    XLMUSDT        15-Sep 14:56  TP  3.64%  SL -1.82%  mfe   2.26  mae  -8.47  tTP   None  tSL   3.68  t3.2   None score 78 TOCÓ_FONDO
+    ASTRUSDT       15-Sep 18:55  TP  6.62%  SL -3.31%  mfe   1.71  mae  -6.62  tTP   None  tSL    5.4  t3.2   None score 79 TOCÓ_FONDO
+    MARSCOINUSDT   16-Sep 08:43  TP  7.44%  SL -3.72%  mfe   6.38  mae -10.44  tTP   None  tSL   4.43  t3.2   1.43 score 79 SUBIENDO
+    MARSCOINUSDT   18-Sep 04:13  TP  8.13%  SL -4.06%  mfe   2.30  mae -14.23  tTP   None  tSL   1.23  t3.2   None score 86 SUBIENDO
+    DASHUSDT       18-Sep 04:40  TP  3.99%  SL -1.99%  mfe   3.98  mae  -5.46  tTP   None  tSL    6.1  t3.2   0.32 score 79 TOCÓ_FONDO
+    VTHOUSDT       18-Sep 16:22  TP  5.09%  SL -2.54%  mfe   3.21  mae  -6.28  tTP   None  tSL   4.27  t3.2   0.62 score 86 SUBIENDO
+    XPLUSDT        18-Sep 23:13  TP 11.04%  SL -5.52%  mfe   0.35  mae  -7.12  tTP   None  tSL   5.43  t3.2   None score 86 SUBIENDO
+    GALAUSDT       18-Sep 23:59  TP  4.09%  SL -2.04%  mfe   1.86  mae  -3.47  tTP   None  tSL   5.72  t3.2   None score 86 SUBIENDO
+    RENDERUSDT     19-Sep 15:06  TP  5.27%  SL -2.63%  mfe   0.19  mae  -4.88  tTP   None  tSL   6.08  t3.2   None score 86 SUBIENDO
+    ICPUSDT        19-Sep 16:08  TP  3.76%  SL -1.88%  mfe   3.41  mae  -4.80  tTP   None  tSL   5.88  t3.2   2.85 score 83 SUBIENDO
+    SHIBUSDT       19-Sep 17:03  TP  4.27%  SL -2.14%  mfe   1.42  mae  -5.16  tTP   None  tSL   4.12  t3.2   None score 86 SUBIENDO
+    ETCUSDT        19-Sep 18:37  TP  4.87%  SL -2.44%  mfe   2.93  mae  -3.86  tTP   None  tSL    8.2  t3.2   None score 82 SUBIENDO
+    TRUMPUSDT      19-Sep 22:50  TP  3.76%  SL -1.88%  mfe   1.86  mae  -4.95  tTP   None  tSL    3.9  t3.2   None score 86 SUBIENDO
+    INJUSDT        20-Sep 00:07  TP  5.64%  SL -2.82%  mfe   3.90  mae  -7.10  tTP   None  tSL   2.85  t3.2   0.52 score 86 SUBIENDO
+    MSTRBUSDT      20-Sep 01:20  TP  3.84%  SL -1.92%  mfe   0.01  mae  -4.99  tTP   None  tSL   1.57  t3.2   None score 83 SUBIENDO
+    CFXUSDT        20-Sep 01:40  TP  6.73%  SL -3.36%  mfe   2.14  mae  -4.56  tTP   None  tSL   7.05  t3.2   None score 86 SUBIENDO
+    ZKUSDT         20-Sep 02:53  TP  8.15%  SL -4.07%  mfe   4.66  mae  -5.60  tTP   None  tSL    9.6  t3.2   0.53 score 86 SUBIENDO
+    ZENUSDT        20-Sep 03:06  TP  4.22%  SL -2.11%  mfe   2.65  mae  -2.89  tTP   None  tSL  11.18  t3.2   None score 82 SUBIENDO
+    ARKUSDT        20-Sep 06:02  TP 11.27%  SL -5.64%  mfe   3.06  mae  -7.69  tTP   None  tSL    2.9  t3.2   None score 86 SUBIENDO
+    ESPUSDT        20-Sep 06:22  TP  4.87%  SL -2.43%  mfe   0.80  mae  -5.30  tTP   None  tSL   2.92  t3.2   None score 83 SUBIENDO
+    ENSOUSDT       20-Sep 17:45  TP  7.47%  SL -3.73%  mfe   6.23  mae  -4.05  tTP   None  tSL  10.35  t3.2    6.3 score 86 SUBIENDO
+    OPUSDT         21-Sep 06:25  TP  4.21%  SL -2.10%  mfe   3.38  mae  -4.47  tTP   None  tSL   9.05  t3.2   6.23 score 86 SUBIENDO
+    LSKUSDT        21-Sep 09:17  TP  9.27%  SL -4.64%  mfe   8.18  mae  -4.68  tTP   None  tSL  11.77  t3.2   1.07 score 86 SUBIENDO
+    SKLUSDT        21-Sep 12:28  TP  3.91%  SL -1.95%  mfe   1.08  mae  -4.52  tTP   None  tSL   2.92  t3.2   None score 86 SUBIENDO
+    BNCBUSDT       21-Sep 16:14  TP  7.05%  SL -3.53%  mfe   1.46  mae  -4.24  tTP   None  tSL   3.67  t3.2   None score 86 SUBIENDO
+    ACEUSDT        21-Sep 17:07  TP  3.96%  SL -1.98%  mfe   2.38  mae  -3.63  tTP   None  tSL   2.97  t3.2   None score 86 SUBIENDO
+
+--- F_SL_REBOTE_PARCIAL: 26 (11.4%) — Toca el SL, rebota por encima del +0,4% pero no llega al objetivo
+   horas hasta SL mediana 2.02 | rebote posterior mediana 2.06% | caida total mediana -4.04%
+    SAGAUSDT       11-Sep 05:07  TP 11.19%  SL -5.60%  mfe   3.04  mae -14.89  tTP   None  tSL   7.03  t3.2   None score 100 TOCÓ_FONDO
+    ZECUSDT        11-Sep 14:57  TP  5.16%  SL -2.58%  mfe   1.95  mae  -4.63  tTP   None  tSL   0.95  t3.2   None score 79 SUBIENDO
+    BERAUSDT       13-Sep 03:30  TP  5.54%  SL -2.77%  mfe   3.37  mae  -3.47  tTP   None  tSL   0.42  t3.2  11.38 score 79 TOCÓ_FONDO
+    牛来USDT         14-Sep 07:14  TP 11.48%  SL -5.74%  mfe   5.65  mae -17.53  tTP   None  tSL   2.15  t3.2  10.67 score 79 SUBIENDO
+    COTIUSDT       15-Sep 07:26  TP  3.84%  SL -1.92%  mfe   3.38  mae  -6.69  tTP   None  tSL   4.27  t3.2   1.53 score 79 SUBIENDO
+    BNCBUSDT       15-Sep 15:03  TP  3.18%  SL -1.59%  mfe   2.66  mae  -2.05  tTP   None  tSL   3.72  t3.2   None score 79 TOCÓ_FONDO
+    DODOUSDT       16-Sep 09:58  TP  6.16%  SL -3.08%  mfe   1.93  mae  -5.00  tTP   None  tSL   3.17  t3.2   None score 79 TOCÓ_FONDO
+    LAUSDT         16-Sep 11:51  TP  3.94%  SL -1.97%  mfe   3.90  mae  -4.20  tTP   None  tSL   1.82  t3.2   0.78 score 79 SUBIENDO
+    牛来USDT         18-Sep 08:03  TP 11.33%  SL -5.66%  mfe   3.39  mae  -8.99  tTP   None  tSL   3.07  t3.2   0.38 score 85 SUBIENDO
+    MMTUSDT        18-Sep 19:30  TP  3.75%  SL -1.88%  mfe   3.16  mae  -1.90  tTP   None  tSL   1.47  t3.2   None score 100 SUBIENDO
+    STXUSDT        18-Sep 21:39  TP  5.73%  SL -2.87%  mfe   1.04  mae  -3.75  tTP   None  tSL   8.12  t3.2   None score 86 SUBIENDO
+    COTIUSDT       19-Sep 05:00  TP  8.48%  SL -4.24%  mfe   2.19  mae  -6.80  tTP   None  tSL    1.1  t3.2   None score 86 SUBIENDO
+    ALLOUSDT       19-Sep 13:48  TP  6.03%  SL -3.02%  mfe   5.64  mae  -3.63  tTP   None  tSL   8.22  t3.2   3.25 score 82 SUBIENDO
+    VTHOUSDT       19-Sep 14:53  TP  3.71%  SL -1.85%  mfe   2.79  mae  -3.07  tTP   None  tSL   0.78  t3.2   None score 86 SUBIENDO
+    MINAUSDT       19-Sep 15:05  TP  6.59%  SL -3.29%  mfe   0.54  mae  -6.62  tTP   None  tSL   0.71  t3.2   None score 86 SUBIENDO
+    SYNUSDT        19-Sep 19:23  TP  8.69%  SL -4.35%  mfe   2.71  mae -16.60  tTP   None  tSL   2.81  t3.2   None score 86 SUBIENDO
+    ROBOUSDT       20-Sep 00:20  TP  4.41%  SL -2.21%  mfe   1.59  mae  -6.06  tTP   None  tSL    2.4  t3.2   None score 86 SUBIENDO
+    WLDUSDT        20-Sep 04:39  TP  4.15%  SL -2.07%  mfe   3.99  mae  -3.05  tTP   None  tSL   4.03  t3.2  11.85 score 86 SUBIENDO
+    LSKUSDT        20-Sep 06:33  TP  8.84%  SL -4.42%  mfe   7.72  mae  -7.87  tTP   None  tSL   0.97  t3.2   9.45 score 92 SUBIENDO
+    EIGENUSDT      20-Sep 08:04  TP  4.46%  SL -2.23%  mfe   3.48  mae  -3.87  tTP   None  tSL    1.9  t3.2   8.73 score 77 SUBIENDO
+    USUALUSDT      20-Sep 10:16  TP  4.63%  SL -2.31%  mfe   3.04  mae  -3.04  tTP   None  tSL   0.12  t3.2   None score 83 SUBIENDO
+    OPUSDT         20-Sep 22:30  TP  5.05%  SL -2.53%  mfe   1.88  mae  -3.83  tTP   None  tSL   3.35  t3.2   None score 85 SUBIENDO
+    SKLUSDT        20-Sep 22:33  TP  7.18%  SL -3.59%  mfe   2.64  mae  -4.19  tTP   None  tSL   0.47  t3.2   None score 79 SUBIENDO
+    PENDLEUSDT     20-Sep 23:33  TP  5.63%  SL -2.82%  mfe   2.53  mae  -3.00  tTP   None  tSL    6.4  t3.2   None score 79 SUBIENDO
+    SOPHUSDT       21-Sep 00:07  TP  4.78%  SL -2.39%  mfe   1.13  mae  -3.40  tTP   None  tSL   0.88  t3.2   None score 86 SUBIENDO
+    ENSUSDT        21-Sep 01:23  TP  7.30%  SL -3.65%  mfe   1.65  mae  -3.89  tTP   None  tSL   0.55  t3.2   None score 86 SUBIENDO
+
+--- G_NI_OBJ_NI_SL: 96 (41.9%) — Ni objetivo ni SL en 12 h
+   MFE mediana 3.07% | MAE mediana -1.73% | llegaron al 3.2%: 48 | cierre mediana 0.84%
+    COTIUSDT       11-Sep 06:48  TP  6.05%  SL -3.03%  mfe   5.52  mae  -2.73  tTP   None  tSL   None  t3.2   1.82 score 79 TOCÓ_FONDO
+    TFUELUSDT      12-Sep 00:16  TP 11.80%  SL -5.90%  mfe   2.10  mae  -4.40  tTP   None  tSL   None  t3.2   None score 79 TOCÓ_FONDO
+    XTZUSDT        14-Sep 11:18  TP  5.34%  SL -2.67%  mfe   1.74  mae  -2.50  tTP   None  tSL   None  t3.2   None score 79 SUBIENDO
+    MBLUSDT        14-Sep 15:23  TP 10.05%  SL -5.03%  mfe   1.65  mae  -2.03  tTP   None  tSL   None  t3.2   None score 78 SUBIENDO
+    SAGAUSDT       17-Sep 14:13  TP  9.65%  SL -4.82%  mfe   5.52  mae  -4.34  tTP   None  tSL   None  t3.2   5.95 score 79 SUBIENDO
+    SNDKBUSDT      17-Sep 14:38  TP  3.92%  SL -1.96%  mfe   0.70  mae  -1.29  tTP   None  tSL   None  t3.2   None score 79 SUBIENDO
+    SNXXBUSDT      17-Sep 14:38  TP  7.02%  SL -3.51%  mfe   1.16  mae  -2.32  tTP   None  tSL   None  t3.2   None score 76 SUBIENDO
+    ROSEUSDT       18-Sep 00:29  TP  6.81%  SL -3.41%  mfe   6.47  mae  -0.86  tTP   None  tSL   None  t3.2   5.33 score 79 TOCÓ_FONDO
+    PUMPUSDT       18-Sep 04:40  TP 11.87%  SL -5.93%  mfe   6.39  mae  -0.41  tTP   None  tSL   None  t3.2   0.23 score 82 SUBIENDO
+    PENDLEUSDT     18-Sep 05:35  TP 11.39%  SL -5.70%  mfe   7.38  mae  -2.84  tTP   None  tSL   None  t3.2   0.93 score 86 SUBIENDO
+    POLUSDT        18-Sep 05:40  TP  3.73%  SL -1.86%  mfe   2.54  mae  -1.49  tTP   None  tSL   None  t3.2   None score 83 SUBIENDO
+    GOOGLBUSDT     18-Sep 05:53  TP  4.25%  SL -2.12%  mfe   1.02  mae  -1.92  tTP   None  tSL   None  t3.2   None score 81 SUBIENDO
+    THEUSDT        18-Sep 06:59  TP  4.06%  SL -2.03%  mfe   1.56  mae  -1.27  tTP   None  tSL   None  t3.2   None score 82 SUBIENDO
+    SUIUSDT        18-Sep 07:05  TP 10.57%  SL -5.28%  mfe   4.48  mae  -0.60  tTP   None  tSL   None  t3.2   6.53 score 86 SUBIENDO
+    ASTERUSDT      18-Sep 08:03  TP  3.81%  SL -1.91%  mfe   1.20  mae  -1.07  tTP   None  tSL   None  t3.2   None score 85 SUBIENDO
+    AAVEUSDT       18-Sep 08:13  TP  7.49%  SL -3.74%  mfe   5.71  mae  -0.80  tTP   None  tSL   None  t3.2   5.08 score 86 SUBIENDO
+    TAOUSDT        18-Sep 09:20  TP  8.59%  SL -4.29%  mfe   1.77  mae  -2.41  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    EDENUSDT       18-Sep 09:26  TP  7.81%  SL -3.90%  mfe   2.57  mae  -3.51  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    DOGEUSDT       18-Sep 10:28  TP  4.13%  SL -2.06%  mfe   2.31  mae  -2.03  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    SEIUSDT        18-Sep 10:29  TP  7.68%  SL -3.84%  mfe   1.84  mae  -1.96  tTP   None  tSL   None  t3.2   None score 85 SUBIENDO
+    PROVEUSDT      18-Sep 11:26  TP  9.81%  SL -4.90%  mfe   7.72  mae  -0.80  tTP   None  tSL   None  t3.2   4.83 score 78 SUBIENDO
+    FETUSDT        18-Sep 12:35  TP 11.45%  SL -5.72%  mfe   1.41  mae  -1.30  tTP   None  tSL   None  t3.2   None score 85 SUBIENDO
+    ZECUSDT        18-Sep 12:35  TP 10.18%  SL -5.09%  mfe   8.49  mae  -2.59  tTP   None  tSL   None  t3.2   2.75 score 86 SUBIENDO
+    PENGUUSDT      18-Sep 13:35  TP  7.88%  SL -3.94%  mfe   6.06  mae  -0.05  tTP   None  tSL   None  t3.2    1.3 score 82 SUBIENDO
+    SOLUSDT        18-Sep 13:37  TP  8.56%  SL -4.27%  mfe   7.16  mae   0.12  tTP   None  tSL   None  t3.2   1.12 score 100 SUBIENDO
+    AXSUSDT        18-Sep 13:39  TP  7.92%  SL -3.96%  mfe   5.27  mae  -0.89  tTP   None  tSL   None  t3.2   10.4 score 86 SUBIENDO
+    HBARUSDT       18-Sep 14:59  TP  4.22%  SL -2.11%  mfe   1.37  mae  -1.14  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    LDOUSDT        18-Sep 15:09  TP  5.85%  SL -2.93%  mfe   2.20  mae  -0.77  tTP   None  tSL   None  t3.2   None score 79 SUBIENDO
+    CFGUSDT        18-Sep 16:02  TP  5.44%  SL -2.72%  mfe   4.23  mae  -0.73  tTP   None  tSL   None  t3.2   0.78 score 86 SUBIENDO
+    ROSEUSDT       18-Sep 16:59  TP  8.69%  SL -4.34%  mfe   3.24  mae  -0.81  tTP   None  tSL   None  t3.2   5.92 score 86 SUBIENDO
+    LTCUSDT        18-Sep 17:14  TP  5.94%  SL -2.97%  mfe   5.58  mae  -0.09  tTP   None  tSL   None  t3.2   5.19 score 86 SUBIENDO
+    PLUMEUSDT      18-Sep 18:09  TP  7.04%  SL -3.52%  mfe   3.70  mae  -0.43  tTP   None  tSL   None  t3.2   8.38 score 100 SUBIENDO
+    AVAXUSDT       18-Sep 18:28  TP  9.23%  SL -4.61%  mfe   7.24  mae  -0.10  tTP   None  tSL   None  t3.2   7.23 score 86 SUBIENDO
+    ENSOUSDT       18-Sep 19:16  TP  7.31%  SL -3.66%  mfe   0.62  mae  -2.87  tTP   None  tSL   None  t3.2   None score 79 SUBIENDO
+    INTCBUSDT      18-Sep 19:22  TP  5.45%  SL -2.73%  mfe   1.70  mae  -0.16  tTP   None  tSL   None  t3.2   None score 80 SUBIENDO
+    ZKUSDT         18-Sep 20:25  TP  5.58%  SL -2.79%  mfe   4.95  mae  -1.10  tTP   None  tSL   None  t3.2   2.08 score 83 SUBIENDO
+    ORDIUSDT       18-Sep 20:42  TP  6.48%  SL -3.24%  mfe   5.74  mae  -0.31  tTP   None  tSL   None  t3.2   3.42 score 96 SUBIENDO
+    ETCUSDT        18-Sep 21:38  TP 10.03%  SL -5.02%  mfe   2.57  mae  -0.73  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    IOUSDT         18-Sep 22:40  TP 10.09%  SL -5.05%  mfe   2.04  mae  -1.69  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    VIRTUALUSDT    19-Sep 00:17  TP  8.07%  SL -4.03%  mfe   2.90  mae  -1.10  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    SEIUSDT        19-Sep 01:25  TP  9.00%  SL -4.50%  mfe   4.15  mae  -0.88  tTP   None  tSL   None  t3.2   9.72 score 86 SUBIENDO
+    MUBARAKUSDT    19-Sep 01:25  TP 10.66%  SL -5.33%  mfe   1.54  mae  -2.62  tTP   None  tSL   None  t3.2   None score 85 SUBIENDO
+    POLUSDT        19-Sep 01:25  TP 11.69%  SL -5.84%  mfe   4.55  mae  -1.58  tTP   None  tSL   None  t3.2   1.07 score 100 SUBIENDO
+    ETHUSDT        19-Sep 03:05  TP  7.12%  SL -3.56%  mfe   1.19  mae  -0.74  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    ICPUSDT        19-Sep 03:21  TP  5.62%  SL -2.81%  mfe   0.52  mae  -2.25  tTP   None  tSL   None  t3.2   None score 82 SUBIENDO
+    FLOKIUSDT      19-Sep 04:10  TP  7.09%  SL -3.54%  mfe   1.31  mae  -2.43  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    XRPUSDT        19-Sep 05:27  TP  4.15%  SL -2.08%  mfe   1.44  mae  -1.70  tTP   None  tSL   None  t3.2   None score 100 SUBIENDO
+    REDUSDT        19-Sep 06:30  TP  7.31%  SL -3.65%  mfe   3.35  mae  -2.01  tTP   None  tSL   None  t3.2   2.33 score 79 TOCÓ_FONDO
+    XPLUSDT        19-Sep 08:05  TP  7.99%  SL -4.00%  mfe   3.75  mae  -0.71  tTP   None  tSL   None  t3.2   8.25 score 86 SUBIENDO
+    HOMEUSDT       19-Sep 09:05  TP  6.10%  SL -3.05%  mfe   4.30  mae  -2.39  tTP   None  tSL   None  t3.2   7.56 score 77 SUBIENDO
+    AXSUSDT        19-Sep 09:44  TP  8.97%  SL -4.49%  mfe   1.68  mae  -0.89  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    LDOUSDT        19-Sep 09:47  TP  9.71%  SL -4.85%  mfe   5.16  mae  -0.28  tTP   None  tSL   None  t3.2    3.2 score 86 SUBIENDO
+    THETAUSDT      19-Sep 10:47  TP  8.79%  SL -4.40%  mfe   2.62  mae  -2.58  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    ESPUSDT        19-Sep 10:55  TP 11.00%  SL -5.50%  mfe   2.38  mae  -2.39  tTP   None  tSL   None  t3.2   None score 85 SUBIENDO
+    WLDUSDT        19-Sep 12:08  TP  8.76%  SL -4.38%  mfe   2.37  mae  -2.16  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    CFGUSDT        19-Sep 12:12  TP  9.54%  SL -4.77%  mfe   2.55  mae  -2.15  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    0GUSDT         19-Sep 13:42  TP  6.44%  SL -3.22%  mfe   6.39  mae  -1.12  tTP   None  tSL   None  t3.2   3.02 score 86 SUBIENDO
+    MMTUSDT        19-Sep 13:49  TP 11.15%  SL -5.58%  mfe   0.30  mae  -4.89  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    SEIUSDT        19-Sep 16:01  TP  8.17%  SL -4.08%  mfe   2.58  mae  -3.19  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    ADAUSDT        19-Sep 16:08  TP  9.90%  SL -4.95%  mfe   1.85  mae  -3.70  tTP   None  tSL   None  t3.2   None score 100 SUBIENDO
+    ETHUSDT        19-Sep 17:19  TP  9.16%  SL -4.58%  mfe  -0.05  mae  -3.60  tTP   None  tSL   None  t3.2   None score 81 SUBIENDO
+    LTCUSDT        19-Sep 17:31  TP 11.68%  SL -5.84%  mfe   1.05  mae  -2.28  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    HEIUSDT        19-Sep 18:50  TP  8.98%  SL -4.49%  mfe   6.14  mae  -1.58  tTP   None  tSL   None  t3.2   0.62 score 86 SUBIENDO
+    PROVEUSDT      19-Sep 19:39  TP  8.51%  SL -4.26%  mfe   2.07  mae  -1.80  tTP   None  tSL   None  t3.2   None score 100 SUBIENDO
+    JTOUSDT        19-Sep 20:06  TP  8.34%  SL -4.17%  mfe   5.14  mae  -3.44  tTP   None  tSL   None  t3.2   2.68 score 86 SUBIENDO
+    TIAUSDT        19-Sep 21:26  TP  4.44%  SL -2.22%  mfe   3.93  mae  -1.01  tTP   None  tSL   None  t3.2   1.65 score 86 SUBIENDO
+    SUIUSDT        19-Sep 22:38  TP 11.84%  SL -5.92%  mfe   1.81  mae  -5.27  tTP   None  tSL   None  t3.2   None score 85 SUBIENDO
+    SUSDT          19-Sep 23:17  TP 10.99%  SL -5.50%  mfe   9.47  mae  -4.72  tTP   None  tSL   None  t3.2    6.2 score 86 SUBIENDO
+    NEARUSDT       20-Sep 00:06  TP 11.69%  SL -5.84%  mfe   1.77  mae  -5.07  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    CFGUSDT        20-Sep 01:41  TP  6.24%  SL -3.12%  mfe   3.56  mae  -2.59  tTP   None  tSL   None  t3.2   9.72 score 86 SUBIENDO
+    PHAUSDT        20-Sep 03:06  TP  8.74%  SL -4.37%  mfe   5.14  mae  -0.86  tTP   None  tSL   None  t3.2   3.38 score 85 SUBIENDO
+    UNIUSDT        20-Sep 08:27  TP  6.72%  SL -3.36%  mfe   2.79  mae  -2.30  tTP   None  tSL   None  t3.2   None score 79 SUBIENDO
+    OPUSDT         20-Sep 09:13  TP  9.24%  SL -4.62%  mfe   7.77  mae  -2.83  tTP   None  tSL   None  t3.2   7.72 score 82 SUBIENDO
+    CELOUSDT       20-Sep 12:03  TP  8.13%  SL -4.06%  mfe   3.93  mae  -1.86  tTP   None  tSL   None  t3.2  10.35 score 86 SUBIENDO
+    APTUSDT        20-Sep 12:06  TP 10.89%  SL -5.44%  mfe   4.36  mae  -3.13  tTP   None  tSL   None  t3.2    5.5 score 86 SUBIENDO
+    JTOUSDT        20-Sep 14:04  TP 10.13%  SL -5.06%  mfe   4.75  mae  -1.76  tTP   None  tSL   None  t3.2    2.9 score 83 SUBIENDO
+    AEROUSDT       20-Sep 15:02  TP  6.56%  SL -3.28%  mfe   5.30  mae  -1.51  tTP   None  tSL   None  t3.2    9.5 score 86 SUBIENDO
+    BERAUSDT       20-Sep 15:12  TP 10.61%  SL -5.30%  mfe   5.54  mae  -0.48  tTP   None  tSL   None  t3.2   1.12 score 75 SUBIENDO
+    AGLDUSDT       20-Sep 16:29  TP 10.31%  SL -5.16%  mfe   1.52  mae  -1.77  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    CFXUSDT        20-Sep 19:29  TP  3.99%  SL -2.00%  mfe   2.40  mae  -1.65  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    LUNCUSDT       20-Sep 20:10  TP  9.69%  SL -4.86%  mfe   0.04  mae  -3.29  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    XTZUSDT        20-Sep 20:29  TP  7.79%  SL -3.89%  mfe   3.30  mae  -2.64  tTP   None  tSL   None  t3.2   5.22 score 86 SUBIENDO
+    GRTUSDT        20-Sep 21:07  TP 11.71%  SL -5.86%  mfe   5.07  mae  -1.45  tTP   None  tSL   None  t3.2   4.18 score 86 SUBIENDO
+    PUMPUSDT       20-Sep 21:17  TP  7.86%  SL -3.93%  mfe   6.15  mae  -1.41  tTP   None  tSL   None  t3.2   3.47 score 77 SUBIENDO
+    HBARUSDT       20-Sep 21:50  TP 10.19%  SL -5.10%  mfe   3.46  mae  -1.86  tTP   None  tSL   None  t3.2  11.72 score 100 SUBIENDO
+    SKLUSDT        21-Sep 00:06  TP  6.55%  SL -3.28%  mfe   5.57  mae  -2.23  tTP   None  tSL   None  t3.2   9.32 score 86 SUBIENDO
+    CAKEUSDT       21-Sep 00:36  TP 10.27%  SL -5.13%  mfe   1.66  mae  -3.41  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    USTCUSDT       21-Sep 02:04  TP  9.02%  SL -4.51%  mfe   0.51  mae  -3.07  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    MORPHOUSDT     21-Sep 03:05  TP  7.22%  SL -3.61%  mfe   3.45  mae  -1.60  tTP   None  tSL   None  t3.2   0.88 score 85 SUBIENDO
+    ENSOUSDT       21-Sep 06:44  TP  6.27%  SL -3.13%  mfe   2.68  mae  -1.09  tTP   None  tSL   None  t3.2   None score 86 SUBIENDO
+    HOMEUSDT       21-Sep 07:39  TP  9.81%  SL -4.91%  mfe   6.73  mae  -1.02  tTP   None  tSL   None  t3.2   2.67 score 86 SUBIENDO
+    TUSDT          21-Sep 07:59  TP  5.58%  SL -2.79%  mfe   3.54  mae  -0.59  tTP   None  tSL   None  t3.2    1.6 score 83 SUBIENDO
+    BOMEUSDT       21-Sep 10:02  TP  8.22%  SL -4.11%  mfe   4.99  mae  -1.19  tTP   None  tSL   None  t3.2   5.03 score 86 SUBIENDO
+    MASKUSDT       21-Sep 10:26  TP  5.67%  SL -2.83%  mfe   0.61  mae  -2.45  tTP   None  tSL   None  t3.2   None score 82 SUBIENDO
+    ETCUSDT        21-Sep 11:04  TP  4.82%  SL -2.41%  mfe   2.04  mae  -1.81  tTP   None  tSL   None  t3.2   None score 85 SUBIENDO
+    HBARUSDT       21-Sep 11:27  TP  4.77%  SL -2.38%  mfe   3.62  mae  -0.50  tTP   None  tSL   None  t3.2   4.58 score 86 SUBIENDO

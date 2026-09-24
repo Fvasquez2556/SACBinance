@@ -1,0 +1,17 @@
+{
+  "paths_replayed": 1022,
+  "complete_raw_paths": 924,
+  "analysis_paths": 903,
+  "analysis_complete_raw_paths": 902,
+  "analysis_goal_labels_changed": 0,
+  "analysis_confirmed_goal_before_gap": 166,
+  "tracker_lowcoverage_but_raw_complete": 22,
+  "independent_sql_totals": [
+    903,
+    253,
+    166,
+    87,
+    624
+  ],
+  "sql": "SELECT COUNT(*),SUM(goal IS NOT NULL),SUM(goal IS NOT NULL AND (sl IS NULL OR goal<sl)),SUM(goal IS NOT NULL AND sl IS NOT NULL AND goal>sl),SUM(tp_pct<3.2) FROM outcomes WHERE version='f82bcff' AND shadow=0 AND closed=1 AND ts<=? AND coverage>=.98 AND (goal IS NULL OR goal BETWEEN 0 AND 86400000) AND (sl IS NULL OR sl BETWEEN 0 AND 86400000) AND (tp IS NULL OR tp BETWEEN 0 AND 86400000) AND (ms_mfe IS NULL OR ms_mfe BETWEEN 0 AND 86400000) AND (ms_mae IS NULL OR ms_mae BETWEEN 0 AND 86400000)"
+}

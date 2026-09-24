@@ -1,0 +1,78 @@
+{
+  "backup": "/home/flox/.cache/sacbinance-ui-backups/20260916T161655332166Z",
+  "files": {
+    "frontend/src/components/Calculadora.tsx": {
+      "before": "d3d40544c79316b06d8bfb65088afe5eb13a7b49d577125366e96bae6611f5f9",
+      "after": "0248048ccf67a72fbac74bfbded3c8ed62ce6e83a9c80e4d727c1eed6b94180b"
+    },
+    "frontend/src/components/PairCard.tsx": {
+      "before": "da4614d2737ada749d6dd6b4e41900a506cedc907c79d7f27ca180b42f0c3018",
+      "after": "6b6bf571e13cbdad6a44f01c2b154563c72d4a697c0ba86757f3872b70815f0c"
+    },
+    "frontend/src/components/Historial.tsx": {
+      "before": "800802adb18c409be7dfb696d626f7ff6e681c2dde381fba3919921d5127cadf",
+      "after": "ab9af9be874cde3cddd1541fe7083c99eeb966edb45ab34515126454ea22e134"
+    },
+    "frontend/src/components/ProbabilityContext.tsx": {
+      "before": "cf479561e0f8a2c37093718ccdebe2cb8f5dad69b1f27b75329962fcfa2d0b47",
+      "after": "8c0d01a5e1b5f0d83414edf2927f82c1730454071841392ad70ab27584b7ee8e"
+    },
+    "frontend/src/components/PairDetail.tsx": {
+      "before": "b0a80ca39931a58ce776720c4f5a7c46c80f6d0348d8b311bae23bd399804c0b",
+      "after": "6af84434ffe6dda7b1f4842bacbd4724ac7ea3153bf704950075c474f223d9ba"
+    },
+    "frontend/src/components/Dashboard.tsx": {
+      "before": "0db32711ae88bd5a6c3f5a1fdb9f81a2c93c94843c4a427c7595547feb5c3666",
+      "after": "dff04e5eacc1226e78b6accc5447f1aa17c8ef269e524a574e5e54bb74aaa369"
+    },
+    "frontend/src/hooks/useNotifications.ts": {
+      "before": "9fbd0f9fc898e60416501c30f8ee58068d95ad2de6802836e0b7340c17e2eb82",
+      "after": "fa88e73a71a77ce5fc3c38702f0dfc9241c8ac3c9593ba16e4afa2e65e7fedcf"
+    },
+    "frontend/src/domain/reading.ts": {
+      "before": "31f0f1ce97989098b5486abba52526efa6b2f7aee93b9a11e5b2fdaf58bf8db1",
+      "after": "be82e219e37f488f4ee678f14f8fe0bdb60a9714d31174cb188001bb80101c0d"
+    },
+    "frontend/src/components/Dashboard.css": {
+      "before": "e3b167fad23222e43422647ca3358826e37b691c2e40244d57e774eb6798ad9a",
+      "after": "3c81ea95a70628cc00ebeb595e4f68f938f72aaed50828190faedf3175dad367"
+    },
+    "frontend/index.html": {
+      "before": "c489ca10e39dee2c944678c7cbe29c05c1464f0d3ad331829be0616dfe292ada",
+      "after": "db346678b8491e204ca9520356317099a3e378246bde142a45f2979995aa132a"
+    },
+    "frontend/package.json": {
+      "before": "c11987361d40bd1a4784ed6c3f295a34718396fc2d30388f15468fe8a5a132bf",
+      "after": "1c52fcaee19e3c25ec21a69efc3b34195c2750ab37d812e4bfd90edd70c2a55a"
+    },
+    "frontend/vite.config.ts": {
+      "before": "b48ffc2f560c4bbfacc6f0ed30e82a49aeee073908f95eff41b08a06fade5bb1",
+      "after": "007efae575d77222fa30cf2c5f7061b1ee1be8d9b714f4307b373b7712aa8140"
+    },
+    "frontend/tests/reading.test.ts": {
+      "before": null,
+      "after": "b0516b4de6ab696d4be6db57dcd5704a072476c6cdf7a0012ea5daca19aec5ed"
+    },
+    "frontend/dist/favicon.svg": {
+      "before": "61bc9a161de58248288e6905425d7180f0624c2865007b97d763fdac12043a66",
+      "after": "61bc9a161de58248288e6905425d7180f0624c2865007b97d763fdac12043a66"
+    },
+    "frontend/dist/icons.svg": {
+      "before": "b45fa506195cfcdef406ba9f0c77b36ddc1a7c224040926ec70abc2fdea7b93a",
+      "after": "b45fa506195cfcdef406ba9f0c77b36ddc1a7c224040926ec70abc2fdea7b93a"
+    },
+    "frontend/dist/index.html": {
+      "before": "ce7d837838c327bd7508701fcc53bbff2c7c976d8d09cf37268a674972f01444",
+      "after": "de947c48f853af8dec9621e51f00ae26897f899501681809b7a740e6ce2a0ca0"
+    },
+    "frontend/dist/assets/index-C3WCyZTk.css": {
+      "before": null,
+      "after": "15b396c90fd3bd2a2b187308e042e75723f26b7776788ccd456edf2606e5b7ce"
+    },
+    "frontend/dist/assets/index-Dv3PfEKw.js": {
+      "before": null,
+      "after": "6b320ccef5ea9711f6f98807cef3c6bd7c8ccfdc32eca5f455771e5529aa3254"
+    }
+  },
+  "service": "ActiveState=active\nActiveEnterTimestamp=Mon 2026-09-14 20:28:24 UTC\nMainPID=866008\n"
+}

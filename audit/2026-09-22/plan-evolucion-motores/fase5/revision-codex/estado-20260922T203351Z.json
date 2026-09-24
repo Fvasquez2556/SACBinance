@@ -1,0 +1,83 @@
+{
+  "utc": "2026-09-22T20:33:51.796064+00:00",
+  "files": {
+    "backend/main.py": {
+      "sha256": "9a00471d50f6b0cb712f17a946168005ff2b40019a1b4810cff5d3b7dc41c9bf",
+      "normalized": "bb798fd09b972fc579f08a40d2906ec76deea89c90bb7ebdc4a567a719b08fdb",
+      "mtime_utc": "2026-09-22T06:29:53.711753+00:00",
+      "local_sha256": "2f717a1d0fa04d69da418bf7df73e251ad63c8bcedf6631d90799d4b0e0ec1f8"
+    },
+    "backend/src/state/engine.py": {
+      "sha256": "8bf4878459f42ad018b9a0b91c33c2fc2e2919670852f3b7af63475c1c3caf1d",
+      "normalized": "3e71d5113fcb5c1d32f9b201c218ae8f6ad638a3ceb07edae7fa56dd27e418b1",
+      "mtime_utc": "2026-09-22T06:29:52.425751+00:00",
+      "local_sha256": "0f6b77ea2f010e29f77ad6a8635126a32f225135d6bc0b3fff2ce4042e042edd"
+    },
+    "backend/src/persistence/db.py": {
+      "sha256": "3bb0acc42c823ea4259595499f12ae53d5cf209c0385a7649543953001b3dec2",
+      "normalized": "9190e42bcb40431fbc3609aad4aff473df0125c877f0e4d773f638301a540dfd",
+      "mtime_utc": "2026-09-22T06:29:52.834752+00:00",
+      "local_sha256": "0f46f94d3a5fd2a4a65a3fe25f021b8cc76f2729af8df4bd6c0f467ce0c45bf4"
+    },
+    "backend/src/config/settings.py": {
+      "sha256": "f72465e87e1aed5edc18bb82445ca52f9f6cb5b1618b1c89d0e6d88ef0f99d1e",
+      "normalized": "95e1e235610f709516bbcc07776831e6ef9e62c283711575cec3167337dc600a",
+      "mtime_utc": "2026-09-22T06:38:22.861674+00:00",
+      "local_sha256": "d2b21bdc2235e66247168a96cf0e7a906a26747999cbba0f345dbbf765f92533"
+    },
+    "backend/tests/test_experimentos.py": {
+      "missing": true,
+      "local_sha256": "9b963c703d49aed1f65bb8110dff91be5ebd9246c9dba99ad5fcc0b7db2c367b"
+    },
+    "backend/src/evaluacion/recorrido.py": {
+      "sha256": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285",
+      "normalized": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285",
+      "mtime_utc": "2026-09-22T02:57:21.966023+00:00",
+      "local_sha256": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285"
+    },
+    "backend/src/experimentos/__init__.py": {
+      "missing": true,
+      "local_sha256": "3f5f374f69b6b97af7467b198f732ee7f738f0c0eb14235e6bf227a8a915574d"
+    },
+    "backend/src/experimentos/registro.py": {
+      "missing": true,
+      "local_sha256": "a2c92a1484e4fee8df0d94173526691e673f935d096383e0a7f5bbe4024b718f"
+    },
+    "backend/src/experimentos/almacen.py": {
+      "missing": true,
+      "local_sha256": "70b72921b0a29b167b3fb76b54c323b0a6988ef4391abd5d36f129dba9371ed8"
+    }
+  },
+  "service": "ActiveState=active\nSubState=running\nMainPID=3425098\nNRestarts=11\nExecMainStartTimestamp=Tue 2026-09-22 07:40:00 UTC\n",
+  "http": {
+    "status": 200,
+    "pairs_count": null,
+    "state": null
+  },
+  "schema": [
+    {
+      "key": "version",
+      "value": "19"
+    }
+  ],
+  "experiment_tables": [],
+  "flags_explicit_in_env": {},
+  "experiment_log": [],
+  "comparison": {
+    "matching": [
+      "backend/src/evaluacion/recorrido.py"
+    ],
+    "different": [
+      "backend/main.py",
+      "backend/src/state/engine.py",
+      "backend/src/persistence/db.py",
+      "backend/src/config/settings.py"
+    ],
+    "missing_remote": [
+      "backend/tests/test_experimentos.py",
+      "backend/src/experimentos/__init__.py",
+      "backend/src/experimentos/registro.py",
+      "backend/src/experimentos/almacen.py"
+    ]
+  }
+}

@@ -1,0 +1,686 @@
+[2026-09-22 01:54:58.497] [INFO   ] [state.active_alert          ] [TESTUSDT] ALERTA -> SEGUIMIENTO (META_32_ALCANZADA) | entry=100.0 actual=103.0 delta=+3.00% | MFE +3.20% MAE +0.00% | accionable 1 min | estado CUMPLIDA
+[2026-09-22 01:54:58.497] [INFO   ] [state.active_alert          ] [TESTUSDT] TP corto superado; sigue activo hacia +3.2%
+[2026-09-22 01:54:58.497] [INFO   ] [state.active_alert          ] [TESTUSDT] TP corto tocado; se observa extension hasta +3.2% durante 4h
+[2026-09-22 01:54:58.497] [INFO   ] [state.active_alert          ] [TESTUSDT] TP corto tocado; se observa extension hasta +3.2% durante 4h
+[2026-09-22 01:54:58.497] [INFO   ] [state.active_alert          ] [TESTUSDT] ALERTA -> SEGUIMIENTO (TP_CORTO_SIN_EXTENSION) | entry=100.0 actual=101.0 delta=+1.00% | MFE +2.00% MAE +0.00% | accionable 241 min | estado EN_RETROCESO
+[2026-09-22 01:54:58.497] [INFO   ] [state.active_alert          ] [TESTUSDT] ALERTA -> SEGUIMIENTO (SL_ALCANZADO) | entry=100.0 actual=103.0 delta=+3.00% | MFE +4.00% MAE -2.50% | accionable 1 min | estado CUMPLIDA
+[2026-09-22 01:54:58.501] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:58.510] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:58.515] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:58.515] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:58.518] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:58.519] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:58.521] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:58.521] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:58.521] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:58.523] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:58.523] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:58.523] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:58.524] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:58.524] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:58.524] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:58.527] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:58.536] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:58.541] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:58.541] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:58.543] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:58.545] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:58.546] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:58.546] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:58.546] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:58.547] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:58.547] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:58.547] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:58.547] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:58.548] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:58.548] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:58.550] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:58.561] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:58.565] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:58.565] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:58.568] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:58.569] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:58.571] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:58.571] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:58.571] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:58.572] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:58.572] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:58.573] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:58.573] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:58.573] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:58.573] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:58.596] [INFO   ] [state.active_alert          ] [TESTUSDT] ALERTA EMITIDA | entry=100.0 (CONGELADO) TP=106.0 SL=97.0 | score=80 NINGUNO | impulso SOSTENIDA fuerza=80 consumido=1.0%
+[2026-09-22 01:54:58.596] [INFO   ] [state.active_alert          ] [TESTUSDT] ALERTA EMITIDA | entry=100.0 (CONGELADO) TP=106.0 SL=97.0 | score=80 NINGUNO | impulso SOSTENIDA fuerza=80 consumido=1.0%
+[2026-09-22 01:54:58.613] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:58.621] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:58.627] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:58.628] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:58.630] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:58.632] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:58.633] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:58.633] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:58.633] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:58.633] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:58.633] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:58.633] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:58.634] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:58.634] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:58.634] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:58.678] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:58.687] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:58.691] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:58.693] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:58.695] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:58.696] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:58.698] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:58.698] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:58.698] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:58.699] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:58.699] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:58.699] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:58.699] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:58.699] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:58.699] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:58.725] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:58.735] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:58.740] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:58.740] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:58.743] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:58.744] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:58.745] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:58.745] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:58.745] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:58.746] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:58.746] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:58.746] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:58.746] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:58.747] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:58.747] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:58.797] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:58.806] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:58.812] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:58.813] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:58.815] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:58.818] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:58.820] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:58.820] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:58.820] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:58.821] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:58.821] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:58.821] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:58.822] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:58.822] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:58.822] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:58.851] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:58.861] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:58.866] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:58.866] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:58.869] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:58.872] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:58.875] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:58.875] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:58.875] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:58.876] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:58.876] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:58.876] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:58.877] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:58.877] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:58.877] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:58.907] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:58.916] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:58.921] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:58.921] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:58.924] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:58.926] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:58.927] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:58.927] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:58.927] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:58.928] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:58.928] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:58.928] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:58.929] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:58.929] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:58.929] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:58.956] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:58.965] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:58.969] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:58.970] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:58.972] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:58.973] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:58.975] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:58.975] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:58.975] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:58.975] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:58.975] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:58.975] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:58.977] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:58.977] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:58.977] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.003] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.013] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.018] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.018] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.021] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.022] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.024] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.024] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.024] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.025] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.025] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.025] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.025] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.025] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.025] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.051] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.061] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.065] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.066] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.068] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.070] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.071] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.072] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.072] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.072] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.072] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.072] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.074] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.074] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.074] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.098] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.108] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.113] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.113] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.115] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.116] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.118] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.118] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.118] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.119] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.119] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.119] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.119] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.119] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.119] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.145] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.154] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.159] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.159] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.162] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.163] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.165] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.165] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.165] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.165] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.166] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.166] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.166] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.166] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.166] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.169] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.179] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.183] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.185] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.187] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.189] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.191] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.191] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.191] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.191] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.191] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.191] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.191] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.191] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.191] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.195] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.204] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.210] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.210] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.212] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.213] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.215] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.215] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.215] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.216] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.216] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.216] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.216] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.216] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.216] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.219] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.229] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.233] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.233] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.237] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.237] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.239] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.239] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.239] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.241] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.241] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.241] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.242] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.242] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.242] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.244] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.253] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.258] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.259] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.261] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.263] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.264] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.264] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.264] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.265] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.265] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.265] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.265] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.265] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.265] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.269] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.280] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.285] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.285] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.288] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.290] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.291] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.291] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.291] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.291] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.293] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.293] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.293] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.293] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.293] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.296] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.305] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.309] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.309] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.313] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.314] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.315] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.315] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.315] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.316] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.316] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.316] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.316] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.316] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.316] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.319] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.329] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.334] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.334] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.337] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.338] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.340] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.340] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.340] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.342] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.342] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.342] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.342] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.342] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.342] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.345] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.355] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.361] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.361] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.363] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.364] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.366] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.366] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.366] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.366] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.366] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.366] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.367] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.367] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.367] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.370] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.379] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.384] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.385] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.387] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.389] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.390] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.390] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.390] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.391] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.391] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.391] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.391] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.391] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.391] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.394] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.403] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.407] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.409] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.411] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.413] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.414] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.414] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.414] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.415] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.416] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.416] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.416] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.416] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.416] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.419] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.428] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.432] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.432] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.436] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.438] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.440] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.440] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.440] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.440] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.440] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.440] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.441] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.441] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.441] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.492] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.501] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.505] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.505] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.507] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.510] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.511] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.511] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.511] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.511] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.511] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.512] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.512] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.512] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.512] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.516] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.526] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.531] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.532] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.534] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.536] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.537] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.537] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.537] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.539] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.539] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.539] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.539] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.539] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.539] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.542] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.552] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.557] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.558] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.560] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.561] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.564] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.564] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.564] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.565] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.565] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.565] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.565] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.565] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.565] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.568] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.577] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.582] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.582] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.584] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.586] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.589] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.589] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.589] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.590] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.590] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.590] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.590] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.590] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.590] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.593] [INFO   ] [persistence.db              ] Migracion v4->5: columnas de liquidez añadidas a outcomes
+[2026-09-22 01:54:59.602] [INFO   ] [persistence.db              ] Migracion v6->7: 31 columnas de contexto añadidas a outcomes (las filas viejas quedan a NULL)
+[2026-09-22 01:54:59.608] [INFO   ] [persistence.db              ] Migracion v7->8: 15 columnas de la sombra del hoyo añadidas a outcomes
+[2026-09-22 01:54:59.608] [INFO   ] [persistence.db              ] Migracion v8->9: outcomes.sombra_motivo añadida; las filas de sombra anteriores quedan marcadas GATE_MACRO
+[2026-09-22 01:54:59.611] [INFO   ] [persistence.db              ] Migracion v9->10: 7 columnas de medicion añadidas (indicadores por TF, cobertura de flujo, procedencia)
+[2026-09-22 01:54:59.611] [INFO   ] [persistence.db              ] Migracion v10->11: 4 columnas nuevas en outcomes y tabla alertas_emitidas
+[2026-09-22 01:54:59.614] [INFO   ] [persistence.db              ] Migracion v11->12: 4 columnas de sombra para el objetivo por grupo de moneda (no cambia ninguna emision)
+[2026-09-22 01:54:59.614] [INFO   ] [persistence.db              ] Migracion v12->13: tabla de seguimiento de rupturas creada
+[2026-09-22 01:54:59.614] [INFO   ] [persistence.db              ] Migracion v13->14: sombra de rupturas por marco creada (no cambia ninguna emision)
+[2026-09-22 01:54:59.615] [INFO   ] [persistence.db              ] Migracion v15->16: episodios y planes con identidad propia (en sombra; no cambia ninguna emision)
+[2026-09-22 01:54:59.615] [INFO   ] [persistence.db              ] Migracion v16->17: recorrido por plan y horizontes (en sombra; no sustituye a ningun tracker)
+[2026-09-22 01:54:59.615] [INFO   ] [persistence.db              ] Migracion v17->18: diario de operaciones del usuario (vacio; solo se llena con lo que el declare)
+[2026-09-22 01:54:59.615] [INFO   ] [persistence.db              ] Migracion v18->19: los dos motores en sombra (no cambian ninguna emision)
+[2026-09-22 01:54:59.615] [INFO   ] [persistence.db              ] Esquema de la DB en version 19
+[2026-09-22 01:54:59.615] [INFO   ] [persistence.db              ] SQLite inicializado: :memory:
+[2026-09-22 01:54:59.638] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.641] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.649] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.655] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.660] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.664] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.688] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.693] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.697] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.699] [INFO   ] [analysis.tf_rupture_tracker ] Sombra de rupturas por marco recuperada: 1
+[2026-09-22 01:54:59.701] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.707] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+[2026-09-22 01:54:59.711] [INFO   ] [analysis.tf_rupture_tracker ] Sombra por marcos armada sobre 4 pares-marco en 0.0s
+test_meta_resets_even_when_the_planned_tp_is_short (test_active_alert.ActiveAlertResetTests.test_meta_resets_even_when_the_planned_tp_is_short) ... ok
+test_short_tp_that_is_exceeded_stays_active_toward_meta (test_active_alert.ActiveAlertResetTests.test_short_tp_that_is_exceeded_stays_active_toward_meta) ... ok
+test_short_tp_waits_for_extension_before_resetting (test_active_alert.ActiveAlertResetTests.test_short_tp_waits_for_extension_before_resetting) ... ok
+test_short_tp_without_extension_resets_after_configured_wait (test_active_alert.ActiveAlertResetTests.test_short_tp_without_extension_resets_after_configured_wait) ... ok
+test_stop_wins_when_a_single_bar_crosses_stop_and_meta (test_active_alert.ActiveAlertResetTests.test_stop_wins_when_a_single_bar_crosses_stop_and_meta) ... ok
+test_a_notified_outcome_closes_the_episode_without_asking_the_engine (test_episodios.BaseDeDatosTests.test_a_notified_outcome_closes_the_episode_without_asking_the_engine) ... ok
+test_an_alert_ends_up_pointing_at_its_episode_and_its_plan (test_episodios.BaseDeDatosTests.test_an_alert_ends_up_pointing_at_its_episode_and_its_plan) ... ok
+test_the_migration_creates_the_tables_and_the_two_columns (test_episodios.BaseDeDatosTests.test_the_migration_creates_the_tables_and_the_two_columns) ... ok
+test_a_failure_registering_identity_never_reaches_the_alert (test_episodios.MotorEnSombraTests.test_a_failure_registering_identity_never_reaches_the_alert) ... ok
+test_an_alert_without_id_is_not_given_an_episode (test_episodios.MotorEnSombraTests.test_an_alert_without_id_is_not_given_an_episode) ... ok
+test_the_switch_off_leaves_the_registry_untouched (test_episodios.MotorEnSombraTests.test_the_switch_off_leaves_the_registry_untouched) ... ok
+test_a_different_structural_anchor_is_a_different_thesis (test_episodios.RegistroTests.test_a_different_structural_anchor_is_a_different_thesis) ... ok
+test_a_later_rise_does_not_rewrite_the_stop (test_episodios.RegistroTests.test_a_later_rise_does_not_rewrite_the_stop) ... ok
+test_a_stop_closes_the_episode_and_the_next_plan_opens_another (test_episodios.RegistroTests.test_a_stop_closes_the_episode_and_the_next_plan_opens_another) ... ok
+test_an_alert_without_signal_id_still_gets_its_own_plan (test_episodios.RegistroTests.test_an_alert_without_signal_id_still_gets_its_own_plan) ... ok
+test_an_anchor_that_barely_breathes_stays_in_the_same_episode (test_episodios.RegistroTests.test_an_anchor_that_barely_breathes_stays_in_the_same_episode) ... ok
+test_incoherent_levels_are_not_registered_as_a_plan (test_episodios.RegistroTests.test_incoherent_levels_are_not_registered_as_a_plan) ... ok
+test_registering_the_same_alert_twice_neither_duplicates_nor_advances (test_episodios.RegistroTests.test_registering_the_same_alert_twice_neither_duplicates_nor_advances) ... ok
+test_silence_beyond_the_window_opens_another_episode_linked_to_the_first (test_episodios.RegistroTests.test_silence_beyond_the_window_opens_another_episode_linked_to_the_first) ... ok
+test_the_clock_closes_what_nobody_touched_again (test_episodios.RegistroTests.test_the_clock_closes_what_nobody_touched_again) ... ok
+test_the_summary_counts_firsts_and_plans_without_signal (test_episodios.RegistroTests.test_the_summary_counts_firsts_and_plans_without_signal) ... ok
+test_two_alerts_inside_the_window_share_the_episode_and_keep_their_order (test_episodios.RegistroTests.test_two_alerts_inside_the_window_share_the_episode_and_keep_their_order) ... ok
+test_a_reading_round_trips_with_its_reasons_and_data (test_motores.AlmacenTests.test_a_reading_round_trips_with_its_reasons_and_data) ... ok
+test_the_fall_state_is_reloaded_as_it_was_saved (test_motores.AlmacenTests.test_the_fall_state_is_reloaded_as_it_was_saved) ... ok
+test_the_summary_counts_by_origin_so_the_sample_is_visible (test_motores.AlmacenTests.test_the_summary_counts_by_origin_so_the_sample_is_visible) ... ok
+test_a_break_that_already_ran_away_is_not_the_trigger_either (test_motores.CaidaTests.test_a_break_that_already_ran_away_is_not_the_trigger_either) ... ok
+test_a_confirmed_rebound_is_a_buy_once_not_every_minute (test_motores.CaidaTests.test_a_confirmed_rebound_is_a_buy_once_not_every_minute)
+El disparador es un instante. Un rebote confirmado hace tres horas no ... ok
+test_a_confirmed_rebound_with_timeframes_fighting_is_conflict (test_motores.CaidaTests.test_a_confirmed_rebound_with_timeframes_fighting_is_conflict) ... ok
+test_a_failed_rebound_is_closed_even_if_the_absolute_low_holds (test_motores.CaidaTests.test_a_failed_rebound_is_closed_even_if_the_absolute_low_holds)
+Perder el piso de la base no es perder el minimo de la caida. Sin esta ... ok
+test_a_market_with_no_buy_is_still_followed (test_motores.CaidaTests.test_a_market_with_no_buy_is_still_followed) ... ok
+test_a_rebound_holding_above_its_base_floor_stays_alive (test_motores.CaidaTests.test_a_rebound_holding_above_its_base_floor_stays_alive) ... ok
+test_a_shallow_dip_does_not_open_an_episode (test_motores.CaidaTests.test_a_shallow_dip_does_not_open_an_episode) ... ok
+test_an_unmeasurable_volume_is_not_taken_as_good (test_motores.CaidaTests.test_an_unmeasurable_volume_is_not_taken_as_good) ... ok
+test_breaking_the_base_without_the_bounce_is_still_not_a_buy (test_motores.CaidaTests.test_breaking_the_base_without_the_bounce_is_still_not_a_buy) ... ok
+test_losing_the_floor_invalidates_the_rebound_instead_of_hoping (test_motores.CaidaTests.test_losing_the_floor_invalidates_the_rebound_instead_of_hoping) ... ok
+test_the_drop_is_measured_in_magnitude_not_in_sign (test_motores.CaidaTests.test_the_drop_is_measured_in_magnitude_not_in_sign)
+`retroceso.caida_pct` llega con signo: una caida del 26 % es -26.0. ... ok
+test_the_state_survives_a_restart_because_it_lives_in_a_row (test_motores.CaidaTests.test_the_state_survives_a_restart_because_it_lives_in_a_row) ... ok
+test_the_whole_sequence_only_buys_at_the_declared_trigger (test_motores.CaidaTests.test_the_whole_sequence_only_buys_at_the_declared_trigger) ... ok
+test_touching_the_ceiling_without_volume_is_not_the_trigger (test_motores.CaidaTests.test_touching_the_ceiling_without_volume_is_not_the_trigger)
+`base_rebote.rompio` se pone en cuanto el maximo pasa el techo, ANTES ... ok
+test_twelve_hours_close_the_episode_like_everywhere_else (test_motores.CaidaTests.test_twelve_hours_close_the_episode_like_everywhere_else) ... ok
+test_without_candles_it_reports_missing_data_and_keeps_its_state (test_motores.CaidaTests.test_without_candles_it_reports_missing_data_and_keeps_its_state) ... ok
+test_a_flat_coin_is_not_an_extended_move (test_motores.ContinuacionTests.test_a_flat_coin_is_not_an_extended_move)
+`FASE_AGOTADA` se devuelve en cuanto el precio esta bajo la EMA7 en dos ... ok
+test_a_move_that_already_ran_too_far_is_extended_too (test_motores.ContinuacionTests.test_a_move_that_already_ran_too_far_is_extended_too) ... ok
+test_a_pullback_in_a_live_trend_waits_for_the_measured_bounce (test_motores.ContinuacionTests.test_a_pullback_in_a_live_trend_waits_for_the_measured_bounce) ... ok
+test_a_pullback_is_not_swallowed_by_the_exhaustion_check (test_motores.ContinuacionTests.test_a_pullback_is_not_swallowed_by_the_exhaustion_check)
+Un pullback dentro de una tendencia viva ES, por definicion, precio por ... ok
+test_a_really_spent_move_is_still_caught (test_motores.ContinuacionTests.test_a_really_spent_move_is_still_caught) ... ok
+test_a_stale_anchor_is_missing_data_not_a_silent_fallback (test_motores.ContinuacionTests.test_a_stale_anchor_is_missing_data_not_a_silent_fallback) ... ok
+test_a_sustained_break_on_the_anchor_with_live_impulse_is_a_candidate (test_motores.ContinuacionTests.test_a_sustained_break_on_the_anchor_with_live_impulse_is_a_candidate) ... ok
+test_a_trigger_with_the_timeframes_contradicting_is_conflict_not_a_buy (test_motores.ContinuacionTests.test_a_trigger_with_the_timeframes_contradicting_is_conflict_not_a_buy) ... ok
+test_a_trigger_without_valid_levels_is_not_a_buy (test_motores.ContinuacionTests.test_a_trigger_without_valid_levels_is_not_a_buy) ... ok
+test_an_exhausted_move_is_watched_and_never_chased (test_motores.ContinuacionTests.test_an_exhausted_move_is_watched_and_never_chased) ... ok
+test_an_unconfirmed_break_waits_and_names_what_is_missing (test_motores.ContinuacionTests.test_an_unconfirmed_break_waits_and_names_what_is_missing) ... ok
+test_compression_says_when_not_where_so_it_never_fires_alone (test_motores.ContinuacionTests.test_compression_says_when_not_where_so_it_never_fires_alone) ... ok
+test_nothing_happening_is_reported_as_nothing_happening (test_motores.ContinuacionTests.test_nothing_happening_is_reported_as_nothing_happening) ... ok
+test_the_retest_needs_the_rebound_confirmed_before_it_is_a_buy (test_motores.ContinuacionTests.test_the_retest_needs_the_rebound_confirmed_before_it_is_a_buy) ... ok
+test_the_same_observation_always_gives_the_same_reading (test_motores.ContinuacionTests.test_the_same_observation_always_gives_the_same_reading) ... ok
+test_too_few_candles_is_missing_data (test_motores.ContinuacionTests.test_too_few_candles_is_missing_data) ... ok
+test_without_the_slow_anchor_it_says_so_instead_of_guessing (test_motores.ContinuacionTests.test_without_the_slow_anchor_it_says_so_instead_of_guessing) ... ok
+test_a_contradiction_between_timeframes_is_not_averaged (test_motores.ContratoTests.test_a_contradiction_between_timeframes_is_not_averaged) ... ok
+test_a_thesis_cannot_be_called_a_buy_without_its_trigger (test_motores.ContratoTests.test_a_thesis_cannot_be_called_a_buy_without_its_trigger) ... ok
+test_missing_data_has_to_say_what_is_missing (test_motores.ContratoTests.test_missing_data_has_to_say_what_is_missing) ... ok
+test_only_a_candidate_may_carry_a_plan (test_motores.ContratoTests.test_only_a_candidate_may_carry_a_plan) ... ok
+test_the_detector_says_broke_while_rejecting_it_for_volume (test_motores.DetectorRealTests.test_the_detector_says_broke_while_rejecting_it_for_volume) ... ok
+test_the_engine_does_confirm_when_the_detector_accepts_it (test_motores.DetectorRealTests.test_the_engine_does_confirm_when_the_detector_accepts_it) ... ok
+test_the_engine_does_not_confirm_a_rebound_the_detector_rejected (test_motores.DetectorRealTests.test_the_engine_does_not_confirm_a_rebound_the_detector_rejected) ... ok
+test_a_broken_store_never_reaches_the_caller (test_motores.ServicioTests.test_a_broken_store_never_reaches_the_caller) ... ok
+test_a_candidate_is_written_even_inside_the_cooldown (test_motores.ServicioTests.test_a_candidate_is_written_even_inside_the_cooldown) ... ok
+test_a_sample_is_written_even_when_nothing_changed (test_motores.ServicioTests.test_a_sample_is_written_even_when_nothing_changed) ... ok
+test_a_saturated_pass_still_records_the_alert_with_its_identity (test_motores.ServicioTests.test_a_saturated_pass_still_records_the_alert_with_its_identity)
+El tope descartaba tambien las filas con identidad, y ese enlace no se ... ok
+test_a_saturated_pass_still_records_the_universe_sample (test_motores.ServicioTests.test_a_saturated_pass_still_records_the_universe_sample)
+La muestra es la poblacion de referencia de toda la fase. Perder filas ... ok
+test_the_per_pass_cap_delays_rows_but_never_drops_them_silently (test_motores.ServicioTests.test_the_per_pass_cap_delays_rows_but_never_drops_them_silently) ... ok
+test_the_same_verdict_minute_after_minute_is_not_written_twice (test_motores.ServicioTests.test_the_same_verdict_minute_after_minute_is_not_written_twice) ... ok
+test_the_sample_rotates_so_no_pair_is_left_out_forever (test_motores.ServicioTests.test_the_sample_rotates_so_no_pair_is_left_out_forever) ... ok
+test_the_switch_turns_both_engines_off (test_motores.ServicioTests.test_the_switch_turns_both_engines_off) ... ok
+test_the_floor_does_not_rise_when_the_price_bounces (test_motores.SueloDeLaCaidaTests.test_the_floor_does_not_rise_when_the_price_bounces) ... ok
+test_the_floor_keeps_dropping_while_the_fall_is_active (test_motores.SueloDeLaCaidaTests.test_the_floor_keeps_dropping_while_the_fall_is_active) ... ok
+test_a_plan_without_structural_levels_freezes_nothing_invented (test_niveles_visibles.AlertaCongelaLosNivelesTests.test_a_plan_without_structural_levels_freezes_nothing_invented) ... ok
+test_the_alert_freezes_both_levels_with_the_rest_of_the_plan (test_niveles_visibles.AlertaCongelaLosNivelesTests.test_the_alert_freezes_both_levels_with_the_rest_of_the_plan) ... ok
+test_a_ceiling_above_the_target_is_reported_without_alarm (test_niveles_visibles.AvisoDeTelegramTests.test_a_ceiling_above_the_target_is_reported_without_alarm) ... ok
+test_a_ceiling_in_the_way_is_named_as_what_has_to_break (test_niveles_visibles.AvisoDeTelegramTests.test_a_ceiling_in_the_way_is_named_as_what_has_to_break) ... ok
+test_the_message_says_what_holds_the_stop (test_niveles_visibles.AvisoDeTelegramTests.test_the_message_says_what_holds_the_stop) ... ok
+test_the_whole_notice_carries_the_two_levels (test_niveles_visibles.AvisoDeTelegramTests.test_the_whole_notice_carries_the_two_levels) ... ok
+test_without_levels_the_message_does_not_invent_lines (test_niveles_visibles.AvisoDeTelegramTests.test_without_levels_the_message_does_not_invent_lines) ... ok
+test_the_ceiling_is_published_whether_or_not_it_blocks_the_target (test_niveles_visibles.NivelesEnElPlanTests.test_the_ceiling_is_published_whether_or_not_it_blocks_the_target) ... ok
+test_the_support_that_holds_the_stop_is_published_with_its_touches (test_niveles_visibles.NivelesEnElPlanTests.test_the_support_that_holds_the_stop_is_published_with_its_touches) ... ok
+test_a_flat_book_of_zero_volume_does_not_divide_by_zero (test_niveles_visibles.VolumenDeLaRupturaTests.test_a_flat_book_of_zero_volume_does_not_divide_by_zero) ... ok
+test_the_ratio_is_computed_from_the_candles_when_no_snapshot_exists (test_niveles_visibles.VolumenDeLaRupturaTests.test_the_ratio_is_computed_from_the_candles_when_no_snapshot_exists) ... ok
+test_without_enough_history_it_says_nothing_instead_of_guessing (test_niveles_visibles.VolumenDeLaRupturaTests.test_without_enough_history_it_says_nothing_instead_of_guessing) ... ok
+test_bad_economics_and_missing_liquidity_are_rejected (test_notification_policy.EligibilityTests.test_bad_economics_and_missing_liquidity_are_rejected) ... ok
+test_continuation_does_not_require_a_prior_capitulation (test_notification_policy.EligibilityTests.test_continuation_does_not_require_a_prior_capitulation) ... ok
+test_rebound_still_needs_confirmation (test_notification_policy.EligibilityTests.test_rebound_still_needs_confirmation) ... ok
+test_existing_symbol_is_deduplicated_even_when_a_new_signal_has_an_id (test_notification_policy.PolicyTests.test_existing_symbol_is_deduplicated_even_when_a_new_signal_has_an_id) ... ok
+test_failed_followup_has_backoff_and_is_retryable (test_notification_policy.PolicyTests.test_failed_followup_has_backoff_and_is_retryable) ... ok
+test_failed_initial_send_does_not_spend_hourly_budget (test_notification_policy.PolicyTests.test_failed_initial_send_does_not_spend_hourly_budget) ... ok
+test_global_budget_survives_restart_and_critical_event_still_passes (test_notification_policy.PolicyTests.test_global_budget_survives_restart_and_critical_event_still_passes) ... ok
+test_interrupted_send_keeps_its_slot_without_blocking_pair_forever (test_notification_policy.PolicyTests.test_interrupted_send_keeps_its_slot_without_blocking_pair_forever) ... ok
+test_late_candle_cannot_invent_a_tp_or_inflate_mfe (test_notification_policy.PolicyTests.test_late_candle_cannot_invent_a_tp_or_inflate_mfe) ... ok
+test_meta_does_not_terminate_a_plan_whose_tp_is_higher (test_notification_policy.PolicyTests.test_meta_does_not_terminate_a_plan_whose_tp_is_higher) ... ok
+test_near_stop_is_relative_to_plan_risk_and_only_once (test_notification_policy.PolicyTests.test_near_stop_is_relative_to_plan_risk_and_only_once) ... ok
+test_no_notifications_from_pre_entry_or_out_of_order_candles (test_notification_policy.PolicyTests.test_no_notifications_from_pre_entry_or_out_of_order_candles) ... ok
+test_short_tp_closes_notification_plan_without_later_meta_claim (test_notification_policy.PolicyTests.test_short_tp_closes_notification_plan_without_later_meta_claim) ... ok
+test_stop_wins_an_ambiguous_candle_and_later_rebound_is_not_a_win (test_notification_policy.PolicyTests.test_stop_wins_an_ambiguous_candle_and_later_rebound_is_not_a_win) ... ok
+test_successful_event_receipt_survives_restart (test_notification_policy.PolicyTests.test_successful_event_receipt_survives_restart) ... ok
+test_tp_and_meta_share_one_event_and_duplicate_candles_are_ignored (test_notification_policy.PolicyTests.test_tp_and_meta_share_one_event_and_duplicate_candles_are_ignored) ... ok
+test_unsent_meta_is_superseded_by_stop (test_notification_policy.PolicyTests.test_unsent_meta_is_superseded_by_stop) ... ok
+test_concurrent_candidates_cannot_overrun_the_global_limit (test_notification_policy.ServiceTests.test_concurrent_candidates_cannot_overrun_the_global_limit) ... ok
+test_expiry_without_new_candles_only_edits_the_existing_thread (test_notification_policy.ServiceTests.test_expiry_without_new_candles_only_edits_the_existing_thread) ... ok
+test_failed_transport_does_not_leave_a_pending_plan_forever (test_notification_policy.ServiceTests.test_failed_transport_does_not_leave_a_pending_plan_forever) ... ok
+test_legacy_open_plan_is_adopted_without_repeating_past_meta (test_notification_policy.ServiceTests.test_legacy_open_plan_is_adopted_without_repeating_past_meta) ... ok
+test_legacy_rupture_horizon_never_sends_a_new_message (test_notification_policy.ServiceTests.test_legacy_rupture_horizon_never_sends_a_new_message) ... ok
+test_new_raw_rupture_is_only_recorded_not_pushed (test_notification_policy.ServiceTests.test_new_raw_rupture_is_only_recorded_not_pushed) ... ok
+test_ranked_batch_sends_only_three_and_records_the_suppression (test_notification_policy.ServiceTests.test_ranked_batch_sends_only_three_and_records_the_suppression) ... ok
+test_routine_tracking_edits_without_sending (test_notification_policy.ServiceTests.test_routine_tracking_edits_without_sending) ... ok
+test_stale_or_moved_entry_is_not_published_after_batch_delay (test_notification_policy.ServiceTests.test_stale_or_moved_entry_is_not_published_after_batch_delay) ... ok
+test_terminal_message_once_and_no_gain_after_stop (test_notification_policy.ServiceTests.test_terminal_message_once_and_no_gain_after_stop) ... ok
+test_a_cancelled_trade_is_not_a_zero_loss (test_operaciones.DiarioTests.test_a_cancelled_trade_is_not_a_zero_loss) ... ok
+test_a_closed_trade_cannot_be_closed_again (test_operaciones.DiarioTests.test_a_closed_trade_cannot_be_closed_again) ... ok
+test_a_later_signal_does_not_touch_the_trade_you_took (test_operaciones.DiarioTests.test_a_later_signal_does_not_touch_the_trade_you_took) ... ok
+test_a_loss_and_a_re_entry_are_two_trades_with_a_correct_balance (test_operaciones.DiarioTests.test_a_loss_and_a_re_entry_are_two_trades_with_a_correct_balance) ... ok
+test_a_partial_cannot_exceed_what_is_open_and_needs_a_quantity (test_operaciones.DiarioTests.test_a_partial_cannot_exceed_what_is_open_and_needs_a_quantity) ... ok
+test_a_plan_from_another_pair_is_refused (test_operaciones.DiarioTests.test_a_plan_from_another_pair_is_refused) ... ok
+test_an_alert_or_a_telegram_send_never_creates_a_trade (test_operaciones.DiarioTests.test_an_alert_or_a_telegram_send_never_creates_a_trade) ... ok
+test_an_open_trade_shows_an_unrealised_number_marked_as_such (test_operaciones.DiarioTests.test_an_open_trade_shows_an_unrealised_number_marked_as_such) ... ok
+test_partials_weight_the_exit_price_and_close_when_nothing_is_left (test_operaciones.DiarioTests.test_partials_weight_the_exit_price_and_close_when_nothing_is_left) ... ok
+test_simulated_and_declared_are_counted_apart (test_operaciones.DiarioTests.test_simulated_and_declared_are_counted_apart) ... ok
+test_the_migration_creates_the_journal_empty (test_operaciones.DiarioTests.test_the_migration_creates_the_journal_empty) ... ok
+test_the_trade_keeps_the_levels_it_copied_when_it_opened (test_operaciones.DiarioTests.test_the_trade_keeps_the_levels_it_copied_when_it_opened) ... ok
+test_el_informe_cubre_los_cuatro_marcos_y_lleva_sus_advertencias (test_pair_report.InformeTests.test_el_informe_cubre_los_cuatro_marcos_y_lleva_sus_advertencias) ... ok
+test_marcos_en_desacuerdo_se_marcan_en_vez_de_promediarse (test_pair_report.InformeTests.test_marcos_en_desacuerdo_se_marcan_en_vez_de_promediarse) ... ok
+test_un_marco_sin_historia_no_hunde_el_informe (test_pair_report.InformeTests.test_un_marco_sin_historia_no_hunde_el_informe) ... ok
+test_cierre_bajo_un_suelo_tocado_es_ruptura_bajista (test_pair_report.LeerTFTests.test_cierre_bajo_un_suelo_tocado_es_ruptura_bajista) ... ok
+test_cierre_sobre_un_techo_tocado_es_ruptura_alcista (test_pair_report.LeerTFTests.test_cierre_sobre_un_techo_tocado_es_ruptura_alcista) ... ok
+test_el_rango_intacto_no_es_ruptura (test_pair_report.LeerTFTests.test_el_rango_intacto_no_es_ruptura) ... ok
+test_sin_historia_el_marco_no_opina (test_pair_report.LeerTFTests.test_sin_historia_el_marco_no_opina) ... ok
+test_una_sola_vela_pasada_no_se_da_por_confirmada (test_pair_report.LeerTFTests.test_una_sola_vela_pasada_no_se_da_por_confirmada) ... ok
+test_completa_el_par_cuando_solo_se_escribe_la_moneda (test_pair_report.NormalizarSymbolTests.test_completa_el_par_cuando_solo_se_escribe_la_moneda) ... ok
+test_rechaza_lo_que_no_tiene_forma_de_par (test_pair_report.NormalizarSymbolTests.test_rechaza_lo_que_no_tiene_forma_de_par) ... ok
+test_el_beneficio_publicado_descuenta_costes (test_pair_report.PlanDireccionalTests.test_el_beneficio_publicado_descuenta_costes) ... ok
+test_el_plan_bajista_invierte_los_niveles_y_avisa_de_que_no_esta_medido (test_pair_report.PlanDireccionalTests.test_el_plan_bajista_invierte_los_niveles_y_avisa_de_que_no_esta_medido) ... ok
+test_el_rango_va_del_nivel_roto_al_precio_y_el_riesgo_se_mide_a_mercado (test_pair_report.PlanDireccionalTests.test_el_rango_va_del_nivel_roto_al_precio_y_el_riesgo_se_mide_a_mercado) ... ok
+test_sin_nivel_roto_no_hay_plan (test_pair_report.PlanDireccionalTests.test_sin_nivel_roto_no_hay_plan) ... ok
+test_a_finished_plan_is_not_evaluated_again (test_recorrido.AlmacenTests.test_a_finished_plan_is_not_evaluated_again) ... ok
+test_a_plan_is_evaluated_from_the_stored_candles (test_recorrido.AlmacenTests.test_a_plan_is_evaluated_from_the_stored_candles) ... ok
+test_a_second_pass_resumes_instead_of_starting_over (test_recorrido.AlmacenTests.test_a_second_pass_resumes_instead_of_starting_over) ... ok
+test_horizons_are_stored_apart_from_the_outcome (test_recorrido.AlmacenTests.test_horizons_are_stored_apart_from_the_outcome) ... ok
+test_no_plan_starves_when_there_are_more_than_one_pass_allows (test_recorrido.AlmacenTests.test_no_plan_starves_when_there_are_more_than_one_pass_allows) ... ok
+test_the_shadow_comparison_reports_agreement_and_differences (test_recorrido.AlmacenTests.test_the_shadow_comparison_reports_agreement_and_differences) ... ok
+test_a_finished_plan_is_not_evaluated_again (test_recorrido.CosteCongeladoTests.test_a_finished_plan_is_not_evaluated_again) ... ok
+test_a_plan_is_evaluated_from_the_stored_candles (test_recorrido.CosteCongeladoTests.test_a_plan_is_evaluated_from_the_stored_candles) ... ok
+test_a_plan_without_its_own_cost_falls_back_to_the_global_one (test_recorrido.CosteCongeladoTests.test_a_plan_without_its_own_cost_falls_back_to_the_global_one) ... ok
+test_a_second_pass_resumes_instead_of_starting_over (test_recorrido.CosteCongeladoTests.test_a_second_pass_resumes_instead_of_starting_over) ... ok
+test_changing_the_global_cost_does_not_rewrite_an_open_plan (test_recorrido.CosteCongeladoTests.test_changing_the_global_cost_does_not_rewrite_an_open_plan) ... ok
+test_horizons_are_stored_apart_from_the_outcome (test_recorrido.CosteCongeladoTests.test_horizons_are_stored_apart_from_the_outcome) ... ok
+test_no_plan_starves_when_there_are_more_than_one_pass_allows (test_recorrido.CosteCongeladoTests.test_no_plan_starves_when_there_are_more_than_one_pass_allows) ... ok
+test_the_result_uses_the_cost_the_plan_froze (test_recorrido.CosteCongeladoTests.test_the_result_uses_the_cost_the_plan_froze) ... ok
+test_the_shadow_comparison_reports_agreement_and_differences (test_recorrido.CosteCongeladoTests.test_the_shadow_comparison_reports_agreement_and_differences) ... ok
+test_a_restart_in_the_middle_does_not_change_the_result (test_recorrido.EquivalenciaTests.test_a_restart_in_the_middle_does_not_change_the_result) ... ok
+test_repeated_and_overlapping_deliveries_do_not_double_count (test_recorrido.EquivalenciaTests.test_repeated_and_overlapping_deliveries_do_not_double_count) ... ok
+test_streaming_and_replay_agree_candle_by_candle (test_recorrido.EquivalenciaTests.test_streaming_and_replay_agree_candle_by_candle) ... ok
+test_the_migration_adds_the_tables_without_touching_the_rest (test_recorrido.EsquemaTests.test_the_migration_adds_the_tables_without_touching_the_rest) ... ok
+test_a_candle_outside_the_window_never_counts (test_recorrido.ReglaTests.test_a_candle_outside_the_window_never_counts) ... ok
+test_a_gap_below_the_stop_fills_at_the_open_not_at_the_level (test_recorrido.ReglaTests.test_a_gap_below_the_stop_fills_at_the_open_not_at_the_level) ... ok
+test_a_rise_after_the_stop_does_not_rewrite_the_outcome (test_recorrido.ReglaTests.test_a_rise_after_the_stop_does_not_rewrite_the_outcome) ... ok
+test_a_stop_and_a_target_in_one_minute_is_a_stop_and_is_flagged (test_recorrido.ReglaTests.test_a_stop_and_a_target_in_one_minute_is_a_stop_and_is_flagged) ... ok
+test_an_open_window_has_no_outcome_and_no_result (test_recorrido.ReglaTests.test_an_open_window_has_no_outcome_and_no_result) ... ok
+test_coverage_says_how_much_of_the_window_was_actually_seen (test_recorrido.ReglaTests.test_coverage_says_how_much_of_the_window_was_actually_seen) ... ok
+test_milestones_and_horizons_are_recorded_apart_from_the_outcome (test_recorrido.ReglaTests.test_milestones_and_horizons_are_recorded_apart_from_the_outcome) ... ok
+test_the_clock_expires_it_even_if_no_candle_arrives (test_recorrido.ReglaTests.test_the_clock_expires_it_even_if_no_candle_arrives) ... ok
+test_the_same_candle_twice_changes_nothing (test_recorrido.ReglaTests.test_the_same_candle_twice_changes_nothing) ... ok
+test_a_pair_without_alerts_today_says_so_instead_of_failing (test_referencias.ReferenciasTests.test_a_pair_without_alerts_today_says_so_instead_of_failing) ... ok
+test_the_episode_carries_its_first_plan_so_the_panel_can_show_it (test_referencias.ReferenciasTests.test_the_episode_carries_its_first_plan_so_the_panel_can_show_it) ... ok
+test_the_symbol_is_normalised_and_other_pairs_do_not_leak_in (test_referencias.ReferenciasTests.test_the_symbol_is_normalised_and_other_pairs_do_not_leak_in) ... ok
+test_yesterdays_alert_is_not_todays_first (test_referencias.ReferenciasTests.test_yesterdays_alert_is_not_todays_first) ... ok
+test_bearish_track_treats_fall_as_favorable (test_rupture_tracker.RuptureTrackerTests.test_bearish_track_treats_fall_as_favorable) ... ok
+test_bullish_track_records_raw_and_directional_returns (test_rupture_tracker.RuptureTrackerTests.test_bullish_track_records_raw_and_directional_returns) ... ok
+test_classifier_keeps_bullish_and_bearish_routes_separate (test_rupture_tracker.RuptureTrackerTests.test_classifier_keeps_bullish_and_bearish_routes_separate) ... ok
+test_a_cell_carries_its_sample_and_its_window (test_tf_estadistica.EstadisticaTests.test_a_cell_carries_its_sample_and_its_window) ... ok
+test_a_missing_table_gives_no_numbers_instead_of_an_error (test_tf_estadistica.EstadisticaTests.test_a_missing_table_gives_no_numbers_instead_of_an_error) ... ok
+test_below_the_minimum_it_says_so_instead_of_widening_the_cell (test_tf_estadistica.EstadisticaTests.test_below_the_minimum_it_says_so_instead_of_widening_the_cell) ... ok
+test_the_horizon_share_counts_only_what_fit_in_it (test_tf_estadistica.EstadisticaTests.test_the_horizon_share_counts_only_what_fit_in_it) ... ok
+test_the_window_leaves_out_what_is_too_old (test_tf_estadistica.EstadisticaTests.test_the_window_leaves_out_what_is_too_old) ... ok
+test_what_never_filled_is_reported_apart_from_what_hit (test_tf_estadistica.EstadisticaTests.test_what_never_filled_is_reported_apart_from_what_hit) ... ok
+test_a_frame_that_fits_the_day_raises_no_horizon_warning (test_tf_estadistica.InformeConTasasTests.test_a_frame_that_fits_the_day_raises_no_horizon_warning) ... ok
+test_a_frame_too_slow_for_the_day_is_flagged_with_its_measured_share (test_tf_estadistica.InformeConTasasTests.test_a_frame_too_slow_for_the_day_is_flagged_with_its_measured_share) ... ok
+test_each_reading_arrives_with_the_measured_rate_beside_it (test_tf_estadistica.InformeConTasasTests.test_each_reading_arrives_with_the_measured_rate_beside_it) ... ok
+test_the_conflict_warning_no_longer_claims_a_risk_the_data_denies (test_tf_estadistica.InformeConTasasTests.test_the_conflict_warning_no_longer_claims_a_risk_the_data_denies) ... ok
+test_the_summary_is_conditioned_on_confluence_not_on_the_longest_frame (test_tf_estadistica.InformeConTasasTests.test_the_summary_is_conditioned_on_confluence_not_on_the_longest_frame) ... ok
+test_without_sample_the_conflict_warning_states_no_conclusion (test_tf_estadistica.InformeConTasasTests.test_without_sample_the_conflict_warning_states_no_conclusion) ... ok
+test_without_statistics_the_report_still_works_as_before (test_tf_estadistica.InformeConTasasTests.test_without_statistics_the_report_still_works_as_before) ... ok
+test_armar_siembra_la_direccion_sin_abrir_filas (test_tf_rupture_tracker.ArmadoTests.test_armar_siembra_la_direccion_sin_abrir_filas) ... ok
+test_el_cooldown_del_marco_evita_la_misma_ruptura_repetida (test_tf_rupture_tracker.ArmadoTests.test_el_cooldown_del_marco_evita_la_misma_ruptura_repetida) ... ok
+test_la_confluencia_del_momento_queda_congelada_en_la_fila (test_tf_rupture_tracker.ArmadoTests.test_la_confluencia_del_momento_queda_congelada_en_la_fila) ... ok
+test_sin_armar_no_registra_lo_que_ya_estaba_en_curso (test_tf_rupture_tracker.ArmadoTests.test_sin_armar_no_registra_lo_que_ya_estaba_en_curso) ... ok
+test_solo_el_cambio_de_direccion_abre_una_fila (test_tf_rupture_tracker.ArmadoTests.test_solo_el_cambio_de_direccion_abre_una_fila) ... ok
+test_el_relleno_del_retest_se_mide_aparte_de_la_entrada_a_mercado (test_tf_rupture_tracker.MedicionTests.test_el_relleno_del_retest_se_mide_aparte_de_la_entrada_a_mercado) ... ok
+test_en_bajista_caer_cuenta_como_favorable (test_tf_rupture_tracker.MedicionTests.test_en_bajista_caer_cuenta_como_favorable) ... ok
+test_la_ventana_se_cierra_a_las_24h (test_tf_rupture_tracker.MedicionTests.test_la_ventana_se_cierra_a_las_24h) ... ok
+test_mide_recorrido_favorable_y_adverso_en_la_direccion (test_tf_rupture_tracker.MedicionTests.test_mide_recorrido_favorable_y_adverso_en_la_direccion) ... ok
+test_recupera_las_filas_abiertas_tras_un_reinicio (test_tf_rupture_tracker.MedicionTests.test_recupera_las_filas_abiertas_tras_un_reinicio) ... ok
+test_registra_el_primer_toque_de_cada_barrera_y_no_lo_pisa (test_tf_rupture_tracker.MedicionTests.test_registra_el_primer_toque_de_cada_barrera_y_no_lo_pisa) ... ok
+test_sin_relleno_la_entrada_del_retest_queda_vacia_no_en_cero (test_tf_rupture_tracker.MedicionTests.test_sin_relleno_la_entrada_del_retest_queda_vacia_no_en_cero) ... ok
+test_una_vela_repetida_no_cuenta_dos_veces (test_tf_rupture_tracker.MedicionTests.test_una_vela_repetida_no_cuenta_dos_veces) ... ok
+
+----------------------------------------------------------------------
+Ran 202 tests in 1.217s
+
+OK

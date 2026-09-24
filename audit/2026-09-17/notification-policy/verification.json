@@ -1,0 +1,26 @@
+{
+  "files_match": true,
+  "schema_version": "14",
+  "notification_tables": [],
+  "service": "ActiveState=active\nActiveEnterTimestamp=Thu 2026-09-17 20:15:46 UTC\nMainPID=1891912\n",
+  "health": {
+    "http": 200,
+    "payload": {
+      "status": "activo",
+      "total_pairs": 210,
+      "state_distribution": {
+        "NEUTRAL": 136,
+        "SUBIENDO": 60,
+        "CAYENDO": 11,
+        "TOC\u00d3_FONDO": 3
+      },
+      "tier_distribution": {
+        "VIGILANCIA": 11,
+        "MODERADA": 14,
+        "FUERTE": 3,
+        "EXTRA-FUERTE": 1
+      },
+      "interesting": 31
+    }
+  }
+}

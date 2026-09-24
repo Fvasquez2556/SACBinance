@@ -21,6 +21,27 @@ El inverso de un score de continuacion no es automaticamente una prediccion de
 caida. Incluye señales planas, datos insuficientes y rutas que no pertenecen a
 ninguna de las dos politicas.
 
+## Actualizacion de implementacion, 14-sep
+
+Se implementaron dos cambios de producto sin convertir los modelos en reglas
+de ejecucion:
+
+1. `backend/src/state/active_alert.py` resetea la fase accionable cuando la
+   señal alcanza `+3.2%`. Si el TP congelado es menor que esa meta, tocarlo
+   abre una observacion de extension de cuatro horas configurables en vez de
+   cerrar de inmediato. Si no excede el TP, se resetea con
+   `TP_CORTO_SIN_EXTENSION`. La alerta sigue en seguimiento para conservar el
+   recorrido de 24 h y permitir una nueva emisión tras el cooldown normal.
+2. El tablero ahora usa tarjetas en `frontend/src/components/PairCard.tsx`.
+   Muestra el ranking actual de `rango_1h_pct` como lectura de continuación en
+   sombra y las bandas de retroceso como medición. El clasificador completo y
+   la ruta de caída no se usan para vetar, alertar ni recomendar compras.
+
+Verificado: cinco pruebas del ciclo de vida pasan, `python -m compileall -q
+backend` pasa y `frontend/npm run build` pasa. `npm run lint` sigue fallando
+por una regla previa en `frontend/src/hooks/useNotifications.ts:37`, no tocada
+por esta implementación.
+
 ---
 
 ## Resumen ejecutivo

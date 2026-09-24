@@ -1,0 +1,489 @@
+--- before/backend/main.py
++++ after/backend/main.py
+@@ -194,6 +194,9 @@
+     # Cerrar la sesion HTTP de Telegram antes que nada: aiohttp se queja si
+     # el loop muere con una sesion abierta.
+     from src.api.ws_server import _engine as motor
++    notifications = getattr(motor, "_notifications", None) if motor is not None else None
++    if notifications is not None:
++        await notifications.close()
+     tg = getattr(motor, "_tg", None) if motor is not None else None
+     if tg is not None:
+         try:
+@@ -406,6 +409,11 @@
+             logger.debug(f"db_flush_loop error: {e}")
+         ahora_ms = int(time.time() * 1000)
+         try:
++            if engine is not None and engine._notifications is not None:
++                await engine._notifications.maintenance(ahora_ms)
++        except Exception as e:
++            logger.warning(f"notificaciones mantenimiento: {type(e).__name__}")
++        try:
+             if engine is not None and engine._outcomes is not None:
+                 engine._outcomes.cerrar_vencidos(ahora_ms)
+         except Exception as e:
+
+--- before/backend/src/config/settings.py
++++ after/backend/src/config/settings.py
+@@ -336,6 +336,12 @@
+     aviso_score_min: int = Field(default=75)
+     aviso_vol24h_min: float = Field(default=2_000_000)
+     aviso_cooldown_min: int = Field(default=45)   # por par, evita repetir
++    # Presupuesto SOLO de oportunidades nuevas; nunca bloquea TP/SL.
++    aviso_max_nuevas_hora: int = Field(default=3, ge=1)
++    aviso_lote_segundos: int = Field(default=30, ge=1, le=60)
++    aviso_actualizar_minutos: int = Field(default=5, ge=1)
++    aviso_desvio_entrada_max_pct: float = Field(default=0.5, gt=0)
++    aviso_stop_cercano_fraccion: float = Field(default=0.8, gt=0, lt=1)
+ 
+     # --- Patron validado: "viene de caer" ---
+     # research/marea_ingredientes.py, 7-sep-2026: una caida >=2% en los 40
+
+--- before/backend/src/notify/telegram.py
++++ after/backend/src/notify/telegram.py
+@@ -2,6 +2,9 @@
+ from __future__ import annotations
+ 
+ import asyncio
++import datetime as dt
++import html
++import json
+ import time
+ from typing import Dict, Optional
+ 
+@@ -145,14 +148,21 @@
+         mid = self._mensajes.get(symbol)
+         if mid is None:
+             return False
++        return await self.actualizar_mensaje(mid, texto)
++
++    async def actualizar_mensaje(self, message_id: int, texto: str) -> bool:
++        """Actualiza el mismo mensaje; no crea un aviso periodico nuevo."""
+         r = await self._pedir("editMessageText", {
+             "chat_id": self.chat_id,
+-            "message_id": mid,
++            "message_id": int(message_id),
+             "text": texto,
+             "parse_mode": "HTML",
+             "disable_web_page_preview": True,
+         })
+         return r is not None
++
++    def mensaje_id(self, symbol: str) -> Optional[int]:
++        return self._mensajes.get(symbol)
+ 
+     async def responder(self, symbol: str, texto: str) -> bool:
+         """
+@@ -452,3 +462,51 @@
+         "despues a +3.2%. Tocar el stop no cierra la historia.",
+         _enlace(symbol),
+     ])
++
++
++def texto_plan_notificado(plan: dict, titulo: str = "PLAN EN SEGUIMIENTO") -> str:
++    """Frozen plan, without mixing historical excursions with win probabilities."""
++    ctx = plan.get('contexto') or {}
++    if isinstance(ctx, str):
++        ctx = json.loads(ctx)
++    entry, tp, sl = plan['entry'], plan['take_profit'], plan['stop_loss']
++    current = plan.get('last_price') or entry
++    gross = (tp / entry - 1) * 100
++    cost = ctx.get('coste_pct')
++    stamp = dt.datetime.fromtimestamp(plan['ts_open']/1000,dt.timezone.utc).strftime('%d/%m %H:%M UTC')
++    lines = [f"<b>{html.escape(plan['symbol'])} · {titulo}</b>",
++             f"Plan #{plan['alerta_id']} · detectado {stamp}",
++             "Señal de 1m · niveles de 1h · volatilidad de 15m",
++             "",f"entrada <code>{entry}</code>",
++             f"TP <code>{tp}</code> ({gross:+.2f}% bruto)",
++             f"SL <code>{sl}</code> ({(sl/entry-1)*100:+.2f}%)",
++             f"ahora <code>{current}</code> ({(current/entry-1)*100:+.2f}%)"]
++    if cost is not None:
++        lines.append(f"TP tras coste supuesto {cost:.2f}%: {gross-cost:+.2f}%")
++    trends = ctx.get('macro_trends') or {}
++    if trends:
++        lines.append('Contexto al detectar: ' + ' · '.join(
++            f"{tf} {html.escape(str(trends.get(tf,'sin datos')))}" for tf in ('15m','1h','4h')))
++    lines += [f"Estado del plan: {html.escape(plan.get('estado','ABIERTO'))}",
++              f"Máx. favorable {_fmt(plan.get('mfe'),2,'%')} · adverso {_fmt(plan.get('mae'),2,'%')}",
++              "Seguimiento simulado. Los cambios menores actualizan este mensaje.",
++              _enlace(plan['symbol'])]
++    return '\n'.join(lines)
++
++
++def texto_evento_plan(event: dict) -> str:
++    plan = json.loads(event['snapshot'])
++    kind = event['tipo']
++    titles = {'SL':'STOP DEL PLAN ALCANZADO','TP':'TP DEL PLAN ALCANZADO',
++              'TP_META':'TP Y +3.2% BRUTO ALCANZADOS','META':'+3.2% BRUTO ALCANZADO',
++              'CERCA_SL':'PRECIO CERCA DEL STOP','VENCIDO':'PLAN VENCIDO'}
++    text = texto_plan_notificado(plan,titles[kind])
++    stamp = dt.datetime.fromtimestamp(event['ts_ms']/1000,dt.timezone.utc).strftime('%d/%m %H:%M UTC')
++    text += f"\nEvento observado: {stamp}"
++    if kind=='META':
++        text += '\nEl TP del plan sigue pendiente. Este hito no descuenta costes.'
++    if kind=='SL':
++        text += '\nEste plan deja de generar avisos de ganancia; el recorrido posterior queda en la UI.'
++    if plan.get('ambiguous'):
++        text += '\nSL y meta/TP aparecen en la misma vela: orden desconocido; no se contabiliza como éxito.'
++    return text
+
+--- before/backend/src/persistence/db.py
++++ after/backend/src/persistence/db.py
+@@ -12,6 +12,7 @@
+ from typing import List, Optional
+ 
+ from src.config.settings import get_settings
++from src.notify.policy import NOTIFICATION_SCHEMA, NotificationPolicy
+ from src.utils.logger import get_logger
+ 
+ logger = get_logger(__name__)
+@@ -338,7 +339,8 @@
+ #            proposito: mezclarlas con `rupturas` contaminaria la medicion
+ #            de produccion, que es de 1m y lleva semanas acumulando.
+ #            y excursiones favorables/adversas simetricas para ambos lados.
+-SCHEMA_VERSION = 14
++# 14 -> 15: planes notificados y recibos por evento; evita duplicados al reiniciar.
++SCHEMA_VERSION = 15
+ 
+ # --- Contexto de la senal: lo que el engine ya calcula y hasta ahora se tiraba
+ #
+@@ -455,7 +457,7 @@
+             _CREATE_SYMBOL_STATES, _CREATE_ANALYSIS_LOG, _CREATE_PAIR_META,
+             _CREATE_SIGNALS, _CREATE_KLINES, _CREATE_META, _CREATE_OUTCOMES,
+             _CREATE_TELEGRAM_HILOS, _CREATE_ALERTAS_EMITIDAS, _CREATE_RUPTURAS,
+-            _CREATE_RUPTURAS_TF,
++            _CREATE_RUPTURAS_TF, NOTIFICATION_SCHEMA,
+         ):
+             self._conn.executescript(ddl)
+         self._conn.commit()
+@@ -1124,6 +1126,9 @@
+         filas = [dict(zip(cols, row)) for row in cur.fetchall()]
+         return {"total": sum(f["n"] for f in filas), "por_marco": filas}
+ 
++    def notification_policy(self) -> NotificationPolicy:
++        return NotificationPolicy(self._conn)
++
+     # --- Hilos de Telegram ---------------------------------------------------
+     #
+     # Los avisos de seguimiento — bajadas, stop, TP, hitos — cuelgan del mensaje
+
+--- before/backend/src/state/engine.py
++++ after/backend/src/state/engine.py
+@@ -30,10 +30,8 @@
+ from src.analysis import grupos
+ from src.analysis.retroceso import detectar_retroceso
+ from src.utils import procedencia
+-from src.notify.telegram import (
+-    Telegram, texto_alerta, texto_bajada, texto_hito, texto_meta, texto_stop,
+-    texto_tp, texto_ruptura, texto_seguimiento_ruptura,
+-)
++from src.notify.telegram import Telegram, texto_seguimiento_ruptura
++from src.notify.service import NotificationService
+ from src.analysis.trade_levels import calcular_niveles
+ from src.config.settings import get_settings
+ from src.indicators.calculator import indicators_from_candles
+@@ -48,7 +46,7 @@
+     evaluate,
+     provisional_state,
+ )
+-from src.state.active_alert import MOTIVO_META, MOTIVO_SL, MOTIVO_TP, AlertManager
++from src.state.active_alert import AlertManager
+ from src.state.symbol_state import (
+     DISPLAY_BREAKOUT,
+     DISPLAY_CAYENDO,
+@@ -166,25 +164,6 @@
+ _VETOS_CONTABLES = ("ya hay una alerta viva", "cooldown")
+ 
+ 
+-def _merece_aviso(snap: dict, retro: dict, s) -> tuple:
+-    """
+-    ¿Este par justifica sonar el telefono? Devuelve (bool, motivo).
+-
+-    El sistema emite ~460 señales al dia. Avisar de todas es lo mismo que no
+-    avisar de ninguna, porque se silencia el primer dia. Estos filtros lo dejan
+-    en ~15 diarios y son los que tienen respaldo medido
+-    (research/volumen_avisos.py).
+-    """
+-    if s.aviso_solo_confirmado and not retro.get("confirmado"):
+-        return False, "sin rebote confirmado"
+-    if not retro.get("detectado"):
+-        return False, "no viene de una caida"
+-    if (snap.get("score") or 0) < s.aviso_score_min:
+-        return False, f"score {snap.get('score')} < {s.aviso_score_min}"
+-    vol = (snap.get("vol_24h") or 0)
+-    if vol and vol < s.aviso_vol24h_min:
+-        return False, f"volumen 24h {vol:.0f} bajo"
+-    return True, ""
+ 
+ 
+ def _orden_tablero(x: dict) -> tuple:
+@@ -254,7 +233,7 @@
+         self._ultima_ruptura: Dict[str, Optional[str]] = {}
+         self._alertas = AlertManager()
+         self._tg = Telegram()
+-        self._aviso_ultimo: dict = {}   # symbol -> ts del ultimo aviso
++        self._notifications = None
+         # Caches del analisis pesado (ver throttling en on_closed_candle)
+         self._sr_cache: Dict[str, object] = {}
+         self._cons_cache: Dict[str, object] = {}
+@@ -269,6 +248,7 @@
+ 
+     def set_db(self, db) -> None:
+         self._db = db
++        self._notifications = NotificationService(db,self._tg,self.get_symbol)
+         # El tracker de outcomes vive junto a la DB: al reanudar recupera las
+         # señales que seguia antes del reinicio.
+         self._outcomes = OutcomeTracker(db)
+@@ -320,6 +300,8 @@
+             pass
+         try:
+             vivos |= set(self._alertas._activas.keys())
++            if self._notifications is not None:
++                vivos |= self._notifications.symbols()
+         except Exception:
+             pass
+         return vivos
+@@ -1025,145 +1007,56 @@
+         await self._avisar_ruptura(evento)
+ 
+     async def _avisar_ruptura(self, evento: dict) -> None:
+-        if self._ruptures is None:
+-            return
+-        s = get_settings()
+-        if not (s.telegram_rupturas_enabled and self._tg.activo):
+-            self._ruptures.marcar_telegram(evento, "no_procede", "Telegram de rupturas no activo")
+-            return
+-        try:
+-            message_id = await self._tg.avisar_ruptura(texto_ruptura(evento["symbol"], evento))
+-        except Exception as exc:
+-            logger.warning(f"[{evento['symbol']}] aviso de ruptura fallo: {exc}")
+-            self._ruptures.marcar_telegram(evento, "fallo", f"{type(exc).__name__}: {exc}")
+-            return
+-        if message_id is None:
+-            logger.warning(f"[{evento['symbol']}] ruptura no entregada por Telegram")
+-            self._ruptures.marcar_telegram(evento, "fallo", "Telegram no confirmo el envio")
+-            return
+-        self._ruptures.marcar_telegram(evento, "enviado", "aviso inicial", message_id)
+-        logger.info(f"[{evento['symbol']}] RUPTURA enviada a Telegram")
++        # A short market-state change has no independent frozen trade plan.
++        # Keep collecting it; the selected plan owns the only notification thread.
++        self._ruptures.marcar_telegram(
++            evento, "no_procede", "movimiento corto medido en UI; avisos unificados en el plan seleccionado")
++
+ 
+     async def _avisar_seguimiento_ruptura(self, seguimiento: dict) -> None:
++        # Previously sent rupture messages remain useful, but their clock
++        # milestones are silent edits, never additional sendMessage calls.
+         evento = seguimiento["ruptura"]
+-        s = get_settings()
+-        hitos = set(s.telegram_ruptura_hitos_list)
++        mid = evento.get("telegram_message_id")
++        hitos = set(get_settings().telegram_ruptura_hitos_list)
+         disponibles = [h for h in seguimiento["horizontes"] if h in hitos]
+-        message_id = evento.get("telegram_message_id")
+-        if not disponibles or not message_id or not (s.telegram_rupturas_enabled and self._tg.activo):
++        if not mid or not disponibles or not self._tg.activo:
+             return
+         minutos = max(disponibles)
+-        try:
+-            enviado = await self._tg.responder_a(
+-                message_id, texto_seguimiento_ruptura(evento["symbol"], evento, minutos)
+-            )
+-        except Exception as exc:
+-            logger.warning(f"[{evento['symbol']}] seguimiento de ruptura fallo: {exc}")
+-            return
+-        if enviado:
+-            self._ruptures.marcar_telegram(evento, "enviado", f"seguimiento {minutos}m")
+-            logger.info(f"[{evento['symbol']}] seguimiento de ruptura {minutos}m enviado")
+-        else:
+-            logger.warning(f"[{evento['symbol']}] seguimiento de ruptura {minutos}m no entregado")
++        await self._tg.actualizar_mensaje(
++            mid, texto_seguimiento_ruptura(evento["symbol"], evento, minutos)
++            + "\nActualización del movimiento corto; no invalida por sí sola la estructura de 1h.")
++
+ 
+     async def _refrescar_alerta_viva(
+         self, symbol: str, st, now_ms: int, high: float, low: float,
+         close: float, impulso, display: str, viene_de_caida: bool,
+     ) -> None:
+-        """
+-        Pasa la vela recien cerrada por el plan que ya estaba vivo.
+-
+-        Esta parte del ciclo se necesita desde dos sitios distintos, y por eso
+-        esta aqui suelta: ademas del camino normal la llama el veto de
+-        blow-off, que antes hacia `return` sin tocar AlertManager. La vela de
+-        agotamiento es justo la que suele perforar el stop, asi que el
+-        desenlace se quedaba sin registrar hasta la siguiente vela que no fuera
+-        blow-off — y si el par seguia agotado, no llegaba nunca. Un plan vivo
+-        se actualiza SIEMPRE antes de vetar nada.
+-
+-        `impulso` puede venir None (el veto corta antes de calcularlo): la
+-        alerta se actualiza igual, porque el impulso solo alimenta la fase y lo
+-        que no puede esperar es el TP/SL contra los niveles congelados.
+-        """
++        # Notifications follow their own frozen notified plan, even if the UI
++        # alert is reset at +3.2%, replaced, or restored as non-actionable.
++        if self._notifications is not None:
++            try:
++                candle_ms = st.candles[-1].t
++                await self._notifications.observe(symbol,candle_ms,now_ms,high,low,close)
++            except Exception as exc:
++                logger.warning(f"[{symbol}] seguimiento de aviso fallo: {type(exc).__name__}")
+         if not get_settings().alerta_congelada_enabled:
+             return
+         cambio = self._alertas.actualizar(
+             symbol, now_ms, high, low, close, impulso,
+-            display_state=display, viene_de_caida=viene_de_caida,
+-        )
+-        if cambio is not None:
+-            if self._emit:
+-                await self._emit({
+-                    "type": "alerta_cambio",
+-                    "ts": now_ms,
+-                    "symbol": symbol,
+-                    "alerta": cambio.to_dict(),
+-                })
+-            # Si ya se aviso de este par, se EDITA ese mensaje en vez de
+-            # mandar otro: el aviso de las 03:00 se actualiza solo y el
+-            # historial no se llena de repeticiones del mismo simbolo.
+-            if self._tg.activo and self._tg.tiene_mensaje(symbol):
+-                try:
+-                    await self._tg.actualizar(symbol, texto_alerta(
+-                        symbol, cambio.to_dict(), st.retroceso, st.sr_levels))
+-                except Exception as e:
+-                    logger.debug(f"[{symbol}] editar aviso: {e}")
+-                # El SL sale como mensaje aparte, no como edicion: una
+-                # edicion no hace sonar el telefono y esto hay que verlo.
+-                if cambio.motivo_cierre in (MOTIVO_SL, MOTIVO_TP, MOTIVO_META):
+-                    redactar = (
+-                        texto_stop if cambio.motivo_cierre == MOTIVO_SL
+-                        else texto_meta if cambio.motivo_cierre == MOTIVO_META
+-                        else texto_tp
+-                    )
+-                    que = ("stop" if cambio.motivo_cierre == MOTIVO_SL
+-                           else "TP/meta")
+-                    await self._responder_aviso(
+-                        symbol, redactar(symbol, cambio.to_dict()), f"AVISO {que}")
+-
+-        # Escalones de bajada: cada uno suena una vez, colgando del aviso
+-        # original del par. Solo para pares de los que ya se aviso.
++            display_state=display, viene_de_caida=viene_de_caida)
++        if cambio is not None and self._emit:
++            await self._emit({"type":"alerta_cambio","ts":now_ms,
++                              "symbol":symbol,"alerta":cambio.to_dict()})
+         viva = self._alertas.get(symbol)
+-        # Hitos hacia arriba: llegar a la meta y superar +4.2% sobre el
+-        # entry de la PRIMERA señal del episodio.
+-        if viva is not None and viva.hitos_nuevos:
+-            hitos = list(viva.hitos_nuevos)
++        if viva is not None:
++            # Keep the UI's excursion markers; these lists no longer trigger
++            # fixed-percentage drops or duplicate meta/4.2% Telegram messages.
+             viva.hitos_nuevos.clear()
+-            for hito in hitos:
+-                await self._responder_aviso(
+-                    symbol, texto_hito(symbol, viva.to_dict(), hito),
+-                    f"AVISO hito {hito}")
+-        if viva is not None and viva.bajadas_nuevas:
+-            niveles = list(viva.bajadas_nuevas)
+             viva.bajadas_nuevas.clear()
+-            for niv in niveles:
+-                await self._responder_aviso(
+-                    symbol, texto_bajada(symbol, viva.to_dict(), niv),
+-                    f"AVISO bajada -{niv}%")
+-        st.alerta = (
+-            a.to_dict() if (a := self._alertas.get(symbol)) is not None else {}
+-        )
+-
+-    async def _responder_aviso(self, symbol: str, texto: str, que: str) -> bool:
+-        """
+-        Cuelga un aviso de seguimiento del hilo del par y dice si salio.
+-
+-        `responder` devuelve False cuando Telegram rechaza el envio, sin
+-        excepcion de por medio: registrarlo como enviado por no haber reventado
+-        era lo que hacia indistinguible un telefono callado de un sistema roto.
+-        """
+-        if not (self._tg.activo and self._tg.tiene_mensaje(symbol)):
+-            return False
+-        try:
+-            entregado = await self._tg.responder(symbol, texto)
+-        except Exception as e:
+-            logger.warning(f"[{symbol}] {que} fallo: {e}")
+-            return False
+-        if entregado:
+-            logger.info(f"[{symbol}] {que} enviado")
+-        else:
+-            logger.warning(f"[{symbol}] {que} NO entregado: Telegram lo rechazo")
+-        return entregado
++        st.alerta = viva.to_dict() if viva is not None else {}
++
++
+ 
+     async def on_live_candle(
+         self, symbol: str, t: int, o: float, h: float, l: float, c: float, v: float
+@@ -1298,58 +1191,15 @@
+ 
+     async def _quiza_avisar(self, symbol: str, st, snap: dict,
+                             now_ms: int, alerta_id=None) -> None:
+-        """Manda el aviso a Telegram si el par pasa el criterio y no repite."""
+-        if not self._tg.activo:
+-            return
+-        s = get_settings()
+-        # El snapshot base no trae vol_24h — lo añade el helper de liquidez
+-        # solo al abrir outcomes — asi que sin esto el filtro de volumen
+-        # quedaria inerte y pasaria cualquier par ilíquido.
++        if self._notifications is None:
++            return
+         snap = dict(snap)
+         if snap.get("vol_24h") is None and self._db is not None:
+-            try:
+-                row = self._db.get_pair_meta(symbol)
+-                snap["vol_24h"] = row.get("vol_24h") if row else None
+-            except Exception:
+-                snap["vol_24h"] = None
+-        def _anotar(estado, detalle=""):
+-            if alerta_id and self._db is not None:
+-                try:
+-                    self._db.marcar_telegram(alerta_id, estado, detalle)
+-                except Exception:
+-                    pass
+-
+-        ok, motivo = _merece_aviso(snap, st.retroceso or {}, s)
+-        if not ok:
+-            _anotar("no_procede", motivo)
+-            # A nivel INFO a proposito: sin ver el motivo, un telefono callado
+-            # es indistinguible de un sistema roto, y la unica reaccion posible
+-            # es desconfiar de todo.
+-            logger.info(f"[{symbol}] sin aviso: {motivo}")
+-            return
+-        ultimo = self._aviso_ultimo.get(symbol, 0)
+-        if now_ms - ultimo < s.aviso_cooldown_min * 60_000:
+-            logger.debug(f"[{symbol}] sin aviso: en cooldown")
+-            _anotar("no_procede", "en cooldown")
+-            return
+-        self._aviso_ultimo[symbol] = now_ms
+-        self._tg.olvidar(symbol)     # aviso nuevo = hilo nuevo que editar
+-        try:
+-            entregado = await self._tg.avisar(symbol, texto_alerta(
+-                symbol, st.alerta, st.retroceso, st.sr_levels))
+-        except Exception as e:
+-            logger.warning(f"[{symbol}] aviso fallo: {e}")
+-            _anotar("fallo", f"{type(e).__name__}: {e}")
+-            return
+-        # Un rechazo de la API no levanta excepcion: `avisar` devuelve False y
+-        # ese False es lo que se registra. Marcar "enviado" por no haber
+-        # reventado convertia cada rechazo en un aviso fantasma en la tabla.
+-        if entregado:
+-            logger.info(f"[{symbol}] AVISO enviado a Telegram")
+-            _anotar("enviado")
+-        else:
+-            logger.warning(f"[{symbol}] aviso NO entregado: Telegram lo rechazo")
+-            _anotar("fallo", "Telegram no confirmo el envio")
++            row = self._db.get_pair_meta(symbol)
++            snap["vol_24h"] = row.get("vol_24h") if row else None
++        await self._notifications.consider(
++            symbol,alerta_id,snap,st.retroceso or {},st.alerta)
++
+ 
+     # --- Snapshot -------------------------------------------------------------
+ 

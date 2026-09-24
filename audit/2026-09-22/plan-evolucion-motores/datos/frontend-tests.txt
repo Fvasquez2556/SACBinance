@@ -1,0 +1,33 @@
+✔ el par se completa con USDT y se limpia el separador (1.2508ms)
+✔ lo que no tiene forma de par se rechaza antes de pedirlo al backend (0.1438ms)
+✔ una ruptura sin sostener no se enseña como sostenida (0.2402ms)
+✔ sin zona de retest el rango no se disfraza de rango (45.8849ms)
+✔ el plan bajista arrastra su advertencia de que no está medido (0.2604ms)
+✔ un TP que no llega al objetivo tras costes se dice, no se calla (0.9979ms)
+✔ un nivel entre la entrada y el TP se avisa (0.2687ms)
+✔ una ruptura sin plan explica por qué, en vez de quedarse vacía (0.1739ms)
+✔ el desacuerdo entre marcos manda sobre la dirección dominante (0.1888ms)
+✔ solo las dos direcciones cuentan como ruptura (0.2479ms)
+✔ a recovery after the stop remains SL first (1.4195ms)
+✔ target before a later stop is distinguished from a stopped trade (0.1451ms)
+✔ TP and SL in one candle are ambiguous, never a confirmed win (0.107ms)
+✔ a zero-millisecond first touch is retained (0.1102ms)
+✔ older API data cannot establish the order even if it reports TP (0.1586ms)
+✔ invalid and out-of-window timestamps do not establish an order (0.1481ms)
+✔ unfinished observations are not labeled as failed trades (0.7754ms)
+✔ a short TP exit does not claim the later +3.2% as plan profit (0.1933ms)
+✔ goal before SL does not mean the offered TP was reached (0.1304ms)
+✔ an absent stop is described as unobserved, not a known later event (0.1968ms)
+✔ missing coverage is distinct from measured zero, partial, and complete (0.196ms)
+✔ live recalculation cannot replace a frozen plan or its unknown costs (0.1575ms)
+✔ a current proposal is identified separately when no alert exists (0.1047ms)
+✔ coincident rebound and sustained trend are both kept (1.07ms)
+✔ missing numeric values do not become zero performance (0.1319ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 249.561

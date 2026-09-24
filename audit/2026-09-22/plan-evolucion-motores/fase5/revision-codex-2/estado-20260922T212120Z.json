@@ -1,0 +1,129 @@
+{
+  "utc": "2026-09-22T21:21:20.350820+00:00",
+  "files": {
+    "backend/main.py": {
+      "sha256": "2f717a1d0fa04d69da418bf7df73e251ad63c8bcedf6631d90799d4b0e0ec1f8",
+      "normalized": "f1e5f5ac28958ef6652996b19d33d401f75ced872d151bd194550af1abee19b9",
+      "mtime_utc": "2026-09-22T21:00:06.474634+00:00",
+      "local_sha256": "2f717a1d0fa04d69da418bf7df73e251ad63c8bcedf6631d90799d4b0e0ec1f8"
+    },
+    "backend/src/state/engine.py": {
+      "sha256": "0f6b77ea2f010e29f77ad6a8635126a32f225135d6bc0b3fff2ce4042e042edd",
+      "normalized": "376b800517d69de8f5a74d6ca1ec74d6a103750356711b0d6505092223405057",
+      "mtime_utc": "2026-09-22T21:00:05.058632+00:00",
+      "local_sha256": "0f6b77ea2f010e29f77ad6a8635126a32f225135d6bc0b3fff2ce4042e042edd"
+    },
+    "backend/src/persistence/db.py": {
+      "sha256": "0f46f94d3a5fd2a4a65a3fe25f021b8cc76f2729af8df4bd6c0f467ce0c45bf4",
+      "normalized": "2ec79a038f2372c782e5e8e8bccca221bf2bef089b5f03cbc9e69e26a74ad55b",
+      "mtime_utc": "2026-09-22T21:00:05.599633+00:00",
+      "local_sha256": "0f46f94d3a5fd2a4a65a3fe25f021b8cc76f2729af8df4bd6c0f467ce0c45bf4"
+    },
+    "backend/src/config/settings.py": {
+      "sha256": "d2b21bdc2235e66247168a96cf0e7a906a26747999cbba0f345dbbf765f92533",
+      "normalized": "c2ff3e7dd7a07ad2bb4f717bf20c27d522a5a564477ee73e46613d3f5646d553",
+      "mtime_utc": "2026-09-22T21:00:06.036633+00:00",
+      "local_sha256": "d2b21bdc2235e66247168a96cf0e7a906a26747999cbba0f345dbbf765f92533"
+    },
+    "backend/tests/test_experimentos.py": {
+      "sha256": "d731260af290bcf3de8fc8892b8d35861b462f4251241413492de0f44bb31558",
+      "normalized": "746c2de82da479c9f2061b1ac24bf47f931f902d8c5d9a6f7cb94ea971cebf91",
+      "mtime_utc": "2026-09-22T21:00:04.659631+00:00",
+      "local_sha256": "d731260af290bcf3de8fc8892b8d35861b462f4251241413492de0f44bb31558"
+    },
+    "backend/src/evaluacion/recorrido.py": {
+      "sha256": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285",
+      "normalized": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285",
+      "mtime_utc": "2026-09-22T02:57:21.966023+00:00",
+      "local_sha256": "d7090e2126bcbd60cdcd5bf9127a6af6085860a8c9114254ecf773d2ae438285"
+    },
+    "backend/src/experimentos/__init__.py": {
+      "sha256": "d6ab3e58903b7997870fb3e717bb592073095cb60b486b4b71495250d79b5222",
+      "normalized": "b9515c82a866fc85d28b093270518a2ae036ec80727c92fdde15ea28385b9506",
+      "mtime_utc": "2026-09-22T21:00:04.037631+00:00",
+      "local_sha256": "d6ab3e58903b7997870fb3e717bb592073095cb60b486b4b71495250d79b5222"
+    },
+    "backend/src/experimentos/registro.py": {
+      "sha256": "9f8b8fceaa26d9b0135fef863c14ca537fdec603f271e62669132ab2f0a29568",
+      "normalized": "3a64464ea3c79f8ff61aa081a1b00177a8ac5552b224ca9a28b264df4106dde5",
+      "mtime_utc": "2026-09-22T21:00:04.182631+00:00",
+      "local_sha256": "9f8b8fceaa26d9b0135fef863c14ca537fdec603f271e62669132ab2f0a29568"
+    },
+    "backend/src/experimentos/almacen.py": {
+      "sha256": "ef7f247435033cac47e14fa2a4dac108a55978bd10af874635c2d8d7868eac3c",
+      "normalized": "a8558dce09e2354d7d89dab6ba0e8860ded47dcad9860d37df478b04125b235f",
+      "mtime_utc": "2026-09-22T21:00:04.077631+00:00",
+      "local_sha256": "ef7f247435033cac47e14fa2a4dac108a55978bd10af874635c2d8d7868eac3c"
+    },
+    "backend/src/experimentos/informe.py": {
+      "sha256": "c299d462dcc543e36d8ce05e571824f9fe79b19d966259a84b042cd5d4a32a9b",
+      "normalized": "c299d462dcc543e36d8ce05e571824f9fe79b19d966259a84b042cd5d4a32a9b",
+      "mtime_utc": "2026-09-22T21:00:04.145631+00:00",
+      "local_sha256": "c299d462dcc543e36d8ce05e571824f9fe79b19d966259a84b042cd5d4a32a9b"
+    },
+    "backend/src/experimentos/cartera.py": {
+      "sha256": "3bc0809d60ed2a29106c42dc41f30293b378bbbab156467acb016f419c23d710",
+      "normalized": "3bc0809d60ed2a29106c42dc41f30293b378bbbab156467acb016f419c23d710",
+      "mtime_utc": "2026-09-22T21:00:04.111631+00:00",
+      "local_sha256": "3bc0809d60ed2a29106c42dc41f30293b378bbbab156467acb016f419c23d710"
+    }
+  },
+  "service": "ActiveState=active\nSubState=running\nMainPID=3615954\nNRestarts=12\nExecMainStartTimestamp=Tue 2026-09-22 21:00:56 UTC\n",
+  "http": {
+    "status": 200,
+    "pairs_count": null,
+    "state": null
+  },
+  "schema": [
+    {
+      "key": "version",
+      "value": "20"
+    }
+  ],
+  "experiment_tables": [
+    {
+      "name": "experimento_registro"
+    },
+    {
+      "name": "experimento_resultados"
+    }
+  ],
+  "registry": [
+    {
+      "huella": "cef2ec54020c46ca",
+      "version": "fase5-v3",
+      "declaracion": "{\"cobertura_minima\": 0.9, \"documento\": \"fase5/REGISTRO_CONGELADO.md\", \"documento_sha256\": \"af285a769f2d1f1ccfcd97e5c497d5a52a0fdd35cc553ac3dfb511b0da752900\", \"evaluador\": \"recorrido-v1\", \"filtros\": {\"D1\": \"ancla de 1h con ruptura alcista al crear el plan\", \"D2\": \"primera oportunidad de su episodio\", \"D3\": \"avisado por Telegram\"}, \"metodo\": \"metodo-v2\", \"poblacion_decisoria\": \"avisado por Telegram Y primera oportunidad de su episodio\", \"politicas\": [{\"clave\": \"REF\", \"descripcion\": \"la politica vigente: entrada, TP y SL que el plan congelo\", \"descuento_pct\": null, \"eje\": \"REFERENCIA\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"A1\", \"descripcion\": \"objetivo fijo +2,7 % neto\", \"descuento_pct\": null, \"eje\": \"SALIDA\", \"exploracion\": false, \"objetivo_neto_pct\": 2.7, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"A2\", \"descripcion\": \"objetivo fijo +3,2 % neto\", \"descuento_pct\": null, \"eje\": \"SALIDA\", \"exploracion\": false, \"objetivo_neto_pct\": 3.2, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"A3\", \"descripcion\": \"objetivo fijo +4,2 % neto — el rival principal\", \"descuento_pct\": null, \"eje\": \"SALIDA\", \"exploracion\": false, \"objetivo_neto_pct\": 4.2, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"A4\", \"descripcion\": \"objetivo fijo +4,7 % neto\", \"descuento_pct\": null, \"eje\": \"SALIDA\", \"exploracion\": false, \"objetivo_neto_pct\": 4.7, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"A5\", \"descripcion\": \"objetivo fijo +5,2 % neto — exploracion registrada\", \"descuento_pct\": null, \"eje\": \"SALIDA\", \"exploracion\": true, \"objetivo_neto_pct\": 5.2, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"B1\", \"descripcion\": \"comprar 0,5 % por debajo; mismo precio objetivo\", \"descuento_pct\": 0.5, \"eje\": \"ENTRADA\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"B2\", \"descripcion\": \"comprar 1,5 % por debajo; mismo precio objetivo\", \"descuento_pct\": 1.5, \"eje\": \"ENTRADA\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": null, \"stop_pct\": null}, {\"clave\": \"C1\", \"descripcion\": \"stop fijo -2,0 %\", \"descuento_pct\": null, \"eje\": \"STOP\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": null, \"stop_pct\": 2.0}, {\"clave\": \"C2\", \"descripcion\": \"stop fijo -3,0 %\", \"descuento_pct\": null, \"eje\": \"STOP\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": null, \"stop_pct\": 3.0}, {\"clave\": \"C3\", \"descripcion\": \"stop del plan x 1,5\", \"descuento_pct\": null, \"eje\": \"STOP\", \"exploracion\": false, \"objetivo_neto_pct\": null, \"stop_multiplo\": 1.5, \"stop_pct\": null}], \"puertas\": {\"bootstrap\": \"agrupado por par\", \"dinero_limite_inferior_pct\": 0.3, \"habilidad_min_puntos\": 0.0, \"ic\": 95, \"n_minimo\": 50, \"terreno_nuevo\": \"solo planes creados despues de la congelacion\"}, \"regla_cobertura\": \"un plan solo es medible con cobertura >= 0,90 de las velas esperadas; por debajo se marca SIN_DATOS, no entra en ninguna media y se puede volver a medir cuando las velas se recuperen\", \"regla_fill\": \"la vela del fill aplica su STOP (se lleno bajando, asi que el minimo vino despues) pero NO concede el objetivo (su maximo pudo ser anterior al fill); solo cuentan velas cuyo minuto entero cae en la ventana\", \"version\": \"fase5-v3\"}",
+      "ts_congelado": 1790110861014
+    }
+  ],
+  "results": [],
+  "new_plans": [
+    {
+      "huella": "cef2ec54020c46ca",
+      "n": 40,
+      "first_created": 1790110980913,
+      "first_due": 1790154180913
+    }
+  ],
+  "flags_explicit_in_env": {},
+  "experiment_log": [
+    "[2026-09-22 21:01:01.014] [INFO   ] [state.engine                ] Experimentos de la fase 5: huella cef2ec54020c46ca, congelada ahora"
+  ],
+  "comparison": {
+    "matching": [
+      "backend/main.py",
+      "backend/src/state/engine.py",
+      "backend/src/persistence/db.py",
+      "backend/src/config/settings.py",
+      "backend/tests/test_experimentos.py",
+      "backend/src/evaluacion/recorrido.py",
+      "backend/src/experimentos/__init__.py",
+      "backend/src/experimentos/registro.py",
+      "backend/src/experimentos/almacen.py",
+      "backend/src/experimentos/informe.py",
+      "backend/src/experimentos/cartera.py"
+    ],
+    "different": [],
+    "missing_remote": []
+  }
+}

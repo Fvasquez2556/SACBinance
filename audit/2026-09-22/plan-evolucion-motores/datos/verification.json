@@ -1,0 +1,54 @@
+{
+  "independent_raw_bar_recalculation": [
+    {
+      "target_net_pct": null,
+      "n": 176,
+      "hits": 45,
+      "mean_net_pct": 0.8948187809236096,
+      "verified": true
+    },
+    {
+      "target_net_pct": 1.2,
+      "n": 176,
+      "hits": 132,
+      "mean_net_pct": 0.31414575076867485,
+      "verified": true
+    },
+    {
+      "target_net_pct": 2.2,
+      "n": 176,
+      "hits": 105,
+      "mean_net_pct": 0.6025829776049073,
+      "verified": true
+    },
+    {
+      "target_net_pct": 2.7,
+      "n": 176,
+      "hits": 99,
+      "mean_net_pct": 0.723903197533189,
+      "verified": true
+    },
+    {
+      "target_net_pct": 3.2,
+      "n": 176,
+      "hits": 87,
+      "mean_net_pct": 0.6986949986061255,
+      "verified": true
+    },
+    {
+      "target_net_pct": 4.2,
+      "n": 176,
+      "hits": 73,
+      "mean_net_pct": 0.9420589042088673,
+      "verified": true
+    },
+    {
+      "target_net_pct": 5.2,
+      "n": 176,
+      "hits": 53,
+      "mean_net_pct": 0.9432259368524044,
+      "verified": true
+    }
+  ],
+  "source_sha256_valid": true
+}
