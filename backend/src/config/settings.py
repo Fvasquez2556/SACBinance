@@ -187,6 +187,39 @@ class Settings(BaseSettings):
     # arreglo.
     exigir_objetivo_operador: bool = Field(default=False)
 
+    # --- Informe por marco temporal (consulta manual de un par) ---
+    # El tablero clasifica la ruptura sobre la FSM de 1m: es una lectura de un
+    # solo marco. Este informe repite la lectura en cada TF por separado para
+    # ver si el movimiento de 1m va a favor o en contra de los marcos largos.
+    # Es una lectura nueva, sin medicion propia todavia: no decide nada del
+    # tablero ni de los avisos.
+    informe_tfs: str = Field(default="5m,15m,1h,4h")
+    # Velas hacia atras que definen "antes de la ruptura". El nivel se busca
+    # sobre la ventana que termina ahi, no sobre la vela actual: si se buscara
+    # con el precio de ahora, un nivel ya roto aparece como soporte y la
+    # ruptura se vuelve invisible justo cuando acaba de ocurrir.
+    informe_ruptura_lookback: int = Field(default=6)
+    # Cierres mas alla del nivel para llamarla confirmada. Con 1 basta una
+    # mecha; el resto se publica como "en curso, sin confirmar".
+    informe_ruptura_confirm_velas: int = Field(default=2)
+    # Ancho maximo del rango de entrada (% del precio). El rango va del nivel
+    # roto al precio actual: si el precio ya se fue muy lejos del nivel, el
+    # rango entero dejaria de ser una entrada y pasaria a ser una apuesta.
+    informe_rango_max_pct: float = Field(default=3.0)
+    # Cache del informe por par. Una consulta a un par que no esta en el
+    # universo son 5 peticiones REST a Binance; sin cache, recargar la pantalla
+    # las repite todas.
+    informe_cache_seconds: int = Field(default=20)
+
+    # --- Sombra de rupturas por marco ---
+    # Se registran y se miden, no se publican: ni tablero, ni Telegram, ni
+    # scoring. Es para poder pasarlas algun dia por las tres puertas sobre
+    # señales nuevas, que es lo que ninguna de estas lecturas tiene todavia.
+    sombra_tf_enabled: bool = Field(default=True)
+    # Cooldown en velas DEL PROPIO marco: 6 son 30 min en 5m y un dia en 4h.
+    # En minutos serviria a un marco y no al otro.
+    sombra_tf_cooldown_velas: int = Field(default=6)
+
     # --- Clasificacion de estado visible (filtro de contexto) ---
     # "TOCÓ FONDO" / "CONSOLIDANDO" solo si el precio esta en la zona baja del
     # rango 15m. Por encima de esto, un dip de 1m es un pullback, no un fondo.
@@ -212,6 +245,116 @@ class Settings(BaseSettings):
 
     # --- Auto-evaluacion de señales ---
     signal_expiry_hours: int = Field(default=12)    # cierra como EXPIRED tras N horas
+
+    # --- Identidad por episodio (fase 1 del plan de evolucion, en sombra) ---
+    #
+    # A que movimiento pertenece cada aviso. La ventana se fijo el 21-sep-2026
+    # midiendo: la mediana entre dos avisos del mismo par es de 21 h y el 82%
+    # de las repeticiones tarda mas de 12 h, asi que con 12 h casi todo aviso
+    # de Telegram es la primera de su episodio (212 de 229 medidos). Con 4-6 h
+    # se partirian movimientos que son uno solo; con 24 h se fundirian dos.
+    #
+    # La tolerancia del ancla sale de la misma medicion: dentro de 12 h el
+    # stop estructural se mueve 0,20% de mediana y el 90% no pasa del 2,62%.
+    # Mas que eso ya es otra tesis, aunque el reloj no haya vencido.
+    episodio_registro_enabled: bool = Field(default=True)
+    episodio_silencio_horas: int = Field(default=12, ge=1)
+    episodio_ancla_tolerancia_pct: float = Field(default=2.5, gt=0)
+
+    # --- Evaluador comun de recorridos (fase 2, en sombra) ---
+    #
+    # Mide en paralelo a los cuatro trackers actuales para poder compararlos
+    # antes de retirar ninguno. El limite por pasada existe para no competir
+    # con el ciclo de velas: lo que no entra espera a la siguiente, y como el
+    # recorrido se reconstruye desde las velas guardadas, llegar tarde no
+    # pierde nada.
+    evaluador_recorridos_enabled: bool = Field(default=True)
+    evaluador_max_planes_por_pasada: int = Field(default=60, ge=1)
+
+    # --- Los dos motores en sombra (fase 4) ---
+    #
+    # El ancla es 1h porque es el unico marco que bate a su control: medido el
+    # 22-sep sobre 43.500 rupturas maduras con barreras homogeneas en R,
+    # 1h +8,46 pp y estable al partir la muestra, mientras 5m da -4,32 pp y
+    # 15m no se distingue del azar. Los marcos rapidos entran como contexto.
+    #
+    # `max_edad_min` es el reloj del ancla: una lectura de 1h de hace cuatro
+    # horas describe otro mercado, y usarla en silencio seria justo el fallback
+    # que el plan prohibe. Pasado ese plazo el motor dice que le falta el dato.
+    motores_enabled: bool = Field(default=True)
+    motores_ancla_tf: str = Field(default="1h")
+    motores_ancla_max_edad_min: int = Field(default=240, ge=1)
+    motores_retest_banda_pct: float = Field(default=1.5, gt=0)
+    motores_vol_minimo: float = Field(default=1.0, gt=0)
+
+    # La muestra del universo. Sin ella, todo lo guardado seria poblacion que
+    # ya paso el filtro comprador, y cualquier tasa medida sobre eso esta
+    # condicionada al filtro que se queria evaluar.
+    motores_muestra_por_pasada: int = Field(default=12, ge=0)
+    motores_muestra_cada_min: int = Field(default=5, ge=1)
+    motores_max_filas_por_pasada: int = Field(default=120, ge=1)
+    motores_transicion_cooldown_min: int = Field(default=5, ge=0)
+
+    # Motor de caida. La caducidad es la misma ventana del episodio (12 h): un
+    # movimiento que sigue vivo al dia siguiente es otro episodio, no el mismo.
+    # En MAGNITUD: `retroceso.caida_pct` llega con signo negativo.
+    motor_caida_min_caida_pct: float = Field(default=2.0, gt=0)
+    motor_caida_base_min_velas: int = Field(default=20, ge=1)
+    motor_caida_caducidad_horas: int = Field(default=12, ge=1)
+
+    # --- Prueba prospectiva de salidas y seleccion (fase 5) ---
+    #
+    # Las politicas NO son configurables: viven congeladas en
+    # `src/experimentos/registro.py` con una huella de contenido, y moverlas
+    # desde un ajuste seria justo lo que una prueba prospectiva prohibe. Lo
+    # unico que se ajusta aqui es cuanto trabajo hace por pasada.
+    experimentos_enabled: bool = Field(default=True)
+    # 3 y no 20: cada plan cuesta ~63 ms (11 politicas x 720 velas) y el bucle
+    # de mantenimiento es sincrono — bloquearlo 1,6 s deja al lector del
+    # WebSocket sin turno. Con 3 por pasada y una pasada cada 5 s la capacidad
+    # es de 2.160 planes/hora contra los 83/hora que llegan de verdad: 26 veces
+    # de margen, y un atasco de un dia entero se drena en menos de una hora.
+    experimentos_max_planes_por_pasada: int = Field(default=3, ge=1)
+
+    # --- Activacion gradual y reversion (fase 7a) ---
+    #
+    # Las reglas NO son configurables: viven congeladas en
+    # `src/activacion/registro.py` con su huella. La fraccion, los umbrales de
+    # reversion y el calendario de la rampa se cambian abriendo otra version
+    # del registro, no tocando un ajuste — que es justo lo que convertiria una
+    # prueba prospectiva en una busqueda.
+    #
+    # `activacion_enabled` NO activa el rival: solo enciende el reparto por
+    # episodio, que corre en sombra y no toca ninguna emision. Encender el
+    # rival exige atarlo con `AlmacenActivacion.activar()`, que pide la
+    # revision explicita del operador y comprueba las cuatro puertas.
+    activacion_enabled: bool = Field(default=True)
+
+    # --- Suelo de cobertura para las lecturas retrospectivas ---
+    #
+    # `plan_recorrido` marca completa=1 cuando la ventana de 12 h VENCE, sin
+    # mirar cuantas velas llego a ver. Y las velas que faltan no se pierden al
+    # azar: una vela ausente borra la barrera que mas se toca, y la que mas se
+    # toca es la mas cercana — el stop. Faltar datos FABRICA objetivos.
+    #
+    # Medido el 24-sep sobre 1.681 recorridos, la habilidad aparente cae de
+    # forma monotona segun sube la cobertura: +26,67 pp entre 0,75 y 0,90,
+    # +14,61 pp entre 0,90 y 0,99, y +2,49 pp por encima de 0,99.
+    #
+    # 0,99 y no 0,90 (el suelo de la fase 5) porque aqui el suelo SI muerde: la
+    # fase 5 mide casi solo recorridos completos —33 de 14.642 bajan de 0,99— y
+    # su suelo no llega a actuar, mientras que `plan_recorrido` lo incluye todo.
+    presentacion_cobertura_minima: float = Field(default=0.99, ge=0.0, le=1.0)
+
+    # --- Tasas medidas del informe por marcos ---
+    #
+    # El informe describia estructura sin ningun numero detras mientras
+    # `rupturas_tf` acumulaba 49.648 rupturas con su desenlace. Ahora cada
+    # lectura lleva su tasa base, su n y su ventana. Por debajo de `min_n` se
+    # dice «sin estimacion fiable» en vez de rellenar con una celda mas ancha.
+    informe_stats_dias: int = Field(default=14, ge=1)
+    informe_stats_min_n: int = Field(default=50, ge=1)
+    informe_stats_cache_seconds: int = Field(default=300, ge=0)
 
     # --- Fuerza del impulso (derivada, no magnitud) ---
     # El score mide cuanto subio; esto mide si SIGUE subiendo. Se compara la
@@ -245,6 +388,11 @@ class Settings(BaseSettings):
     alerta_minutos_declive: int = Field(default=10)
     # Vida maxima de una alerta sin desenlace
     alerta_vida_horas: int = Field(default=6)
+    # Si el TP congelado queda por debajo de la meta fija (+3.2%), tocarlo no
+    # termina la tesis: se observa este tiempo si el precio logra extenderse
+    # por encima. Evita resetear una continuacion solo porque el TP calculado
+    # por R:R era corto.
+    alerta_tp_corto_extension_horas: int = Field(default=4)
     # Espera antes de admitir una alerta nueva del mismo par
     alerta_recooldown_minutos: int = Field(default=45)
     # Recorrido maximo ya consumido para admitir una alerta NUEVA. Es una
@@ -273,11 +421,7 @@ class Settings(BaseSettings):
     # (retroceso_dinamico.py) y no aporta nada sobre el numero fijo.
     retroceso_entrada_pct: float = Field(default=1.8)
 
-    # --- Avisos de BAJADA ---
-    # Escalones bajo el entry congelado que disparan aviso, una vez cada uno.
-    # De 1391 senales cerradas, 217 subieron >=2.2% y despues cayeron al SL:
-    # saber que una alerta viva se esta dando la vuelta importa tanto como
-    # saber que nacio. El SL propio de la senal avisa aparte.
+    # Marcadores de bajada de la UI; no generan mensajes de Telegram.
     aviso_bajada_pct: str = Field(default="0.4,0.9,1.8")
 
     # --- Avisos por Telegram ---
@@ -286,13 +430,22 @@ class Settings(BaseSettings):
     telegram_enabled: bool = Field(default=False)
     telegram_token: str = Field(default="")
     telegram_chat_id: str = Field(default="")
-    # Criterio de aviso. Con ~460 señales al dia, avisar de todas equivale a no
-    # avisar de ninguna: se silencia el primer dia. Estos filtros lo bajan a
-    # ~15 diarios (research/volumen_avisos.py) y son los que tienen respaldo.
-    aviso_solo_confirmado: bool = Field(default=True)   # exige rebote >=1%
+    # Compatibilidad con la configuracion anterior. Los movimientos cortos
+    # nuevos se miden en la UI; sus antiguos hilos solo reciben ediciones.
+    telegram_rupturas_enabled: bool = Field(default=True)
+    telegram_ruptura_cooldown_min: int = Field(default=60)
+    telegram_ruptura_hitos_min: str = Field(default="15,60,240,1440")
+    # Filtros de seleccion de planes. El score no es una probabilidad.
+    aviso_solo_confirmado: bool = Field(default=True)   # para escenarios de rebote
     aviso_score_min: int = Field(default=75)
     aviso_vol24h_min: float = Field(default=2_000_000)
     aviso_cooldown_min: int = Field(default=45)   # por par, evita repetir
+    # Presupuesto SOLO de oportunidades nuevas; nunca bloquea TP/SL.
+    aviso_max_nuevas_hora: int = Field(default=3, ge=1)
+    aviso_lote_segundos: int = Field(default=30, ge=1, le=60)
+    aviso_actualizar_minutos: int = Field(default=5, ge=1)
+    aviso_desvio_entrada_max_pct: float = Field(default=0.5, gt=0)
+    aviso_stop_cercano_fraccion: float = Field(default=0.8, gt=0, lt=1)
 
     # --- Patron validado: "viene de caer" ---
     # research/marea_ingredientes.py, 7-sep-2026: una caida >=2% en los 40
@@ -408,12 +561,30 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO")
 
     @property
+    def informe_tfs_list(self) -> List[str]:
+        validos = ("1m", "5m", "15m", "1h", "4h", "1d")
+        return [t.strip() for t in self.informe_tfs.split(",")
+                if t.strip() in validos]
+
+    @property
     def htf_live_tfs_list(self) -> List[str]:
         return [t.strip() for t in self.htf_live_tfs.split(",") if t.strip()]
 
     @property
     def cors_origins_list(self) -> List[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def telegram_ruptura_hitos_list(self) -> List[int]:
+        values = []
+        for raw in self.telegram_ruptura_hitos_min.split(","):
+            try:
+                minutos = int(raw.strip())
+            except ValueError:
+                continue
+            if 0 < minutos <= 1440:
+                values.append(minutos)
+        return sorted(set(values))
 
 
 @lru_cache()

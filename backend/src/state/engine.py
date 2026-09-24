@@ -23,12 +23,17 @@ from src.analysis.macro_gate import aplicar_gate, calcular_tendencia_global
 from src.analysis.scoring import score_and_tier
 from src.analysis.impulse import medir_impulso
 from src.analysis.outcome_tracker import OutcomeTracker
+from src.analysis.rupture_tracker import RuptureTracker
+from src.analysis.tf_rupture_tracker import TFRuptureShadow
+from src.analysis.ruptures import clasificar as clasificar_ruptura
 from src.analysis.signal_tracker import abrir_senal, evaluar_senales
 from src.analysis import grupos
 from src.analysis.retroceso import detectar_retroceso
 from src.utils import procedencia
-from src.notify.telegram import (Telegram, texto_alerta, texto_bajada,
-                                 texto_hito, texto_stop, texto_tp)
+from src.notify.telegram import Telegram, texto_seguimiento_ruptura
+from src.motores.contrato import ORIGEN_ALERTA, ORIGEN_VETO
+from src.motores.servicio import ServicioMotores
+from src.notify.service import NotificationService
 from src.analysis.trade_levels import calcular_niveles
 from src.config.settings import get_settings
 from src.indicators.calculator import indicators_from_candles
@@ -43,7 +48,7 @@ from src.state.state_machine import (
     evaluate,
     provisional_state,
 )
-from src.state.active_alert import MOTIVO_SL, MOTIVO_TP, AlertManager
+from src.state.active_alert import AlertManager
 from src.state.symbol_state import (
     DISPLAY_BREAKOUT,
     DISPLAY_CAYENDO,
@@ -69,6 +74,7 @@ _INTERESTING_DISPLAY = {
     DISPLAY_SUBIENDO,
     DISPLAY_BREAKOUT,
 }
+_DASHBOARD_DISPLAY = _INTERESTING_DISPLAY | {DISPLAY_CAYENDO}
 
 
 def _pos_en_rango(candles_15m: list, price: float) -> float:
@@ -160,25 +166,6 @@ def _tier_order(tier: str) -> int:
 _VETOS_CONTABLES = ("ya hay una alerta viva", "cooldown")
 
 
-def _merece_aviso(snap: dict, retro: dict, s) -> tuple:
-    """
-    ¿Este par justifica sonar el telefono? Devuelve (bool, motivo).
-
-    El sistema emite ~460 señales al dia. Avisar de todas es lo mismo que no
-    avisar de ninguna, porque se silencia el primer dia. Estos filtros lo dejan
-    en ~15 diarios y son los que tienen respaldo medido
-    (research/volumen_avisos.py).
-    """
-    if s.aviso_solo_confirmado and not retro.get("confirmado"):
-        return False, "sin rebote confirmado"
-    if not retro.get("detectado"):
-        return False, "no viene de una caida"
-    if (snap.get("score") or 0) < s.aviso_score_min:
-        return False, f"score {snap.get('score')} < {s.aviso_score_min}"
-    vol = (snap.get("vol_24h") or 0)
-    if vol and vol < s.aviso_vol24h_min:
-        return False, f"volumen 24h {vol:.0f} bajo"
-    return True, ""
 
 
 def _orden_tablero(x: dict) -> tuple:
@@ -242,9 +229,17 @@ class StateEngine:
         self._last_live: Dict[str, float] = {}
         self._db = None
         self._outcomes: Optional[OutcomeTracker] = None
+        self._ruptures: Optional[RuptureTracker] = None
+        self._ruptures_tf: Optional[TFRuptureShadow] = None
+        self._rupturas_armadas = False
+        self._ultima_ruptura: Dict[str, Optional[str]] = {}
         self._alertas = AlertManager()
         self._tg = Telegram()
-        self._aviso_ultimo: dict = {}   # symbol -> ts del ultimo aviso
+        self._notifications = None
+        self._episodios = None
+        self._recorridos = None
+        self._motores = None
+        self._experimentos = None
         # Caches del analisis pesado (ver throttling en on_closed_candle)
         self._sr_cache: Dict[str, object] = {}
         self._cons_cache: Dict[str, object] = {}
@@ -259,10 +254,76 @@ class StateEngine:
 
     def set_db(self, db) -> None:
         self._db = db
+        self._notifications = NotificationService(db,self._tg,self.get_symbol)
         # El tracker de outcomes vive junto a la DB: al reanudar recupera las
         # señales que seguia antes del reinicio.
         self._outcomes = OutcomeTracker(db)
         self._outcomes.cargar()
+        self._ruptures = RuptureTracker(db)
+        self._ruptures.cargar()
+        self._ruptures_tf = TFRuptureShadow(db)
+        self._ruptures_tf.cargar()
+        # Identidad por episodio y por plan: fase 1, en sombra. El estado vive
+        # en la tabla, asi que reanudar no reabre un episodio ya cerrado.
+        self._episodios = db.registro_episodios()
+        # Evaluador comun de recorridos: mide en paralelo a los trackers
+        # existentes para poder compararlos antes de retirar ninguno.
+        self._recorridos = db.almacen_recorridos()
+        # Fase 4: los dos motores, en sombra. Corren DESPUES de que la emision
+        # ya esta decidida y escriben en tablas propias. Su estado vive en
+        # `motor_estado`, asi que reiniciar no reabre una caida ya cerrada.
+        self._motores = ServicioMotores(db.almacen_motores())
+        # Fase 5: las politicas congeladas. Se congelan al arrancar — si la
+        # huella ya existe, conserva su fecha original en vez de pisarla.
+        self._experimentos = db.almacen_experimentos()
+        try:
+            marca = self._experimentos.congelar()
+            logger.info(
+                f"Experimentos de la fase 5: huella {marca['huella']}, "
+                + ("congelada ahora" if marca["nuevo"] else
+                   f"congelada el {marca['ts_congelado']}"))
+        except Exception as exc:
+            logger.warning(f"No se pudo congelar el registro de experimentos: {exc}")
+        # Fase 7a: las reglas de activacion, congeladas y APAGADAS. Lo unico
+        # que corre es el reparto por episodio, en sombra, para que el dia del
+        # veredicto activar sea un interruptor y no un estreno.
+        self._activacion = db.almacen_activacion()
+        try:
+            marca = self._activacion.congelar()
+            est = self._activacion.estado()
+            logger.info(
+                f"Activacion fase 7a: huella {marca['huella']}, "
+                + ("congelada ahora" if marca["nuevo"] else "ya congelada")
+                + f"; rival {est['rival'] or 'ninguno'}, "
+                + ("ACTIVA" if est["activo"] else "apagada"))
+            problemas = self._activacion.verificar_integridad()
+            if problemas:
+                logger.warning("Integridad de la activacion: " + "; ".join(problemas))
+        except Exception as exc:
+            logger.warning(f"No se pudo congelar el registro de activacion: {exc}")
+
+    def armar_seguimiento_rupturas(self) -> None:
+        """Activa eventos nuevos sin anunciar los estados heredados del arranque."""
+        self._rupturas_armadas = True
+        for symbol, st in self.states.items():
+            ruptura = clasificar_ruptura(st.snapshot())
+            self._ultima_ruptura[symbol] = ruptura.direccion if ruptura else None
+        # La sombra por marcos se siembra igual y por la misma razon: al
+        # arrancar medio universo ya esta al otro lado de algun nivel, y eso
+        # ocurrio antes de estar mirando — no es terreno nuevo.
+        if self._ruptures_tf is not None:
+            try:
+                self._ruptures_tf.armar(self.states)
+            except Exception as exc:
+                logger.warning(f"No se pudo armar la sombra por marcos: {exc}")
+        # El ancla de 1h de los motores se siembra igual: sin ella dirian
+        # "falta la lectura de 1h" durante la primera hora, que es cierto pero
+        # evitable porque las velas ya estan en el buffer.
+        if self._motores is not None:
+            try:
+                self._motores.armar(self.states)
+            except Exception as exc:
+                logger.warning(f"No se pudo armar el ancla de los motores: {exc}")
 
 
     def simbolos_en_seguimiento(self) -> set:
@@ -280,7 +341,19 @@ class StateEngine:
         except Exception:
             pass
         try:
+            if self._ruptures is not None:
+                vivos |= self._ruptures.symbols()
+        except Exception:
+            pass
+        try:
+            if self._ruptures_tf is not None:
+                vivos |= self._ruptures_tf.symbols()
+        except Exception:
+            pass
+        try:
             vivos |= set(self._alertas._activas.keys())
+            if self._notifications is not None:
+                vivos |= self._notifications.symbols()
         except Exception:
             pass
         return vivos
@@ -450,6 +523,23 @@ class StateEngine:
         if tf in get_settings().htf_live_tfs_list:
             self._update_ind_htf(st, tf)
 
+        # Sombra: una ruptura de marco solo puede cambiar cuando cierra una
+        # vela de ESE marco, asi que se evalua aqui y no en cada vela de 1m.
+        # En la vuelta normal es una sola lectura del marco que cerro.
+        if self._ruptures_tf is not None:
+            try:
+                self._ruptures_tf.evaluar(symbol, st, tf, int(time.time() * 1000))
+            except Exception as e:
+                logger.debug(f"[{symbol}/{tf}] sombra por marcos error: {e}")
+
+        # El ancla de los motores se relee aqui por el mismo motivo: una
+        # ruptura de 1h solo puede cambiar cuando cierra una vela de 1h.
+        if self._motores is not None:
+            try:
+                self._motores.refrescar_ancla(symbol, st, tf, int(time.time() * 1000))
+            except Exception as e:
+                logger.debug(f"[{symbol}/{tf}] ancla de motores: {e}")
+
     # --- 1m (FSM reactiva) ----------------------------------------------------
 
     async def on_closed_candle(
@@ -480,6 +570,20 @@ class StateEngine:
                 self._outcomes.on_candle(symbol, t, h, l, c)
             except Exception as e:
                 logger.debug(f"[{symbol}] outcome_tracker error: {e}")
+
+        if self._ruptures is not None:
+            try:
+                seguimientos = self._ruptures.on_candle(symbol, t, h, l, c)
+                for seguimiento in seguimientos:
+                    await self._avisar_seguimiento_ruptura(seguimiento)
+            except Exception as e:
+                logger.debug(f"[{symbol}] rupture_tracker error: {e}")
+
+        if self._ruptures_tf is not None:
+            try:
+                self._ruptures_tf.on_candle(symbol, t, h, l, c)
+            except Exception as e:
+                logger.debug(f"[{symbol}] sombra por marcos error: {e}")
 
         # Auto-evaluacion: la vela nueva puede tocar TP/SL de señales abiertas
         cerradas = evaluar_senales(symbol, h, l, c, self._db)
@@ -516,6 +620,7 @@ class StateEngine:
             st.score = 0
             st.tier = "NINGUNO"
             st.trade_levels = {}
+            await self._evaluar_ruptura(symbol, st, now_ms)
             logger.info(f"[{symbol}] -> AGOTADO (blow-off) {bo.reason}")
             self._log_db(symbol, "VETO", f"AGOTADO (blow-off): {bo.reason}")
             if self._emit:
@@ -755,6 +860,8 @@ class StateEngine:
             and _tier_order(tier) > _tier_order(self._last_tier.get(symbol, "NINGUNO"))
         )
 
+        await self._evaluar_ruptura(symbol, st, now_ms)
+
         if state_changed:
             st.push_state_history(now_ms, display, val, tier)
             st.score_since_ms = now_ms
@@ -866,6 +973,13 @@ class StateEngine:
                         snap = st.snapshot()
                         alerta_id = self._registrar_alerta(
                             symbol, st, snap, tl, sig_id, now_ms)
+                        self._registrar_identidad(
+                            symbol, snap, tl, sig_id, now_ms, alerta_id)
+                        self._leer_motores(
+                            symbol, st, now_ms, origen=ORIGEN_ALERTA,
+                            alerta_id=alerta_id,
+                            plan_id=(st.alerta or {}).get("plan_id"),
+                            episode_id=(st.alerta or {}).get("episode_id"))
                         await self._quiza_avisar(symbol, st, snap, now_ms,
                                                  alerta_id=alerta_id)
 
@@ -919,105 +1033,102 @@ class StateEngine:
                     **st.snapshot(),
                 })
 
+        # Fase 4: la pasada normal de los dos motores. Va lo ultimo, cuando ya
+        # no queda ninguna decision por tomar, y solo escribe si el veredicto
+        # cambio o si el par cayo en la muestra del universo.
+        self._leer_motores(symbol, st, now_ms)
+
         if not alertable or not (state_changed or tier_changed):
             if transition and self._emit:
                 await self._emit({"type": "transition", "ts": now_ms, **st.snapshot()})
+
+    async def _evaluar_ruptura(self, symbol: str, st, now_ms: int) -> None:
+        """Abre un seguimiento cuando entra en una ruptura direccional nueva."""
+        if self._ruptures is None:
+            return
+        snapshot = st.snapshot()
+        lectura = clasificar_ruptura(snapshot)
+        direccion = lectura.direccion if lectura is not None else None
+
+        if not self._rupturas_armadas:
+            self._ultima_ruptura[symbol] = direccion
+            return
+        if symbol not in self._ultima_ruptura:
+            # Un par listado despues del arranque se siembra primero. Asi no se
+            # notifica una ruptura que ya estaba en curso antes de observarlo.
+            self._ultima_ruptura[symbol] = direccion
+            return
+        anterior = self._ultima_ruptura[symbol]
+        if direccion == anterior:
+            return
+        self._ultima_ruptura[symbol] = direccion
+        if lectura is None:
+            return
+
+        evento = self._ruptures.abrir(
+            symbol, lectura.direccion, now_ms, st.metrics.price, snapshot, lectura.razon,
+        )
+        if evento is None:
+            logger.debug(f"[{symbol}] ruptura {lectura.direccion} en cooldown")
+            return
+        self._log_db(symbol, "RUPTURA", f"{lectura.direccion} | {lectura.razon}")
+        logger.info(
+            f"[{symbol}] {lectura.direccion} en seguimiento | "
+            f"precio={st.metrics.price} | {lectura.razon}"
+        )
+        await self._avisar_ruptura(evento)
+
+    async def _avisar_ruptura(self, evento: dict) -> None:
+        # A short market-state change has no independent frozen trade plan.
+        # Keep collecting it; the selected plan owns the only notification thread.
+        self._ruptures.marcar_telegram(
+            evento, "no_procede", "movimiento corto medido en UI; avisos unificados en el plan seleccionado")
+
+
+    async def _avisar_seguimiento_ruptura(self, seguimiento: dict) -> None:
+        # Previously sent rupture messages remain useful, but their clock
+        # milestones are silent edits, never additional sendMessage calls.
+        evento = seguimiento["ruptura"]
+        mid = evento.get("telegram_message_id")
+        hitos = set(get_settings().telegram_ruptura_hitos_list)
+        disponibles = [h for h in seguimiento["horizontes"] if h in hitos]
+        if not mid or not disponibles or not self._tg.activo:
+            return
+        minutos = max(disponibles)
+        await self._tg.actualizar_mensaje(
+            mid, texto_seguimiento_ruptura(evento["symbol"], evento, minutos)
+            + "\nActualización del movimiento corto; no invalida por sí sola la estructura de 1h.")
+
 
     async def _refrescar_alerta_viva(
         self, symbol: str, st, now_ms: int, high: float, low: float,
         close: float, impulso, display: str, viene_de_caida: bool,
     ) -> None:
-        """
-        Pasa la vela recien cerrada por el plan que ya estaba vivo.
-
-        Esta parte del ciclo se necesita desde dos sitios distintos, y por eso
-        esta aqui suelta: ademas del camino normal la llama el veto de
-        blow-off, que antes hacia `return` sin tocar AlertManager. La vela de
-        agotamiento es justo la que suele perforar el stop, asi que el
-        desenlace se quedaba sin registrar hasta la siguiente vela que no fuera
-        blow-off — y si el par seguia agotado, no llegaba nunca. Un plan vivo
-        se actualiza SIEMPRE antes de vetar nada.
-
-        `impulso` puede venir None (el veto corta antes de calcularlo): la
-        alerta se actualiza igual, porque el impulso solo alimenta la fase y lo
-        que no puede esperar es el TP/SL contra los niveles congelados.
-        """
+        # Notifications follow their own frozen notified plan, even if the UI
+        # alert is reset at +3.2%, replaced, or restored as non-actionable.
+        if self._notifications is not None:
+            try:
+                candle_ms = st.candles[-1].t
+                await self._notifications.observe(symbol,candle_ms,now_ms,high,low,close)
+            except Exception as exc:
+                logger.warning(f"[{symbol}] seguimiento de aviso fallo: {type(exc).__name__}")
         if not get_settings().alerta_congelada_enabled:
             return
         cambio = self._alertas.actualizar(
             symbol, now_ms, high, low, close, impulso,
-            display_state=display, viene_de_caida=viene_de_caida,
-        )
-        if cambio is not None:
-            if self._emit:
-                await self._emit({
-                    "type": "alerta_cambio",
-                    "ts": now_ms,
-                    "symbol": symbol,
-                    "alerta": cambio.to_dict(),
-                })
-            # Si ya se aviso de este par, se EDITA ese mensaje en vez de
-            # mandar otro: el aviso de las 03:00 se actualiza solo y el
-            # historial no se llena de repeticiones del mismo simbolo.
-            if self._tg.activo and self._tg.tiene_mensaje(symbol):
-                try:
-                    await self._tg.actualizar(symbol, texto_alerta(
-                        symbol, cambio.to_dict(), st.retroceso, st.sr_levels))
-                except Exception as e:
-                    logger.debug(f"[{symbol}] editar aviso: {e}")
-                # El SL sale como mensaje aparte, no como edicion: una
-                # edicion no hace sonar el telefono y esto hay que verlo.
-                if cambio.motivo_cierre in (MOTIVO_SL, MOTIVO_TP):
-                    redactar = (texto_stop if cambio.motivo_cierre == MOTIVO_SL
-                                else texto_tp)
-                    que = ("stop" if cambio.motivo_cierre == MOTIVO_SL
-                           else "TP")
-                    await self._responder_aviso(
-                        symbol, redactar(symbol, cambio.to_dict()), f"AVISO {que}")
-
-        # Escalones de bajada: cada uno suena una vez, colgando del aviso
-        # original del par. Solo para pares de los que ya se aviso.
+            display_state=display, viene_de_caida=viene_de_caida)
+        if cambio is not None and self._emit:
+            await self._emit({"type":"alerta_cambio","ts":now_ms,
+                              "symbol":symbol,"alerta":cambio.to_dict()})
         viva = self._alertas.get(symbol)
-        # Hitos hacia arriba: llegar a la meta y superar +4.2% sobre el
-        # entry de la PRIMERA señal del episodio.
-        if viva is not None and viva.hitos_nuevos:
-            hitos = list(viva.hitos_nuevos)
+        if viva is not None:
+            # Keep the UI's excursion markers; these lists no longer trigger
+            # fixed-percentage drops or duplicate meta/4.2% Telegram messages.
             viva.hitos_nuevos.clear()
-            for hito in hitos:
-                await self._responder_aviso(
-                    symbol, texto_hito(symbol, viva.to_dict(), hito),
-                    f"AVISO hito {hito}")
-        if viva is not None and viva.bajadas_nuevas:
-            niveles = list(viva.bajadas_nuevas)
             viva.bajadas_nuevas.clear()
-            for niv in niveles:
-                await self._responder_aviso(
-                    symbol, texto_bajada(symbol, viva.to_dict(), niv),
-                    f"AVISO bajada -{niv}%")
-        st.alerta = (
-            a.to_dict() if (a := self._alertas.get(symbol)) is not None else {}
-        )
+        st.alerta = viva.to_dict() if viva is not None else {}
 
-    async def _responder_aviso(self, symbol: str, texto: str, que: str) -> bool:
-        """
-        Cuelga un aviso de seguimiento del hilo del par y dice si salio.
 
-        `responder` devuelve False cuando Telegram rechaza el envio, sin
-        excepcion de por medio: registrarlo como enviado por no haber reventado
-        era lo que hacia indistinguible un telefono callado de un sistema roto.
-        """
-        if not (self._tg.activo and self._tg.tiene_mensaje(symbol)):
-            return False
-        try:
-            entregado = await self._tg.responder(symbol, texto)
-        except Exception as e:
-            logger.warning(f"[{symbol}] {que} fallo: {e}")
-            return False
-        if entregado:
-            logger.info(f"[{symbol}] {que} enviado")
-        else:
-            logger.warning(f"[{symbol}] {que} NO entregado: Telegram lo rechazo")
-        return entregado
 
     async def on_live_candle(
         self, symbol: str, t: int, o: float, h: float, l: float, c: float, v: float
@@ -1113,6 +1224,59 @@ class StateEngine:
             logger.debug(f"[{symbol}] registrar_alerta error: {e}")
             return None
 
+    def _registrar_identidad(self, symbol: str, snap: dict, tl: dict,
+                             sig_id, now_ms: int, alerta_id) -> None:
+        """
+        Le pone episodio y plan a la alerta que acaba de salir. No decide nada.
+
+        Corre DESPUES de emitir y de registrar la alerta, y cualquier fallo se
+        traga aqui: la fase 1 del plan de evolucion no puede cambiar —ni
+        romper— lo que el operador recibe. Su unico efecto es que un aviso sin
+        fila en `signals` deje de ser inmedible.
+        """
+        s = get_settings()
+        if (self._episodios is None or self._db is None or alerta_id is None
+                or not s.episodio_registro_enabled):
+            return
+        try:
+            ident = self._episodios.registrar(
+                symbol=symbol, ts_ms=now_ms, tl=tl, snap=snap,
+                alerta_id=alerta_id, signal_id=sig_id,
+                horizonte_ms=s.signal_expiry_hours * 3600_000,
+                coste_pct=s.coste_operacion_pct,
+                strategy_version=procedencia.version(),
+                config_hash=procedencia.config_hash(),
+            )
+            if ident is None:
+                return
+            self._db.anotar_identidad_alerta(
+                alerta_id, ident["episode_id"], ident["plan_id"])
+            # La alerta viva lleva su identidad: el tablero necesita el plan
+            # exacto para enlazar «Tomé esta entrada» con lo que se propuso.
+            viva = self._alertas.get(symbol)
+            if viva is not None:
+                viva.plan_id, viva.episode_id = ident["plan_id"], ident["episode_id"]
+                viva.ordinal_episodio = ident.get("ordinal")
+                st = self.states.get(symbol)
+                if st is not None:
+                    st.alerta = viva.to_dict()
+            # Fase 7a: el brazo del episodio. Se escribe una vez y no toca
+            # nada: mientras la activacion este apagada, los dos brazos ven
+            # exactamente la misma emision. Cuando se encienda, el reparto ya
+            # llevara semanas hecho.
+            if getattr(self, "_activacion", None) is not None and s.activacion_enabled:
+                try:
+                    self._activacion.asignar(ident["episode_id"], symbol)
+                except Exception as e:
+                    logger.debug(f"[{symbol}] asignar brazo error: {e}")
+            if ident["episodio_nuevo"]:
+                logger.debug(
+                    f"[{symbol}] episodio {ident['episode_id']} abierto"
+                    + (f" (cierra el anterior por {ident['motivo_cierre']})"
+                       if ident["motivo_cierre"] else ""))
+        except Exception as e:
+            logger.debug(f"[{symbol}] registrar_identidad error: {e}")
+
     def _sombra_de_veto(self, symbol: str, st, score: int, motivo: str,
                         now_ms: int) -> None:
         """
@@ -1149,61 +1313,41 @@ class StateEngine:
             )
         except Exception as e:
             logger.debug(f"[{symbol}] sombra de veto: {e}")
+        # Los motores tambien miran al candidato bloqueado. Guardar solo lo que
+        # pasa el filtro es medir el filtro con sus propios elegidos.
+        self._leer_motores(symbol, st, now_ms, origen=ORIGEN_VETO)
+
+    def _leer_motores(self, symbol: str, st, now_ms: int, *,
+                      origen=None, alerta_id=None, plan_id=None,
+                      episode_id=None) -> None:
+        """
+        Corre los dos motores de la fase 4. No decide nada.
+
+        Igual que el registro de identidad: se llama cuando la emision ya esta
+        resuelta, y cualquier fallo suyo se traga aqui. Si estos motores se
+        rompieran enteros, el operador no notaria la diferencia — y esa es la
+        propiedad que los hace desplegables en sombra.
+        """
+        if self._motores is None:
+            return
+        try:
+            self._motores.procesar(symbol, st, now_ms, origen=origen,
+                                   alerta_id=alerta_id, plan_id=plan_id,
+                                   episode_id=episode_id)
+        except Exception as e:
+            logger.debug(f"[{symbol}] motores en sombra: {e}")
 
     async def _quiza_avisar(self, symbol: str, st, snap: dict,
                             now_ms: int, alerta_id=None) -> None:
-        """Manda el aviso a Telegram si el par pasa el criterio y no repite."""
-        if not self._tg.activo:
+        if self._notifications is None:
             return
-        s = get_settings()
-        # El snapshot base no trae vol_24h — lo añade el helper de liquidez
-        # solo al abrir outcomes — asi que sin esto el filtro de volumen
-        # quedaria inerte y pasaria cualquier par ilíquido.
         snap = dict(snap)
         if snap.get("vol_24h") is None and self._db is not None:
-            try:
-                row = self._db.get_pair_meta(symbol)
-                snap["vol_24h"] = row.get("vol_24h") if row else None
-            except Exception:
-                snap["vol_24h"] = None
-        def _anotar(estado, detalle=""):
-            if alerta_id and self._db is not None:
-                try:
-                    self._db.marcar_telegram(alerta_id, estado, detalle)
-                except Exception:
-                    pass
+            row = self._db.get_pair_meta(symbol)
+            snap["vol_24h"] = row.get("vol_24h") if row else None
+        await self._notifications.consider(
+            symbol,alerta_id,snap,st.retroceso or {},st.alerta)
 
-        ok, motivo = _merece_aviso(snap, st.retroceso or {}, s)
-        if not ok:
-            _anotar("no_procede", motivo)
-            # A nivel INFO a proposito: sin ver el motivo, un telefono callado
-            # es indistinguible de un sistema roto, y la unica reaccion posible
-            # es desconfiar de todo.
-            logger.info(f"[{symbol}] sin aviso: {motivo}")
-            return
-        ultimo = self._aviso_ultimo.get(symbol, 0)
-        if now_ms - ultimo < s.aviso_cooldown_min * 60_000:
-            logger.debug(f"[{symbol}] sin aviso: en cooldown")
-            _anotar("no_procede", "en cooldown")
-            return
-        self._aviso_ultimo[symbol] = now_ms
-        self._tg.olvidar(symbol)     # aviso nuevo = hilo nuevo que editar
-        try:
-            entregado = await self._tg.avisar(symbol, texto_alerta(
-                symbol, st.alerta, st.retroceso, st.sr_levels))
-        except Exception as e:
-            logger.warning(f"[{symbol}] aviso fallo: {e}")
-            _anotar("fallo", f"{type(e).__name__}: {e}")
-            return
-        # Un rechazo de la API no levanta excepcion: `avisar` devuelve False y
-        # ese False es lo que se registra. Marcar "enviado" por no haber
-        # reventado convertia cada rechazo en un aviso fantasma en la tabla.
-        if entregado:
-            logger.info(f"[{symbol}] AVISO enviado a Telegram")
-            _anotar("enviado")
-        else:
-            logger.warning(f"[{symbol}] aviso NO entregado: Telegram lo rechazo")
-            _anotar("fallo", "Telegram no confirmo el envio")
 
     # --- Snapshot -------------------------------------------------------------
 
@@ -1215,7 +1359,7 @@ class StateEngine:
         out = []
         seguimiento = []
         for st in self.states.values():
-            interesting = st.display_state in _INTERESTING_DISPLAY
+            interesting = st.display_state in _DASHBOARD_DISPLAY
             # Retencion: sigue visible "perdiendo fuerza" tras dejar de interesar
             in_retention = (
                 st.last_interesting_ms > 0

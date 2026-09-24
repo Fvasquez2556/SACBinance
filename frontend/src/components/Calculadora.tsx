@@ -1,171 +1,35 @@
 import { useState } from "react";
+import { percent, price } from "../domain/reading";
 
-/**
- * Calculadora de niveles: metes el precio al que compraste y salen el TP, el
- * SL y el nivel de retroceso.
- *
- * Los porcentajes NO son los que el sistema calcula por par —esos salen del
- * ATR y de la estructura de cada moneda— sino los de referencia que Felix
- * usa: +3.2% de objetivo y -1.2% de stop. Son editables por si quiere probar
- * otros.
- *
- * Aviso medido que conviene tener a la vista: un stop del 1.2% quedo por
- * debajo del |MAE| mediano de las senales (1.83%), y saltaba antes de llegar
- * al objetivo en el 33% de las que SI lo alcanzaron. Por eso el campo del SL
- * avisa cuando se queda corto en vez de callarse.
- */
-
-const NUM = (s: string) => {
-  const v = parseFloat(s.replace(",", "."));
-  return Number.isFinite(v) ? v : null;
-};
-
-/** Redondeo por magnitud, igual que el backend, para no mostrar 12 decimales. */
-function redondear(p: number): string {
-  if (p >= 100) return p.toFixed(2);
-  if (p >= 1) return p.toFixed(4);
-  if (p >= 0.01) return p.toFixed(6);
-  return p.toFixed(8);
-}
-
-const caja: React.CSSProperties = {
-  background: "#0f0f0f",
-  border: "1px solid #222",
-  borderRadius: 4,
-  color: "#ccc",
-  fontFamily: "monospace",
-  fontSize: 12,
-  padding: "4px 6px",
-  width: "100%",
-  boxSizing: "border-box",
-};
+const number = (text: string) => text.trim() ? Number(text.replace(",", ".")) : NaN;
 
 export default function Calculadora() {
-  const [abierta, setAbierta] = useState(false);
-  const [precio, setPrecio] = useState("");
-  const [tpPct, setTpPct] = useState("3.2");
-  const [slPct, setSlPct] = useState("1.2");
-  const [apalanca, setApalanca] = useState("5");
+  const [open, setOpen] = useState(false);
+  const [entry, setEntry] = useState("");
+  const [tp, setTp] = useState("3.2");
+  const [sl, setSl] = useState("1.2");
+  const [leverage, setLeverage] = useState("1");
+  const p = number(entry), target = number(tp), stop = number(sl), lev = number(leverage);
+  const valid = [p, target, stop, lev].every(Number.isFinite) && p > 0 && target > 0 && stop > 0 && stop < 100 && lev >= 1;
 
-  const p = NUM(precio);
-  const tp = NUM(tpPct) ?? 3.2;
-  const sl = NUM(slPct) ?? 1.2;
-  const lev = NUM(apalanca) ?? 1;
-  const retro = 1.8;
-
-  const filas =
-    p && p > 0
-      ? [
-          { et: "objetivo", v: p * (1 + tp / 100), d: `+${tp}%`, c: "#22c55e" },
-          { et: "stop", v: p * (1 - sl / 100), d: `-${sl}%`, c: "#dc2626" },
-          {
-            et: "esperar",
-            v: p * (1 - retro / 100),
-            d: `-${retro}%`,
-            c: "#7a8a9a",
-          },
-        ]
-      : [];
-
-  return (
-    <div style={{ borderTop: "1px solid #1e1e1e", background: "#0c0c0c" }}>
-      <button
-        onClick={() => setAbierta((a) => !a)}
-        style={{
-          background: "none",
-          border: "none",
-          color: "#667",
-          cursor: "pointer",
-          fontFamily: "monospace",
-          fontSize: 11,
-          padding: "6px 16px",
-          width: "100%",
-          textAlign: "left",
-        }}
-      >
-        {abierta ? "▾" : "▸"} CALCULADORA DE NIVELES
-      </button>
-
-      {abierta && (
-        <div style={{ padding: "0 16px 12px" }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
-            <label style={{ fontSize: 10, color: "#667", flex: "2 1 140px" }}>
-              precio de compra
-              <input
-                value={precio}
-                onChange={(e) => setPrecio(e.target.value)}
-                placeholder="0.4503"
-                inputMode="decimal"
-                autoFocus
-                style={{ ...caja, marginTop: 3 }}
-              />
-            </label>
-            {([
-              ["TP %", tpPct, setTpPct],
-              ["SL %", slPct, setSlPct],
-              ["apalanc.", apalanca, setApalanca],
-            ] as const).map(([et, val, set]) => (
-              <label key={et} style={{ fontSize: 10, color: "#667", flex: "1 1 62px" }}>
-                {et}
-                <input
-                  value={val}
-                  onChange={(e) => set(e.target.value)}
-                  inputMode="decimal"
-                  style={{ ...caja, marginTop: 3 }}
-                />
-              </label>
-            ))}
-          </div>
-
-          {filas.length > 0 && (
-            <table style={{ marginTop: 10, width: "100%", fontSize: 12 }}>
-              <tbody>
-                {filas.map((f) => (
-                  <tr key={f.et}>
-                    <td style={{ color: "#667", fontSize: 10, padding: "2px 0" }}>
-                      {f.et}
-                    </td>
-                    <td
-                      style={{
-                        color: f.c,
-                        fontWeight: 700,
-                        textAlign: "right",
-                        padding: "2px 8px",
-                      }}
-                    >
-                      {redondear(f.v)}
-                    </td>
-                    <td style={{ color: "#556", fontSize: 10, width: 48 }}>{f.d}</td>
-                    <td style={{ color: "#556", fontSize: 10 }}>
-                      {lev > 1 && f.et !== "esperar"
-                        ? `${f.et === "objetivo" ? "+" : "-"}${(
-                            (f.et === "objetivo" ? tp : sl) * lev
-                          ).toFixed(1)}% del capital a x${lev}`
-                        : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          {/* Un dato medido, no una opinion: el stop de 1.2% quedo por debajo
-              del movimiento en contra tipico de las senales. */}
-          {sl < 1.83 && (
-            <div style={{ marginTop: 8, fontSize: 10, color: "#8a6a3a", lineHeight: 1.5 }}>
-              ⚠ un stop de {sl}% queda por debajo del |MAE| mediano medido
-              (1.83%). Saltaba antes del objetivo en el 33% de las señales que
-              SÍ llegaron.
-            </div>
-          )}
-          <div style={{ marginTop: 6, fontSize: 10, color: "#445", lineHeight: 1.5 }}>
-            «esperar» es el nivel de retroceso: entrando ahí el rendimiento por
-            operación sube de +0,54% a +0,87%, pero solo se ejecuta el 42% de
-            las veces. El objetivo no se mueve — sigue siendo +{tp}% sobre el
-            precio de arriba.
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return <section className="calculator">
+    <button className="section-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "▾" : "▸"} Calculadora de niveles hipotéticos</button>
+    {open && <div className="calculator-content">
+      <p className="muted">Introduce una entrada para calcular niveles con porcentajes manuales. Esta simulación no usa el stop estructural de una señal ni estima su probabilidad de éxito.</p>
+      <div className="calculator-inputs">
+        {([
+          ["Precio de entrada", entry, setEntry], ["Objetivo TP (%)", tp, setTp],
+          ["Stop SL (%)", sl, setSl], ["Apalancamiento (×)", leverage, setLeverage],
+        ] as const).map(([label, value, set]) => <label key={label}>{label}<input inputMode="decimal" value={value} onChange={e => set(e.target.value)} /></label>)}
+      </div>
+      {entry && !valid && <p className="warning" role="status">Usa números válidos: entrada y TP positivos, SL entre 0 y 100%, y apalancamiento de al menos 1.</p>}
+      {valid && <div className="plan-grid">
+        <div><small>Entrada hipotética</small><strong>{price(p)}</strong></div>
+        <div><small>Objetivo TP</small><strong>{price(p * (1 + target / 100))}</strong><small>{percent(target)} bruto</small></div>
+        <div><small>Stop loss manual</small><strong>{price(p * (1 - stop / 100))}</strong><small>{percent(-stop)} bruto</small></div>
+      </div>}
+      {valid && lev > 1 && <p className="muted">Sobre el margen inicial a ×{lev}: TP {percent(target * lev)} y SL {percent(-stop * lev)}, estimación aritmética antes de costes. No modela liquidación ni ejecución.</p>}
+      <p className="muted">Los porcentajes son movimientos del precio, antes de comisiones y deslizamiento. Un objetivo de +3.2% bruto no equivale a +3.2% neto.</p>
+    </div>}
+  </section>;
 }

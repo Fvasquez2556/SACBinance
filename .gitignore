@@ -34,3 +34,6 @@ logs/
 
 # Informes generados localmente
 informes/
+
+# Adjuntos de sesiones de Codex
+.codex-remote-attachments/

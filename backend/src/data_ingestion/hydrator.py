@@ -164,6 +164,27 @@ async def _hydrate_symbol(
             await _hydrate_tf(symbol, tf, engine, db, session, base_url)
 
 
+async def fetch_candles(symbol: str, tf: str, limit: int) -> List[Candle]:
+    """
+    Velas CERRADAS de un par directamente de Binance, sin tocar el engine ni la
+    base. Es el camino de la consulta manual: un par que no esta en el universo
+    —por volumen, o porque acaba de listarse— no tiene buffers que leer.
+
+    La vela en curso se descarta aqui igual que en `_hydrate_tf`: una ruptura se
+    decide con un cierre, y una vela viva puede estar pasada del nivel a mitad
+    de camino y volver antes de cerrar.
+    """
+    s = get_settings()
+    tf_ms = _TF_MS.get(tf)
+    if tf_ms is None:
+        return []
+    now_ms = int(time.time() * 1000)
+    base_url = s.binance_rest_base.rstrip("/")
+    async with aiohttp.ClientSession() as session:
+        raw = await _fetch_klines_raw(session, symbol, tf, limit, base_url)
+    return [c for c in _raw_to_candles(raw) if c.t + tf_ms <= now_ms]
+
+
 async def reparar_1m(symbols: List[str], engine, db=None) -> int:
     """
     Rellena SOLO el marco de 1m de los pares indicados. Devuelve cuantos se

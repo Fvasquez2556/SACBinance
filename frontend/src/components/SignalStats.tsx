@@ -1,59 +1,41 @@
 import { useEffect, useState } from "react";
+import { percent } from "../domain/reading";
 
 interface Stats {
-  total: number;
-  open: number;
-  closed: number;
-  tp: number;
-  sl: number;
-  expired: number;
-  win_rate: number;
-  avg_result_pct: number;
+  total: number; open: number; closed: number; tp: number; sl: number; expired: number;
+  win_rate: number; avg_result_pct: number; pct_en_positivo?: number; pct_sobre_meta?: number;
 }
 
 export default function SignalStats() {
   const [stats, setStats] = useState<Stats | null>(null);
-
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
-    const load = () => {
-      fetch("/api/signals/stats")
-        .then((r) => r.json())
-        .then(setStats)
-        .catch(() => {});
+    const controller = new AbortController();
+    const load = async () => {
+      try {
+        const r = await fetch("/api/signals/stats", { signal: controller.signal });
+        if (!r.ok) throw new Error("stats");
+        const d: Stats = await r.json();
+        if (!Number.isFinite(d.closed)) throw new Error("stats");
+        setStats(d); setFailed(false);
+      } catch { if (!controller.signal.aborted) setFailed(true); }
     };
-    load();
-    const id = setInterval(load, 30000);
-    return () => clearInterval(id);
+    void load(); const id = setInterval(() => void load(), 30000);
+    return () => { controller.abort(); clearInterval(id); };
   }, []);
-
-  if (!stats || stats.closed === 0) {
-    return (
-      <span style={{ color: "#445", fontSize: 11 }}>
-        Señales: {stats?.open ?? 0} abiertas · sin cerrar aún
-      </span>
-    );
-  }
-
-  const wrColor =
-    stats.win_rate >= 55 ? "#2d7a2d" : stats.win_rate >= 45 ? "#b8860b" : "#8b2020";
-
-  return (
-    <span style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 11 }}>
-      <span style={{ color: "#445" }}>
-        Señales <span style={{ color: "#778" }}>{stats.closed}</span>
-      </span>
-      <span style={{ color: "#557" }}>
-        Win rate{" "}
-        <span style={{ color: wrColor, fontWeight: 700 }}>{stats.win_rate}%</span>
-      </span>
-      <span style={{ color: "#2d7a2d" }}>TP {stats.tp}</span>
-      <span style={{ color: "#8b2020" }}>SL {stats.sl}</span>
-      <span style={{ color: "#557" }}>exp {stats.expired}</span>
-      <span style={{ color: stats.avg_result_pct >= 0 ? "#2d7a2d" : "#8b2020" }}>
-        prom {stats.avg_result_pct > 0 ? "+" : ""}
-        {stats.avg_result_pct}%
-      </span>
-      <span style={{ color: "#445" }}>· {stats.open} abiertas</span>
-    </span>
-  );
+  return <details className="signal-stats">
+    <summary>Histórico de señales <span className="muted">{stats ? `· ${stats.closed} cerradas · ${stats.open} abiertas` : failed ? "· no disponible" : "· cargando…"}</span></summary>
+    <p>Resultados registrados de planes anteriores, en bruto. No representan la probabilidad de la próxima señal ni acreditan operaciones ejecutadas.</p>
+    {failed && <p role="status">No se pudo actualizar. {stats ? "Se conserva la última lectura." : "Intenta de nuevo al actualizar la página."}</p>}
+    {stats && stats.closed > 0 && <>
+      <div className="stats-grid">
+        <div><span>Alcanzaron el TP</span><strong>{stats.win_rate}%</strong><small>{stats.tp} de {stats.closed} cerradas</small></div>
+        <div><span>Cierre ≥ +3.2% bruto</span><strong>{stats.pct_sobre_meta == null ? "—" : `${stats.pct_sobre_meta}%`}</strong><small>Incluye cierres por vencimiento</small></div>
+        <div><span>Cierre positivo bruto</span><strong>{stats.pct_en_positivo == null ? "—" : `${stats.pct_en_positivo}%`}</strong><small>Antes de comisión y deslizamiento</small></div>
+        <div><span>Resultado medio bruto</span><strong>{percent(stats.avg_result_pct)}</strong><small>SL: {stats.sl} · vencidas: {stats.expired}</small></div>
+      </div>
+      <p className="muted">El denominador incluye TP, SL y vencidas. Las señales abiertas se excluyen. Este histórico combina versiones y condiciones de mercado.</p>
+    </>}
+    {stats?.closed === 0 && <p>Aún no hay señales cerradas para calcular estas frecuencias.</p>}
+  </details>;
 }

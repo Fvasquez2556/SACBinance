@@ -149,6 +149,10 @@ async def startup():
         # vivas sin avisos de bajada, stop ni hitos hasta que caducaban.
         engine._tg.cargar_hilos()
 
+    # Las rupturas que ya estaban en curso durante la hidratacion se siembran
+    # sin notificar. A partir de aqui, cada entrada nueva abre su seguimiento.
+    engine.armar_seguimiento_rupturas()
+
     # 6. WebSockets Binance
     ws_mgr = WSManager(symbols, engine)
     await ws_mgr.start()
@@ -190,6 +194,9 @@ async def shutdown():
     # Cerrar la sesion HTTP de Telegram antes que nada: aiohttp se queja si
     # el loop muere con una sesion abierta.
     from src.api.ws_server import _engine as motor
+    notifications = getattr(motor, "_notifications", None) if motor is not None else None
+    if notifications is not None:
+        await notifications.close()
     tg = getattr(motor, "_tg", None) if motor is not None else None
     if tg is not None:
         try:
@@ -402,10 +409,76 @@ async def _db_flush_loop(db, engine=None) -> None:
             logger.debug(f"db_flush_loop error: {e}")
         ahora_ms = int(time.time() * 1000)
         try:
+            if engine is not None and engine._notifications is not None:
+                await engine._notifications.maintenance(ahora_ms)
+        except Exception as e:
+            logger.warning(f"notificaciones mantenimiento: {type(e).__name__}")
+        try:
             if engine is not None and engine._outcomes is not None:
                 engine._outcomes.cerrar_vencidos(ahora_ms)
         except Exception as e:
             logger.debug(f"cerrar_vencidos error: {e}")
+        try:
+            if engine is not None and engine._ruptures is not None:
+                engine._ruptures.cerrar_vencidos(ahora_ms)
+        except Exception as e:
+            logger.debug(f"cerrar_rupturas_vencidas error: {e}")
+        try:
+            if engine is not None and engine._ruptures_tf is not None:
+                engine._ruptures_tf.cerrar_vencidos(ahora_ms)
+        except Exception as e:
+            logger.debug(f"cerrar_sombra_tf_vencida error: {e}")
+        try:
+            if (engine is not None and getattr(engine, "_episodios", None) is not None
+                    and s.episodio_registro_enabled):
+                # Identidad en sombra: cerrar por reloj y recoger los
+                # desenlaces que ya midieron los trackers existentes.
+                engine._episodios.sincronizar_desenlaces(ahora_ms)
+                engine._episodios.barrer(ahora_ms)
+        except Exception as e:
+            logger.debug(f"episodios mantenimiento error: {e}")
+        try:
+            if (engine is not None and getattr(engine, "_recorridos", None) is not None
+                    and s.evaluador_recorridos_enabled):
+                # Recorrido por plan, en sombra: replay incremental desde las
+                # velas guardadas. No cierra operaciones ni avisa a nadie.
+                engine._recorridos.evaluar_pendientes(ahora_ms)
+        except Exception as e:
+            logger.debug(f"evaluador recorridos error: {e}")
+        try:
+            if (engine is not None and getattr(engine, "_motores", None) is not None
+                    and s.motores_enabled):
+                # La muestra del universo: una tajada rotatoria de pares, mire
+                # lo que mire cada uno. Es la unica poblacion no condicionada
+                # al filtro comprador, y sin ella no hay contra que comparar.
+                engine._motores.muestrear(engine.states, ahora_ms)
+        except Exception as e:
+            logger.debug(f"muestra de motores error: {e}")
+        try:
+            if (engine is not None and getattr(engine, "_experimentos", None) is not None
+                    and s.experimentos_enabled):
+                # Fase 5: que habria hecho cada politica congelada con cada
+                # plan nuevo. Solo mide planes creados DESPUES de congelar, que
+                # es la tercera puerta: terreno nuevo.
+                engine._experimentos.evaluar_pendientes(ahora_ms)
+        except Exception as e:
+            logger.debug(f"experimentos error: {e}")
+        try:
+            if (engine is not None and getattr(engine, "_activacion", None) is not None
+                    and s.activacion_enabled):
+                # Fase 7: vigilar los disparadores de reversion y APLICARLOS.
+                # Con la activacion apagada devuelve en seco; en cuanto se
+                # encienda, esto es lo que hace que el cortacircuitos sea una
+                # proteccion y no una funcion que nadie llama. Un fallo aqui no
+                # puede tumbar el bucle, pero SI se registra en voz alta: una
+                # vigilancia que falla en silencio es peor que no tenerla.
+                v = engine._activacion.vigilar(ahora_ms=ahora_ms)
+                if v.get("revertir"):
+                    logger.error(
+                        f"ACTIVACION REVERTIDA automaticamente por "
+                        f"{v['motivo']}: {v['detalle']}")
+        except Exception as e:
+            logger.warning(f"vigilancia de activacion error: {e}")
         try:
             cerrar_vencidas(db, ahora_ms)
         except Exception as e:

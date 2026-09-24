@@ -34,6 +34,7 @@ Fase de SEGUIMIENTO (ya no pide actuar, pero no desaparece):
     EN_RETROCESO      el precio esta por debajo del entry congelado
     EN_VALLE          lleva N minutos sin marcar un minimo nuevo
     RECUPERANDO       sube desde el suelo del retroceso, aun bajo la meta
+    EXTENDIENDO_META   toco un TP corto; se observa si logra pasar de el
     CUMPLIDA          llego a la meta de referencia (+3.2% sobre el entry)
     ARCHIVADA         se acabo la ventana de 24h; aqui si se retira
 
@@ -76,11 +77,12 @@ ESTADO_CERRADA = "CERRADA"          # se mantiene por compatibilidad de eventos
 ESTADO_RETROCESO = "EN_RETROCESO"
 ESTADO_VALLE = "EN_VALLE"
 ESTADO_RECUPERANDO = "RECUPERANDO"
+ESTADO_EXTENDIENDO = "EXTENDIENDO_META"
 ESTADO_CUMPLIDA = "CUMPLIDA"
 ESTADO_ARCHIVADA = "ARCHIVADA"
 
 ESTADOS_SEGUIMIENTO = {ESTADO_RETROCESO, ESTADO_VALLE, ESTADO_RECUPERANDO,
-                       ESTADO_CUMPLIDA}
+                       ESTADO_EXTENDIENDO, ESTADO_CUMPLIDA}
 
 # La meta de referencia la fijo Felix: +3.2% sobre el entry congelado, con
 # independencia del TP que ofrezca el sistema para ese par.
@@ -100,6 +102,8 @@ _ESTADOS_VALIDOS = {"TOCÓ_FONDO", "CONSOLIDANDO", "SUBIENDO", "BREAKOUT_INCIPIE
 _ESTADO_ROTO = "CAYENDO"
 
 MOTIVO_TP = "TP_ALCANZADO"
+MOTIVO_META = "META_32_ALCANZADA"
+MOTIVO_TP_CORTO_SIN_EXTENSION = "TP_CORTO_SIN_EXTENSION"
 MOTIVO_SL = "SL_ALCANZADO"
 MOTIVO_IMPULSO = "IMPULSO_AGOTADO"
 MOTIVO_CADUCA = "CADUCADA"
@@ -222,10 +226,31 @@ class AlertaActiva:
     # si la quinta señal entra mas abajo y sube 4.2% desde SU entry, puede
     # seguir por debajo del precio de la primera, y contarlo seria engañarse.
     entry_primera: Optional[float] = None
+    # Identidad de la fase 1: que plan y que episodio son estos niveles. Deja
+    # que el tablero enlace una operacion con el plan exacto que se tomo.
+    plan_id: Optional[int] = None
+    episode_id: Optional[int] = None
+    # Que numero de oportunidad es dentro de su episodio. Se congela con el
+    # plan porque decide como se presenta: "primera oportunidad" o "n.º 5".
+    ordinal_episodio: Optional[int] = None
+    # Los dos niveles del plan, congelados con el resto: el que sostiene el
+    # stop y el que hay que romper para llegar al TP. Sin ellos, el aviso dice
+    # "SL 0.211382" sin decir sobre que se apoya ese numero.
+    soporte: Optional[float] = None
+    sl_basis: str = ""
+    resistencia: Optional[float] = None
+    tp_bloqueado: bool = False
+    toques_soporte: Optional[int] = None
+    toques_resistencia: Optional[int] = None
     senal_n: int = 0                          # la enesima señal de este par
     # Hitos ya avisados, para que cada uno suene una vez.
     hitos_avisados: set = field(default_factory=set)
     hitos_nuevos: List[str] = field(default_factory=list)
+    # Un TP por debajo de +3.2% es un hito intermedio, no el fin automatico
+    # de una señal. Estos campos dejan claro en la UI que se esta observando
+    # una extension, no que exista una segunda orden.
+    ts_tp_corto: Optional[int] = None
+    tp_corto_superado: bool = False
 
     @property
     def meta(self) -> float:
@@ -280,6 +305,15 @@ class AlertaActiva:
             "fuerza_tendencia": self._tendencia(),
             "marcadores": self.marcadores(),
             "motivo_cierre": self.motivo_cierre,
+            "tp_corto_en_observacion": (
+                self.ts_tp_corto is not None and not self.tp_corto_superado
+                and self.mfe_pct < META_PCT
+            ),
+            "tp_corto_superado": self.tp_corto_superado,
+            "minutos_desde_tp_corto": (
+                round((int(time.time() * 1000) - self.ts_tp_corto) / 60000.0, 1)
+                if self.ts_tp_corto else None
+            ),
             # seguimiento
             "accionable": self.accionable,
             "meta": round(self.meta, 10),
@@ -290,6 +324,15 @@ class AlertaActiva:
             "prob_meta_n": self.prob_meta_n,
             "viene_de_caida": self.viene_de_caida,
             "entry_primera": self.entry_primera,
+            "soporte": self.soporte,
+            "sl_basis": self.sl_basis,
+            "resistencia": self.resistencia,
+            "tp_bloqueado": self.tp_bloqueado,
+            "toques_soporte": self.toques_soporte,
+            "toques_resistencia": self.toques_resistencia,
+            "plan_id": self.plan_id,
+            "episode_id": self.episode_id,
+            "ordinal_episodio": self.ordinal_episodio,
             "senal_n": self.senal_n,
             "delta_primera_pct": self.delta_primera_pct,
             "minutos_en_estado": (
@@ -399,6 +442,12 @@ class AlertManager:
                 mae_pct=o.get("mae_pct") or 0.0,
                 es_giro=(o.get("display_state") or "") in _SETUPS_DE_GIRO,
             )
+            tp_pct = ((a.take_profit - a.entry) / a.entry * 100.0
+                      if a.take_profit else None)
+            if (tp_pct is not None and tp_pct < META_PCT
+                    and o.get("ms_tp") is not None):
+                a.ts_tp_corto = ts + int(o["ms_tp"])
+                a.tp_corto_superado = (a.mfe_pct > tp_pct)
             a.estado = (ESTADO_CUMPLIDA if a.mfe_pct >= META_PCT
                         else ESTADO_RETROCESO)
             silenciados += _marcar_ya_avisados(a)
@@ -504,6 +553,12 @@ class AlertManager:
             es_giro=snapshot.get("display_state", "") in _SETUPS_DE_GIRO,
             entry_primera=snapshot.get("primer_entry") or float(entry),
             senal_n=snapshot.get("senal_n") or 0,
+            soporte=trade_levels.get("soporte"),
+            sl_basis=trade_levels.get("sl_basis") or "",
+            resistencia=trade_levels.get("nearest_resistance"),
+            tp_bloqueado=bool(trade_levels.get("tp_blocked_by_resistance")),
+            toques_soporte=trade_levels.get("toques_soporte"),
+            toques_resistencia=trade_levels.get("toques_resistencia"),
         )
         a.historia_fuerza.append(impulso.fuerza)
         self._activas[symbol] = a
@@ -588,14 +643,65 @@ class AlertManager:
             if len(a.historia_fuerza) > 30:
                 a.historia_fuerza.pop(0)
 
-        # --- Desenlace por precio: TP/SL contra los niveles CONGELADOS ---
+        # --- Reset por precio contra el entry y los niveles CONGELADOS ---
+        # El orden es deliberado: si una vela de 1m contiene stop y meta no
+        # conocemos su secuencia intravela, asi que mantenemos la convencion
+        # conservadora que ya usaba el sistema: primero SL.
         if a.stop_loss and low <= a.stop_loss:
             return self._cerrar(a, now_ms, MOTIVO_SL)
-        if a.take_profit and high >= a.take_profit:
-            return self._cerrar(a, now_ms, MOTIVO_TP)
+
+        # La meta fija representa el objetivo de la señal, aunque el TP que
+        # sale del R:R sea menor. Al llegar a +3.2%, la alerta se resetea y el
+        # par puede volver a emitir tras el cooldown normal.
+        if high >= a.meta:
+            return self._cerrar(a, now_ms, MOTIVO_META)
+
+        # Un TP >= meta queda cubierto por la condicion anterior. Si el TP es
+        # corto, no cerramos al primer toque: esperamos una extension real por
+        # encima del TP. Comparar solo `take_profit > stop_loss` aqui seria un
+        # error, porque todo plan long valido cumple eso desde su emision.
+        if a.take_profit and a.take_profit < a.meta and high >= a.take_profit:
+            if a.ts_tp_corto is None:
+                a.ts_tp_corto = now_ms
+                a.tp_corto_superado = high > a.take_profit
+                if a.tp_corto_superado:
+                    a.estado = ESTADO_VIVA
+                    logger.info(
+                        f"[{symbol}] TP corto superado; sigue activo hacia "
+                        f"+{META_PCT:.1f}%"
+                    )
+                else:
+                    a.estado = ESTADO_EXTENDIENDO
+                    logger.info(
+                        f"[{symbol}] TP corto tocado; se observa extension hasta "
+                        f"+{META_PCT:.1f}% durante "
+                        f"{s.alerta_tp_corto_extension_horas}h"
+                    )
+                return a
+            if high > a.take_profit:
+                a.tp_corto_superado = True
+                if a.estado == ESTADO_EXTENDIENDO:
+                    a.estado = ESTADO_VIVA
+                    logger.info(
+                        f"[{symbol}] TP corto superado; sigue activo hacia "
+                        f"+{META_PCT:.1f}%"
+                    )
+                    return a
+
+        # Respetamos la espera completa desde el primer TP corto incluso si
+        # cruza la vida general de la alerta. Si se extendio, vuelve a mandar
+        # la caducidad normal; si no, este es el reset solicitado.
+        if (a.ts_tp_corto is not None and not a.tp_corto_superado
+                and now_ms - a.ts_tp_corto
+                >= s.alerta_tp_corto_extension_horas * 3600_000):
+            return self._cerrar(a, now_ms, MOTIVO_TP_CORTO_SIN_EXTENSION)
 
         # --- Caducidad ---
-        if now_ms - a.ts_emision >= s.alerta_vida_horas * 3600_000:
+        esperando_extension = (
+            a.ts_tp_corto is not None and not a.tp_corto_superado
+        )
+        if (not esperando_extension
+                and now_ms - a.ts_emision >= s.alerta_vida_horas * 3600_000):
             return self._cerrar(a, now_ms, MOTIVO_CADUCA)
 
         # --- El par dejo de estar en un estado que sostenga la alerta ---

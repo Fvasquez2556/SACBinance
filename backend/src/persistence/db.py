@@ -12,6 +12,14 @@ from pathlib import Path
 from typing import List, Optional
 
 from src.config.settings import get_settings
+from src.analysis.tf_estadistica import EstadisticaRupturas
+from src.episodios import EPISODIOS_SCHEMA, RegistroEpisodios
+from src.evaluacion import EVALUACION_SCHEMA, AlmacenRecorridos
+from src.activacion import ACTIVACION_SCHEMA, AlmacenActivacion
+from src.experimentos import EXPERIMENTOS_SCHEMA, AlmacenExperimentos
+from src.motores import MOTORES_SCHEMA, AlmacenMotores
+from src.operaciones import OPERACIONES_SCHEMA, Diario
+from src.notify.policy import NOTIFICATION_SCHEMA, NotificationPolicy
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -188,6 +196,118 @@ CREATE TABLE IF NOT EXISTS telegram_hilos (
 );
 """
 
+_CREATE_RUPTURAS = """
+CREATE TABLE IF NOT EXISTS rupturas (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol              TEXT    NOT NULL,
+    direction           TEXT    NOT NULL,
+    ts_open             INTEGER NOT NULL,
+    price_open          REAL    NOT NULL,
+    display_state       TEXT,
+    reason              TEXT,
+    score               INTEGER,
+    z_rise              REAL,
+    z_drop              REAL,
+    rango_1h_pct        REAL,
+    last_price          REAL,
+    ts_last             INTEGER,
+    n_velas             INTEGER NOT NULL DEFAULT 0,
+    max_up_pct          REAL    NOT NULL DEFAULT 0,
+    max_down_pct        REAL    NOT NULL DEFAULT 0,
+    mfe_direction_pct   REAL    NOT NULL DEFAULT 0,
+    mae_direction_pct   REAL    NOT NULL DEFAULT 0,
+    ms_mfe_direction    INTEGER,
+    ms_mae_direction    INTEGER,
+    ret_5m_pct          REAL, ms_ret_5m INTEGER,
+    ret_15m_pct         REAL, ms_ret_15m INTEGER,
+    ret_30m_pct         REAL, ms_ret_30m INTEGER,
+    ret_60m_pct         REAL, ms_ret_60m INTEGER,
+    ret_240m_pct        REAL, ms_ret_240m INTEGER,
+    ret_1440m_pct       REAL, ms_ret_1440m INTEGER,
+    telegram            TEXT,
+    telegram_message_id INTEGER,
+    telegram_detail     TEXT,
+    closed              INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_rupturas_abiertas ON rupturas (closed, ts_open DESC);
+CREATE INDEX IF NOT EXISTS idx_rupturas_symbol ON rupturas (symbol, direction, ts_open DESC);
+"""
+
+_CREATE_RUPTURAS_TF = """
+CREATE TABLE IF NOT EXISTS rupturas_tf (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol              TEXT    NOT NULL,
+    tf                  TEXT    NOT NULL,
+    direction           TEXT    NOT NULL,
+    ts_open             INTEGER NOT NULL,
+    price_open          REAL    NOT NULL,
+    -- La lectura del marco en el momento de abrir
+    confirmada          INTEGER NOT NULL DEFAULT 0,
+    nivel_roto          REAL,
+    toques_nivel        INTEGER,
+    velas_desde_ruptura INTEGER,
+    tendencia           TEXT,
+    atr_pct             REAL,
+    rsi14               REAL,
+    vol_ratio           REAL,
+    razon               TEXT,
+    -- Confluencia entre los cuatro marcos en ese mismo instante. Es LA
+    -- variable que hay que medir: si mirar cuatro marcos no separa el
+    -- resultado, la funcion entera es adorno.
+    conf_dominante      TEXT,
+    conf_tf_dominante   TEXT,
+    conf_alcistas       INTEGER,
+    conf_bajistas       INTEGER,
+    conf_confirmadas    INTEGER,
+    conf_en_conflicto   INTEGER,
+    -- El plan que se habria publicado, congelado
+    plan_valid          INTEGER NOT NULL DEFAULT 0,
+    entrada_min         REAL,
+    entrada_max         REAL,
+    entrada_ref         REAL,
+    stop_loss           REAL,
+    take_profit         REAL,
+    risk_pct            REAL,
+    reward_pct          REAL,
+    reward_neto_pct     REAL,
+    sl_basis            TEXT,
+    tp_bloqueado        INTEGER,
+    plan_reason         TEXT,
+    -- Recorrido desde price_open: entrar a mercado al detectarla
+    last_price          REAL,
+    ts_last             INTEGER,
+    n_velas             INTEGER NOT NULL DEFAULT 0,
+    max_up_pct          REAL    NOT NULL DEFAULT 0,
+    max_down_pct        REAL    NOT NULL DEFAULT 0,
+    mfe_direction_pct   REAL    NOT NULL DEFAULT 0,
+    mae_direction_pct   REAL    NOT NULL DEFAULT 0,
+    ms_mfe_direction    INTEGER,
+    ms_mae_direction    INTEGER,
+    ret_5m_pct          REAL, ms_ret_5m INTEGER,
+    ret_15m_pct         REAL, ms_ret_15m INTEGER,
+    ret_30m_pct         REAL, ms_ret_30m INTEGER,
+    ret_60m_pct         REAL, ms_ret_60m INTEGER,
+    ret_240m_pct        REAL, ms_ret_240m INTEGER,
+    ret_1440m_pct       REAL, ms_ret_1440m INTEGER,
+    -- Barreras del plan. Son precios fijos, asi que valen igual para la
+    -- entrada a mercado y para la del retest; el orden entre las dos es lo
+    -- que decide el desenlace. Ambas en la misma vela = ambiguo, nunca
+    -- victoria (misma regla que `barrierOrder` en el frontend).
+    ms_tp               INTEGER,
+    ms_sl               INTEGER,
+    -- El retest: si el rango llego a llenarse, y que paso DESDE ahi. Sin esto
+    -- no se puede comparar "entrar a mercado" contra "esperar al nivel", que
+    -- es la unica parte de esta funcion con respaldo previo.
+    ms_fill             INTEGER,
+    precio_fill         REAL,
+    mfe_fill_pct        REAL    NOT NULL DEFAULT 0,
+    mae_fill_pct        REAL    NOT NULL DEFAULT 0,
+    closed              INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_rupturas_tf_abiertas ON rupturas_tf (closed, ts_open DESC);
+CREATE INDEX IF NOT EXISTS idx_rupturas_tf_symbol ON rupturas_tf (symbol, tf, direction, ts_open DESC);
+"""
+
 _CREATE_META = """
 CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
@@ -221,7 +341,27 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 #           poder excluir las incompletas (F01); ambiguedad intravela de la
 #           sombra del hoyo (F05); y la tabla alertas_emitidas, porque 2.695 de
 #           5.002 alertas con niveles no tenian fila propia en signals (F04).
-SCHEMA_VERSION = 12
+#  12 -> 13: rupturas direccionales independientes, con retornos por horizonte
+#  13 -> 14: sombra de rupturas POR MARCO (5m/15m/1h/4h). Tabla aparte a
+#            proposito: mezclarlas con `rupturas` contaminaria la medicion
+#            de produccion, que es de 1m y lleva semanas acumulando.
+#            y excursiones favorables/adversas simetricas para ambos lados.
+# 14 -> 15: planes notificados y recibos por evento; evita duplicados al reiniciar.
+# 15 -> 16: identidad por episodio y por plan (fase 1 del plan de evolucion).
+#           Aditiva y en sombra: no cambia ninguna emision ni ningun nivel.
+# 16 -> 17: recorrido por plan y sus horizontes (fase 2). Tambien en sombra:
+#           mide en paralelo a los cuatro trackers, sin sustituir a ninguno.
+# 17 -> 18: diario de operaciones del usuario (fase 3). Solo escribe cuando el
+#           usuario declara algo; ningun proceso automatico abre una operacion.
+# 18 -> 19: los dos motores en sombra (fase 4). Lecturas, transiciones y estado
+#           por simbolo. Incluye una MUESTRA del universo sin condicionar al
+#           filtro comprador: sin ella, medir el filtro con sus propios
+#           elegidos no dice nada.
+# 19 -> 20: prueba prospectiva de salidas y seleccion (fase 5). Las politicas
+#           se congelan con una huella de contenido y cada resultado se guarda
+#           con ella: cambiar un umbral despues cambia la huella y los
+#           resultados viejos quedan identificados, no mezclados.
+SCHEMA_VERSION = 21
 
 # --- Contexto de la senal: lo que el engine ya calcula y hasta ahora se tiraba
 #
@@ -337,7 +477,9 @@ class Database:
         for ddl in (
             _CREATE_SYMBOL_STATES, _CREATE_ANALYSIS_LOG, _CREATE_PAIR_META,
             _CREATE_SIGNALS, _CREATE_KLINES, _CREATE_META, _CREATE_OUTCOMES,
-            _CREATE_TELEGRAM_HILOS, _CREATE_ALERTAS_EMITIDAS,
+            _CREATE_TELEGRAM_HILOS, _CREATE_ALERTAS_EMITIDAS, _CREATE_RUPTURAS,
+            _CREATE_RUPTURAS_TF, NOTIFICATION_SCHEMA, EPISODIOS_SCHEMA,
+            EVALUACION_SCHEMA, OPERACIONES_SCHEMA,
         ):
             self._conn.executescript(ddl)
         self._conn.commit()
@@ -521,6 +663,50 @@ class Database:
                     f"objetivo por grupo de moneda (no cambia ninguna emision)"
                 )
 
+        if version < 13:
+            self._conn.executescript(_CREATE_RUPTURAS)
+            logger.info("Migracion v12->13: tabla de seguimiento de rupturas creada")
+
+        if version < 14:
+            self._conn.executescript(_CREATE_RUPTURAS_TF)
+            logger.info("Migracion v13->14: sombra de rupturas por marco creada "
+                        "(no cambia ninguna emision)")
+
+        if version < 16:
+            self._conn.executescript(EPISODIOS_SCHEMA)
+            cols = [r[1] for r in self._conn.execute("PRAGMA table_info(alertas_emitidas)")]
+            for col in ("episode_id", "plan_id"):
+                if col not in cols:
+                    self._conn.execute(
+                        f"ALTER TABLE alertas_emitidas ADD COLUMN {col} INTEGER")
+            logger.info("Migracion v15->16: episodios y planes con identidad propia "
+                        "(en sombra; no cambia ninguna emision)")
+
+        if version < 17:
+            self._conn.executescript(EVALUACION_SCHEMA)
+            logger.info("Migracion v16->17: recorrido por plan y horizontes "
+                        "(en sombra; no sustituye a ningun tracker)")
+
+        if version < 18:
+            self._conn.executescript(OPERACIONES_SCHEMA)
+            logger.info("Migracion v17->18: diario de operaciones del usuario "
+                        "(vacio; solo se llena con lo que el declare)")
+
+        if version < 19:
+            self._conn.executescript(MOTORES_SCHEMA)
+            logger.info("Migracion v18->19: los dos motores en sombra "
+                        "(no cambian ninguna emision)")
+
+        if version < 20:
+            self._conn.executescript(EXPERIMENTOS_SCHEMA)
+            logger.info("Migracion v19->20: prueba prospectiva de salidas "
+                        "(en sombra; las politicas van congeladas por huella)")
+
+        if version < 21:
+            self._conn.executescript(ACTIVACION_SCHEMA)
+            logger.info("Migracion v20->21: reglas de activacion y reversion "
+                        "congeladas (APAGADAS; solo reparto por episodio)")
+
         self._conn.execute(
             "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('version', ?)",
             (str(SCHEMA_VERSION),),
@@ -572,18 +758,21 @@ class Database:
         c3 = self._conn.execute(
             "DELETE FROM signals WHERE status != 'OPEN' AND ts_open < ?", (cut_sigs,)
         )
+        c4 = self._conn.execute(
+            "DELETE FROM rupturas WHERE closed = 1 AND ts_open < ?", (cut_sigs,)
+        )
         self._conn.commit()
         kl = self.prune_klines()
         deleted = {
             "symbol_states": c1.rowcount, "analysis_log": c2.rowcount,
-            "signals": c3.rowcount, "klines": kl,
+            "signals": c3.rowcount, "rupturas": c4.rowcount, "klines": kl,
         }
         total = sum(deleted.values())
         if total:
             logger.info(
                 f"SQLite purga: {deleted['symbol_states']} estados, "
                 f"{deleted['analysis_log']} logs, {deleted['signals']} señales, "
-                f"{deleted['klines']} velas"
+                f"{deleted['rupturas']} rupturas, {deleted['klines']} velas"
             )
         return deleted
 
@@ -840,6 +1029,14 @@ class Database:
                 "sl_pct": r.get("sl_pct"),
                 "desenlace": desenlace,
                 "ms_resuelto": ms,
+                # Preserve first-touch times so the UI can expose ties and
+                # distinguish a later recovery from TP before SL.
+                "ms_tp": tp,
+                "ms_sl": sl,
+                "cobertura_velas": r.get("cobertura_velas"),
+                "strategy_version": r.get("strategy_version"),
+                "reward_neto_pct": r.get("reward_neto_pct"),
+                "objetivo_alcanzable": r.get("objetivo_alcanzable"),
                 "mfe_pct": r.get("mfe_pct"),
                 "mae_pct": r.get("mae_pct"),
                 # Los dos que de verdad importan: la meta del operador y el
@@ -891,6 +1088,213 @@ class Database:
             tuple(args))
         cols = [d[0] for d in cur.description]
         return [dict(zip(cols, r)) for r in cur.fetchall()]
+
+    # --- Rupturas direccionales --------------------------------------------
+
+    def registrar_ruptura(self, row: dict) -> int:
+        """Abre un seguimiento independiente de una ruptura corta."""
+        cols = ", ".join(row.keys())
+        marks = ", ".join("?" * len(row))
+        cur = self._conn.execute(
+            f"INSERT INTO rupturas ({cols}) VALUES ({marks})", tuple(row.values())
+        )
+        self._dirty = True
+        return int(cur.lastrowid)
+
+    def guardar_ruptura(self, ruptura_id: int, campos: dict) -> None:
+        if not campos:
+            return
+        sets = ", ".join(f"{k} = ?" for k in campos)
+        self._conn.execute(
+            f"UPDATE rupturas SET {sets} WHERE id = ?",
+            (*campos.values(), ruptura_id),
+        )
+        self._dirty = True
+
+    def get_rupturas_abiertas(self) -> List[dict]:
+        cur = self._conn.execute(
+            "SELECT * FROM rupturas WHERE closed = 0 ORDER BY ts_open ASC"
+        )
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+    def ultima_ruptura_ts(self, symbol: str, direction: str) -> Optional[int]:
+        row = self._conn.execute(
+            """SELECT MAX(ts_open) FROM rupturas
+               WHERE symbol = ? AND direction = ?""",
+            (symbol, direction),
+        ).fetchone()
+        return int(row[0]) if row and row[0] is not None else None
+
+    # --- Sombra: rupturas por marco temporal --------------------------------
+    #
+    # Mismo patron que `rupturas`, tabla aparte. Nada de esto sale al tablero,
+    # ni a Telegram, ni al scoring: se acumula para poder pasarlo algun dia por
+    # las tres puertas (dinero, habilidad, terreno nuevo) sobre señales nuevas.
+    #
+    # `prune_old` NO la toca a proposito. La purga borra evidencia cerrada a
+    # los 30 dias y aqui hacen falta semanas de acumulacion para tener n
+    # suficiente; si algun dia estorba por tamaño, se purga con una regla
+    # propia y no de rebote.
+
+    def registrar_ruptura_tf(self, row: dict) -> int:
+        cols = ", ".join(row.keys())
+        marks = ", ".join("?" * len(row))
+        cur = self._conn.execute(
+            f"INSERT INTO rupturas_tf ({cols}) VALUES ({marks})", tuple(row.values())
+        )
+        self._dirty = True
+        return int(cur.lastrowid)
+
+    def guardar_ruptura_tf(self, ruptura_id: int, campos: dict) -> None:
+        if not campos:
+            return
+        sets = ", ".join(f"{k} = ?" for k in campos)
+        self._conn.execute(
+            f"UPDATE rupturas_tf SET {sets} WHERE id = ?",
+            (*campos.values(), ruptura_id),
+        )
+        self._dirty = True
+
+    def get_rupturas_tf_abiertas(self) -> List[dict]:
+        cur = self._conn.execute(
+            "SELECT * FROM rupturas_tf WHERE closed = 0 ORDER BY ts_open ASC"
+        )
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+    def ultima_ruptura_tf_ts(self, symbol: str, tf: str,
+                             direction: str) -> Optional[int]:
+        row = self._conn.execute(
+            """SELECT MAX(ts_open) FROM rupturas_tf
+               WHERE symbol = ? AND tf = ? AND direction = ?""",
+            (symbol, tf, direction),
+        ).fetchone()
+        return int(row[0]) if row and row[0] is not None else None
+
+    def get_rupturas_tf_resumen(self) -> dict:
+        """Cuantas hay por marco y direccion. Para mirar si la sombra corre."""
+        cur = self._conn.execute(
+            """SELECT tf, direction, confirmada, COUNT(*) n,
+                      SUM(closed) cerradas, SUM(ms_fill IS NOT NULL) rellenadas
+               FROM rupturas_tf GROUP BY tf, direction, confirmada"""
+        )
+        cols = [d[0] for d in cur.description]
+        filas = [dict(zip(cols, row)) for row in cur.fetchall()]
+        return {"total": sum(f["n"] for f in filas), "por_marco": filas}
+
+    def notification_policy(self) -> NotificationPolicy:
+        return NotificationPolicy(self._conn)
+
+    # --- Episodios y planes (fase 1, en sombra) -----------------------------
+
+    def registro_episodios(self) -> RegistroEpisodios:
+        s = get_settings()
+        return RegistroEpisodios(
+            self._conn,
+            silencio_ms=s.episodio_silencio_horas * 3600_000,
+            caducidad_ms=s.episodio_silencio_horas * 3600_000,
+            ancla_tolerancia_pct=s.episodio_ancla_tolerancia_pct,
+        )
+
+    def estadistica_rupturas(self) -> EstadisticaRupturas:
+        s = get_settings()
+        return EstadisticaRupturas(
+            self._conn,
+            ventana_dias=s.informe_stats_dias,
+            min_n=s.informe_stats_min_n,
+            horizonte_ms=s.signal_expiry_hours * 3600_000,
+        )
+
+    def diario_operaciones(self) -> Diario:
+        return Diario(self._conn, coste_pct=get_settings().coste_operacion_pct)
+
+    def referencias_par(self, symbol: str, desde_ms: int) -> dict:
+        """
+        Las dos referencias que el tablero no sabia dar: la primera alerta del
+        dia y el episodio al que pertenece la actual.
+
+        `desde_ms` lo manda el navegador —la medianoche de SU huso— para que
+        "del dia" signifique el dia del operador y no el del servidor, que va
+        en UTC y le quita seis horas a la cuenta.
+        """
+        sym = symbol.upper()
+        cur = self._conn.execute(
+            """SELECT id, ts_ms, entry, take_profit, stop_loss, telegram, senal_n,
+                      tier, score, display_state, plan_id, episode_id
+               FROM alertas_emitidas
+               WHERE symbol = ? AND ts_ms >= ? AND entry IS NOT NULL
+               ORDER BY ts_ms LIMIT 1""", (sym, desde_ms))
+        cols = [d[0] for d in cur.description]
+        fila = cur.fetchone()
+        primera = dict(zip(cols, fila)) if fila else None
+
+        total, enviadas = self._conn.execute(
+            """SELECT COUNT(*), COALESCE(SUM(telegram = 'enviado'), 0)
+               FROM alertas_emitidas WHERE symbol = ? AND ts_ms >= ?""",
+            (sym, desde_ms)).fetchone()
+
+        episodio = None
+        try:
+            cur = self._conn.execute(
+                """SELECT episode_id, ts_apertura, ts_ultimo_plan, fase, n_planes,
+                          primer_plan_id, motivo_cierre
+                   FROM episodios WHERE symbol = ? ORDER BY ts_apertura DESC LIMIT 1""",
+                (sym,))
+            cols = [d[0] for d in cur.description]
+            fila = cur.fetchone()
+            if fila:
+                episodio = dict(zip(cols, fila))
+                if episodio.get("primer_plan_id"):
+                    cur = self._conn.execute(
+                        """SELECT plan_id, ts_creado, entry, take_profit, stop_loss,
+                                  ordinal_episodio
+                           FROM planes WHERE plan_id = ?""",
+                        (episodio["primer_plan_id"],))
+                    c2 = [d[0] for d in cur.description]
+                    f2 = cur.fetchone()
+                    episodio["primer_plan"] = dict(zip(c2, f2)) if f2 else None
+        except sqlite3.Error:
+            # Una base anterior a la v16 no tiene episodios. No es un error:
+            # el tablero simplemente no muestra esa parte.
+            episodio = None
+
+        return {"symbol": sym, "desde_ms": desde_ms, "primera_del_dia": primera,
+                "alertas_del_dia": int(total or 0),
+                "enviadas_del_dia": int(enviadas or 0), "episodio": episodio}
+
+    def almacen_experimentos(self) -> AlmacenExperimentos:
+        """Las politicas congeladas de la fase 5. Solo escribe en sombra."""
+        s = get_settings()
+        return AlmacenExperimentos(
+            self._conn,
+            coste_pct=s.coste_operacion_pct,
+            max_por_pasada=s.experimentos_max_planes_por_pasada,
+        )
+
+    def almacen_activacion(self) -> AlmacenActivacion:
+        """Las reglas congeladas de la fase 7a. No activa nada por si sola."""
+        return AlmacenActivacion(self._conn)
+
+    def almacen_motores(self) -> AlmacenMotores:
+        """Las lecturas de los dos motores de la fase 4. Solo escribe en sombra."""
+        return AlmacenMotores(self._conn)
+
+    def almacen_recorridos(self) -> AlmacenRecorridos:
+        s = get_settings()
+        return AlmacenRecorridos(
+            self._conn,
+            coste_pct=s.coste_operacion_pct,
+            max_por_pasada=s.evaluador_max_planes_por_pasada,
+        )
+
+    def anotar_identidad_alerta(self, alerta_id: int, episode_id: int,
+                                plan_id: int) -> None:
+        """Enlaza la alerta ya guardada con su episodio y su plan."""
+        self._conn.execute(
+            "UPDATE alertas_emitidas SET episode_id = ?, plan_id = ? WHERE id = ?",
+            (episode_id, plan_id, alerta_id))
+        self._dirty = True
 
     # --- Hilos de Telegram ---------------------------------------------------
     #

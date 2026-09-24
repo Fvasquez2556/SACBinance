@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { PairState } from "../types";
 
 type Permission = "default" | "granted" | "denied" | "unsupported";
@@ -30,12 +30,6 @@ export function useNotifications() {
     }
     const result = await Notification.requestPermission();
     setPermission(result as Permission);
-  }, []);
-
-  useEffect(() => {
-    if (typeof Notification !== "undefined") {
-      setPermission(Notification.permission as Permission);
-    }
   }, []);
 
   const fire = useCallback((title: string, body: string) => {

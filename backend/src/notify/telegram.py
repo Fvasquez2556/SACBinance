@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import asyncio
+import datetime as dt
+import html
+import json
 import time
 from typing import Dict, Optional
 
@@ -116,19 +119,50 @@ class Telegram:
             return True
         return False
 
+    async def avisar_ruptura(self, texto: str) -> Optional[int]:
+        """Envia una ruptura sin reemplazar el hilo de una alerta TP/SL."""
+        r = await self._pedir("sendMessage", {
+            "chat_id": self.chat_id,
+            "text": texto,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        })
+        if r and "message_id" in r:
+            return int(r["message_id"])
+        return None
+
+    async def responder_a(self, message_id: int, texto: str) -> bool:
+        """Cuelga un seguimiento de un mensaje de ruptura concreto."""
+        r = await self._pedir("sendMessage", {
+            "chat_id": self.chat_id,
+            "text": texto,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+            "reply_to_message_id": int(message_id),
+            "allow_sending_without_reply": True,
+        })
+        return r is not None
+
     async def actualizar(self, symbol: str, texto: str) -> bool:
         """\nEdita el aviso que ya se mando para ese par. Devuelve False si no habia\nninguno, para que el llamante decida si manda uno nuevo o lo deja.\n"""
         mid = self._mensajes.get(symbol)
         if mid is None:
             return False
+        return await self.actualizar_mensaje(mid, texto)
+
+    async def actualizar_mensaje(self, message_id: int, texto: str) -> bool:
+        """Actualiza el mismo mensaje; no crea un aviso periodico nuevo."""
         r = await self._pedir("editMessageText", {
             "chat_id": self.chat_id,
-            "message_id": mid,
+            "message_id": int(message_id),
             "text": texto,
             "parse_mode": "HTML",
             "disable_web_page_preview": True,
         })
         return r is not None
+
+    def mensaje_id(self, symbol: str) -> Optional[int]:
+        return self._mensajes.get(symbol)
 
     async def responder(self, symbol: str, texto: str) -> bool:
         """
@@ -277,6 +311,53 @@ def _enlace(symbol: str) -> str:
             f"ver {par} en Binance</a>")
 
 
+def texto_ruptura(symbol: str, ruptura: dict) -> str:
+    """Aviso inicial de una ruptura que queda abierta a seguimiento de 24 h."""
+    par = symbol.replace("USDT", "")
+    alcista = ruptura.get("direction") == "RUPTURA_ALCISTA"
+    icono = "📈" if alcista else "📉"
+    titulo = "RUPTURA ALCISTA CORTA" if alcista else "RUPTURA BAJISTA CORTA"
+    lineas = [
+        f"{icono} <b>{par}</b>  ·  {titulo}",
+        "",
+        f"precio de ruptura <code>{ruptura.get('price_open')}</code>",
+        f"criterio: {ruptura.get('reason', 'sin detalle')}",
+    ]
+    score = ruptura.get("score")
+    rango = ruptura.get("rango_1h_pct")
+    if score is not None or rango is not None:
+        lineas.append(f"score {_fmt(score, 0)}  ·  rango 1h {_fmt(rango, 2, '%')}")
+    lineas += [
+        "",
+        "Seguimiento: 15 min, 1 h, 4 h y 24 h.",
+        _enlace(symbol),
+    ]
+    return "\n".join(lineas)
+
+
+def texto_seguimiento_ruptura(symbol: str, ruptura: dict, minutos: int) -> str:
+    """Resumen de una ruptura con retorno normalizado a su direccion."""
+    par = symbol.replace("USDT", "")
+    alcista = ruptura.get("direction") == "RUPTURA_ALCISTA"
+    icono = "📈" if alcista else "📉"
+    titulo = "alcista" if alcista else "bajista"
+    retorno = ruptura.get(f"ret_{minutos}m_pct")
+    lineas = [
+        f"{icono} <b>{par}</b>  ·  seguimiento {titulo} a {minutos} min",
+        "",
+        f"precio inicial <code>{ruptura.get('price_open')}</code>   "
+        f"ahora <code>{ruptura.get('last_price')}</code>",
+        f"retorno a favor {_fmt(retorno, 2, '%')}",
+        f"máx. a favor {_fmt(ruptura.get('mfe_direction_pct'), 2, '%')}   "
+        f"máx. en contra {_fmt(ruptura.get('mae_direction_pct'), 2, '%')}",
+        f"subida máxima {_fmt(ruptura.get('max_up_pct'), 2, '%')}   "
+        f"bajada máxima {_fmt(ruptura.get('max_down_pct'), 2, '%')}",
+        "",
+        _enlace(symbol),
+    ]
+    return "\n".join(lineas)
+
+
 def texto_bajada(symbol: str, alerta: dict, nivel: float) -> str:
     """\nAviso de que una alerta viva se esta dando la vuelta.\n\nImporta porque de 1391 senales cerradas, 217 subieron >=2.2% y despues\ncayeron al SL. Saber que una señal se tuerce vale tanto como saber que\nnacio, y el tablero solo lo enseña si alguien lo esta mirando.\n"""
     par = symbol.replace("USDT", "")
@@ -350,6 +431,21 @@ def texto_tp(symbol: str, alerta: dict) -> str:
     ])
 
 
+def texto_meta(symbol: str, alerta: dict) -> str:
+    """La meta fija de +3.2% se alcanzo, aunque el TP fuera distinto."""
+    par = symbol.replace("USDT", "")
+    return "\n".join([
+        f"✅ <b>{par}</b>  ·  META +3.2% ALCANZADA",
+        "",
+        f"entrada <code>{alerta.get('entry')}</code>   "
+        f"ahora <code>{alerta.get('precio_actual')}</code>",
+        f"maximo {_fmt(alerta.get('mfe_pct'), 2, '%')}   "
+        f"minimo {_fmt(alerta.get('mae_pct'), 2, '%')}",
+        "",
+        _enlace(symbol),
+    ])
+
+
 def texto_stop(symbol: str, alerta: dict) -> str:
     """El SL que fijo el sistema se ha tocado."""
     par = symbol.replace("USDT", "")
@@ -366,3 +462,124 @@ def texto_stop(symbol: str, alerta: dict) -> str:
         "despues a +3.2%. Tocar el stop no cierra la historia.",
         _enlace(symbol),
     ])
+
+
+def _linea_identidad(ctx: dict, alerta_id) -> str:
+    """
+    Quien es este plan, en palabras.
+
+    Antes decia «Plan #4871»: un identificador de base de datos que no dice si
+    es la primera oportunidad de un movimiento o la quinta repeticion del
+    mismo. La fase 1 guarda episodio y ordinal desde hace dias; solo faltaba
+    sacarlos al mensaje.
+    """
+    partes = [f"Plan #{alerta_id}"]
+    ep = ctx.get('episode_id')
+    if ep:
+        ordinal = ctx.get('ordinal_episodio')
+        if ordinal == 1:
+            partes.append(f"episodio {ep} · <b>primera oportunidad</b>")
+        elif ordinal:
+            partes.append(f"episodio {ep} · oportunidad n.º {ordinal}")
+        else:
+            partes.append(f"episodio {ep}")
+    tf = ctx.get('trigger_tf')
+    if tf:
+        partes.append(f"disparado en {html.escape(str(tf))}")
+    return ' · '.join(partes)
+
+
+def _linea_alcance(ctx: dict) -> str:
+    """
+    ¿Esto afecta a algo que ya tomaste, o solo describe otra oportunidad?
+
+    Es la distincion que el plan de la fase 6 pide explicitamente. Un aviso de
+    seguimiento sobre un plan que no tomaste no exige nada de ti; uno sobre el
+    que si tomaste, si. Sin decirlo, todos los mensajes piden la misma
+    atencion y acaban sin pedir ninguna.
+    """
+    if ctx.get('operacion_abierta'):
+        return ("⚠️ <b>Afecta a tu operación abierta</b> en este par.")
+    return ("Solo describe una oportunidad: no tienes ninguna operación "
+            "registrada en este par.")
+
+
+def texto_plan_notificado(plan: dict, titulo: str = "PLAN EN SEGUIMIENTO") -> str:
+    """Frozen plan, without mixing historical excursions with win probabilities."""
+    ctx = plan.get('contexto') or {}
+    if isinstance(ctx, str):
+        ctx = json.loads(ctx)
+    entry, tp, sl = plan['entry'], plan['take_profit'], plan['stop_loss']
+    current = plan.get('last_price') or entry
+    gross = (tp / entry - 1) * 100
+    cost = ctx.get('coste_pct')
+    stamp = dt.datetime.fromtimestamp(plan['ts_open']/1000,dt.timezone.utc).strftime('%d/%m %H:%M UTC')
+    lines = [f"<b>{html.escape(plan['symbol'])} · {titulo}</b>",
+             f"{_linea_identidad(ctx, plan['alerta_id'])} · detectado {stamp}",
+             "Señal de 1m · niveles de 1h · volatilidad de 15m",
+             "",f"entrada <code>{entry}</code>",
+             f"TP <code>{tp}</code> ({gross:+.2f}% bruto)",
+             f"SL <code>{sl}</code> ({(sl/entry-1)*100:+.2f}%)",
+             f"ahora <code>{current}</code> ({(current/entry-1)*100:+.2f}%)"]
+    if cost is not None:
+        lines.append(f"TP tras coste supuesto {cost:.2f}%: {gross-cost:+.2f}%")
+    lines += _lineas_niveles(ctx, entry, tp)
+    trends = ctx.get('macro_trends') or {}
+    if trends:
+        lines.append('Contexto al detectar: ' + ' · '.join(
+            f"{tf} {html.escape(str(trends.get(tf,'sin datos')))}" for tf in ('15m','1h','4h')))
+    lines += [_linea_alcance(ctx),
+              f"Estado del plan: {html.escape(plan.get('estado','ABIERTO'))}",
+              f"Máx. favorable {_fmt(plan.get('mfe'),2,'%')} · adverso {_fmt(plan.get('mae'),2,'%')}",
+              "Seguimiento simulado. Los cambios menores actualizan este mensaje.",
+              _enlace(plan['symbol'])]
+    return '\n'.join(lines)
+
+
+def _lineas_niveles(ctx: dict, entry: float, tp: float) -> list:
+    """
+    Sobre que se apoya el stop, y que hay que romper antes del TP.
+
+    Son los dos numeros que el mensaje daba por sabidos. El soporte explica de
+    donde sale el stop —no es un porcentaje redondo, es un nivel con toques— y
+    la resistencia dice si el precio tiene algo por delante antes del objetivo.
+    """
+    lineas = []
+    soporte = ctx.get('soporte')
+    if soporte:
+        toques = ctx.get('toques_soporte')
+        marca = f" · {toques} toques" if toques else ""
+        base = ctx.get('sl_basis') or ''
+        lineas.append(f"soporte que sostiene el SL <code>{soporte}</code>"
+                      f" ({(soporte/entry-1)*100:+.2f}%){marca}"
+                      + (f" · {html.escape(base)}" if base else ""))
+    resistencia = ctx.get('resistencia')
+    if resistencia:
+        toques = ctx.get('toques_resistencia')
+        marca = f" · {toques} toques" if toques else ""
+        if ctx.get('tp_bloqueado'):
+            lineas.append(f"techo que debe romper <code>{resistencia}</code>"
+                          f" ({(resistencia/entry-1)*100:+.2f}%){marca} — esta entre la "
+                          f"entrada y el TP")
+        elif resistencia > tp:
+            lineas.append(f"techo mas cercano <code>{resistencia}</code>"
+                          f" ({(resistencia/entry-1)*100:+.2f}%){marca} — por encima del TP")
+    return lineas
+
+
+def texto_evento_plan(event: dict) -> str:
+    plan = json.loads(event['snapshot'])
+    kind = event['tipo']
+    titles = {'SL':'STOP DEL PLAN ALCANZADO','TP':'TP DEL PLAN ALCANZADO',
+              'TP_META':'TP Y +3.2% BRUTO ALCANZADOS','META':'+3.2% BRUTO ALCANZADO',
+              'CERCA_SL':'PRECIO CERCA DEL STOP','VENCIDO':'PLAN VENCIDO'}
+    text = texto_plan_notificado(plan,titles[kind])
+    stamp = dt.datetime.fromtimestamp(event['ts_ms']/1000,dt.timezone.utc).strftime('%d/%m %H:%M UTC')
+    text += f"\nEvento observado: {stamp}"
+    if kind=='META':
+        text += '\nEl TP del plan sigue pendiente. Este hito no descuenta costes.'
+    if kind=='SL':
+        text += '\nEste plan deja de generar avisos de ganancia; el recorrido posterior queda en la UI.'
+    if plan.get('ambiguous'):
+        text += '\nSL y meta/TP aparecen en la misma vela: orden desconocido; no se contabiliza como éxito.'
+    return text
