@@ -1,0 +1,13 @@
+# Entorno PROPIO del servicio de IA en sombra. No se mezcla con
+# backend/requirements.txt: SAC no carga torch ni habla con OpenAI.
+#
+# torch se instala ANTES y aparte, desde el indice de CPU de PyTorch, para no
+# bajar las librerias de CUDA (~2 GB) en un servidor sin GPU:
+#   venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu
+openai>=2.20.0
+numpy>=1.26
+pandas>=2.2
+einops>=0.8.1
+huggingface_hub>=0.33.1
+safetensors>=0.6.2
+tqdm>=4.67

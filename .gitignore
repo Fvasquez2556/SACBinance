@@ -37,3 +37,10 @@ informes/
 
 # Adjuntos de sesiones de Codex
 .codex-remote-attachments/
+
+# IA en sombra: datos, secretos, entorno y codigo de terceros descargado
+ia_sombra/datos/
+ia_sombra/secretos/
+ia_sombra/vendor/
+ia_sombra/venv/
+ia_sombra/.env
