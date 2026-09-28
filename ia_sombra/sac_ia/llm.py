@@ -29,12 +29,17 @@ def ahora_ms() -> int:
     return int(time.time() * 1000)
 
 
-def crear_cliente(cfg):
-    """None si no hay clave: el servicio sigue, las decisiones quedan NO_EJECUTADA."""
+def leer_clave(cfg) -> str | None:
+    """La clave del fichero de secretos, o None. No necesita la libreria de OpenAI."""
     if not cfg.clave_openai.is_file():
         return None
-    clave = cfg.clave_openai.read_text(encoding="utf-8").strip()
-    if not clave:
+    return cfg.clave_openai.read_text(encoding="utf-8").strip() or None
+
+
+def crear_cliente(cfg):
+    """None si no hay clave: el servicio sigue, las decisiones quedan NO_EJECUTADA."""
+    clave = leer_clave(cfg)
+    if clave is None:
         return None
     from openai import OpenAI
     return OpenAI(api_key=clave, max_retries=0, timeout=cfg.llm_timeout_s)

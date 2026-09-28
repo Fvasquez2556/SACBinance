@@ -67,7 +67,7 @@ def cmd_medir(cfg, forzar: bool, prueba=consulta_de_prueba) -> int:
                          f"{registro.RODAJE_MIN_MS / 3.6e6:.0f} h de linea base")
     if not kronos_adapter.MotorKronos.desde_config(cfg).instalado():
         problemas.append(f"Kronos no esta instalado en {cfg.kronos_codigo}")
-    if llm.crear_cliente(cfg) is None:
+    if llm.leer_clave(cfg) is None:
         problemas.append(f"no hay clave de OpenAI en {cfg.clave_openai}")
     else:
         # Una medicion que se queda sin saldo a medio camino no da veredicto:
