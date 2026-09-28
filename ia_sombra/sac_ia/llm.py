@@ -83,10 +83,17 @@ def _uso(resp) -> dict:
             "razonamiento": int(getattr(det_out, "reasoning_tokens", 0) or 0) if det_out else 0}
 
 
+# Lo que OpenAI devuelve cuando la cuenta se queda sin saldo (429). No es un
+# limite de ritmo que pase solo: hasta que alguien recargue, fallara siempre.
+CODIGOS_SIN_CREDITO = {"credit_balance_exhausted", "insufficient_quota"}
+
+
 def _clasificar_error(exc: Exception) -> tuple[str, bool]:
     """(estado, pudo_cobrarse). Un 4xx no llega al modelo; un timeout, quiza si."""
     codigo = getattr(exc, "status_code", None)
     nombre = type(exc).__name__
+    if {getattr(exc, "code", None), getattr(exc, "type", None)} & CODIGOS_SIN_CREDITO:
+        return "SIN_CREDITOS", False
     if "Timeout" in nombre:
         return "TIMEOUT", True
     if codigo is not None:

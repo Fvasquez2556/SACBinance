@@ -35,7 +35,7 @@ Ese script solo instala. El orden completo:
 2. `venv/bin/python -m sac_ia probar-kronos -n 3` mide la latencia real de Kronos en este equipo.
 3. La clave de OpenAI va en `secretos/openai.key`, con `chmod 600`. Nunca va en el repositorio ni en el `.env` de SAC.
 4. `venv/bin/python -m sac_ia probar-llm --si-gastar` hace una llamada real a cada modelo (~1 centavo).
-5. Tras 48 h de rodaje, `venv/bin/python -m sac_ia medir` congela la huella y empieza la ventana de 14 días.
+5. Tras 48 h de rodaje, `venv/bin/python -m sac_ia medir` hace una consulta real a Luna y a Sol (menos de un centavo) y, si las dos salen bien, congela la huella y empieza la ventana de 14 días. Si OpenAI no tiene saldo, no empieza.
 
 ## Gasto
 
@@ -43,7 +43,7 @@ Se reserva el peor caso antes de cada llamada y se liquida con el uso real. Los 
 
 ## Consultar
 
-- `python -m sac_ia estado`: salud, cobertura, gasto y latencia. Nunca muestra decisiones ni resultados.
+- `python -m sac_ia estado`: salud, cobertura, gasto y latencia. Nunca muestra decisiones ni resultados. Si en las últimas 24 h OpenAI se quedó sin saldo o se alcanzó el tope de gasto, lo dice arriba, en `advertencias`.
 - `python -m sac_ia informe`: cegado hasta que cierra la ventana. `--desvelar` existe, pero queda anotado en la base.
 
 ## Apagar

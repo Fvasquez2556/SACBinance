@@ -178,6 +178,7 @@ def operativo(a: Almacen, ahora_ms: int) -> dict:
         k_estados[f["estado"]] += 1
     k_lat = [f["latencia_ms"] / 1000 for f in kronos if f["latencia_ms"]]
     return {
+        "advertencias": advertencias(a, ahora_ms),
         "modo": "MEDICION" if inicio else "RODAJE",
         "inicio_rodaje": _fecha(inicio_rodaje), "inicio_medicion": _fecha(inicio),
         "fin_medicion": _fecha(fin),
@@ -194,6 +195,22 @@ def operativo(a: Almacen, ahora_ms: int) -> dict:
         "huella_actual": registro.huella(),
         "huella_medicion": a.meta("huella_medicion"),
     }
+
+
+def advertencias(a: Almacen, ahora_ms: int) -> list[str]:
+    """Lo que el operador tiene que arreglar YA. No dice nada de resultados."""
+    desde = ahora_ms - 24 * 3600_000
+    salida = []
+    for estado, texto in (
+            ("SIN_CREDITOS", "OpenAI sin saldo: recarga creditos en "
+                             "platform.openai.com/settings/organization/billing"),
+            ("SIN_PRESUPUESTO", "se alcanzo el tope de gasto del servicio "
+                                "(IA_TOPE_DIARIO_USD / IA_TOPE_TOTAL_USD)")):
+        n = a.uno("SELECT COUNT(*) FROM decisiones WHERE estado = ? AND solicitado_ms >= ?",
+                  (estado, desde)) or 0
+        if n:
+            salida.append(f"{texto} ({n} consultas perdidas en las ultimas 24 h)")
+    return salida
 
 
 def interferencia(a: Almacen) -> dict:
@@ -323,7 +340,8 @@ def _f(x, pct=False, n=3):
 
 def generar(a: Almacen, ahora_ms: int, desvelar: bool = False) -> str:
     op = operativo(a, ahora_ms)
-    lineas = [f"# IA en sombra · estudio {registro.ESTUDIO_VERSION}", "",
+    avisos_op = [f"**ATENCION: {x}**" for x in op["advertencias"]]
+    lineas = [f"# IA en sombra · estudio {registro.ESTUDIO_VERSION}", "", *avisos_op,
               f"Modo: **{op['modo']}** · rodaje desde {op['inicio_rodaje']} · "
               f"medicion {op['inicio_medicion']} → {op['fin_medicion']}", "",
               "## Salud operativa", "",
