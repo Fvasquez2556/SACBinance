@@ -99,6 +99,20 @@ class ServicioTests(unittest.TestCase):
         # Kronos no puede llevarse el plazo entero: deja margen a los LLM
         self.assertLessEqual(self.motor.peticiones[0][1], 120 - 30)
 
+    def test_dos_avisos_juntos_se_simulan_uno_a_uno_con_su_plazo(self):
+        self.medir()
+        a = self.sac.alerta(symbol="POLUSDT")
+        b = self.sac.alerta(symbol="DOGEUSDT")
+        self.reloj.t = T0 + 1_000
+        self.s.descubrir(self.reloj.t)
+        for i, s in ((a, "POLUSDT"), (b, "DOGEUSDT")):
+            self.sac.notificar(i, symbol=s)
+            self.sac.telegram(i, "enviado")
+        self.reloj.t = ACTIVADO + 5_000
+        self.s.revisar(self.reloj.t)
+        self.assertEqual([p[0][0]["caso_id"] for p in self.motor.peticiones], [a, b])
+        self.assertEqual(self.a.uno("SELECT COUNT(*) FROM decisiones WHERE estado = 'OK'"), 4)
+
     def test_si_kronos_falla_sol_se_entera_y_decide_igual(self):
         self.motor.error = TimeoutError("lento")
         self.medir()

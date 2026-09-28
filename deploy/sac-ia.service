@@ -14,10 +14,10 @@ RestartSec=30
 # SAC tiene prioridad. Este servicio cede CPU, tiene techo de memoria y, si lo
 # pasa, el que muere es el, no SAC.
 Nice=10
-CPUQuota=150%
+CPUQuota=100%
 MemoryHigh=1536M
 MemoryMax=2G
-Environment=OMP_NUM_THREADS=2
+Environment=OMP_NUM_THREADS=1
 Environment=HF_HUB_OFFLINE=1
 
 [Install]

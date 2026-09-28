@@ -87,9 +87,11 @@ BRAZO_PRINCIPAL = "SOL"
 # secuencia entera en cada paso, asi que el coste es trayectorias x pasos x
 # contexto x parametros. Kronos-small con velas de 15 m (32 x 49 pasos,
 # contexto 256) pasaba de 10 minutos por aviso; Kronos-mini con velas de 1 h
-# (32 x 13 pasos, contexto 128) tarda ~5 s. El servidor es mas lento y pueden
-# llegar tres avisos juntos: dentro de 120 s solo cabe lo segundo. Se fija
-# ANTES de medir; cambiarlo cambia la huella.
+# (32 x 13 pasos, contexto 128) tarda ~5 s. En el servidor (i7-7500U, 2
+# nucleos, con SAC corriendo) ese mismo caso tarda 35 s con 1 hilo y 32 con 2:
+# el segundo hilo no aporta y le quita CPU a SAC. Con tres avisos juntos, 72 s,
+# que no caben. De ahi 16 trayectorias (~17 s por aviso) y Kronos aviso por
+# aviso. Se fija ANTES de medir; cambiarlo cambia la huella.
 KRONOS = {
     # Codigo: github.com/shiyu-coder/Kronos (MIT), commit del 13-abr-2026.
     "codigo_commit": "67b630e67f6a18c9e9be918d9b4337c960db1e9a",
@@ -104,7 +106,9 @@ KRONOS = {
     # y se descarta para no contar como futuro algo que ya habia pasado. Los
     # 12 restantes son las 12 h del plan.
     "pasos": 13,
-    "trayectorias": 32,
+    # 16 caminos: la frecuencia va a saltos de 1/16. La metrica es de orden
+    # (AUC), que tolera empates; lo que no tolera es llegar tarde.
+    "trayectorias": 16,
     "temperatura": 1.0,
     "top_p": 0.9,
     "semilla_base": 20260924,

@@ -165,11 +165,15 @@ class Servicio:
                 self._no_ejecutado(caso["caso_id"], "visto despues del plazo de decision", ahora)
         if not vivos:
             return hechos
-        resumenes = self.correr_kronos([c for c, _ in vivos])
+        # Aviso por aviso, el mas urgente primero: Luna y Sol del primero salen
+        # en cuanto termina su Kronos, mientras Kronos sigue con el siguiente.
+        # En lote, tres avisos juntos tardaban 72 s en el servidor y ninguno
+        # llegaba a tiempo; asi el tercero termina hacia los 51 s.
+        vivos.sort(key=lambda par: par[0]["as_of_ms"])
         with ThreadPoolExecutor(max_workers=4) as ex:
             futuros = []
             for caso, ctx in vivos:
-                resumen, motivo = resumenes.get(caso["caso_id"], (None, "sin resultado"))
+                resumen, motivo = self.kronos_de(caso)
                 deadline = caso["as_of_ms"] + registro.PLAZO_DECISION_MS
                 for brazo, cfg_brazo in registro.BRAZOS_LLM.items():
                     entrada = (contexto.con_kronos(ctx, resumen, motivo) if cfg_brazo["con_kronos"]
@@ -191,81 +195,62 @@ class Servicio:
 
     # --- Kronos ---------------------------------------------------------------------------
 
-    def correr_kronos(self, casos: list[dict]) -> dict:
-        """caso_id -> (resumen para el LLM o None, motivo). Guarda cada fila de kronos."""
+    def kronos_de(self, c: dict) -> tuple[Optional[dict], str]:
+        """(resumen para el LLM o None, motivo) de UN aviso. Guarda su fila de kronos."""
         k = registro.KRONOS
-        ahora = self.reloj()
-        salida, listos = {}, []
 
-        def fallo(caso_id, estado, motivo):
-            self.a.guardar_kronos({"caso_id": caso_id, "estado": estado, "motivo": motivo,
+        def fallo(estado, motivo):
+            self.a.guardar_kronos({"caso_id": c["caso_id"], "estado": estado, "motivo": motivo,
                                    "modelo": k["modelo"], "creado_ms": self.reloj()})
-            salida[caso_id] = (None, motivo)
+            return None, motivo
 
         if self.motor is None or not self.motor.instalado():
-            for c in casos:
-                fallo(c["caso_id"], "NO_EJECUTADO", "Kronos no instalado")
-            return salida
-        for c in casos:
-            try:
-                velas = self.velas_kronos(c["symbol"], c["as_of_ms"], k["lookback"])
-            except Exception as exc:                       # noqa: BLE001
-                fallo(c["caso_id"], "FALLO", f"velas de Binance: {type(exc).__name__}")
-                continue
-            problema = kronos_adapter.serie_util(velas, k["lookback"])
-            if problema:
-                fallo(c["caso_id"], "FALLO", problema)
-                continue
-            listos.append((c, velas))
-        if not listos:
-            return salida
-
-        plazo = min(c["as_of_ms"] for c, _ in listos) + registro.PLAZO_DECISION_MS
-        timeout = min(self.cfg.kronos_timeout_s, (plazo - ahora) / 1000 - MARGEN_LLM_S)
-        if timeout < 5:
-            for c, _ in listos:
-                fallo(c["caso_id"], "FALLO", "sin tiempo para simular")
-            return salida
-        peticion = [{"caso_id": c["caso_id"], "velas": v,
-                     "semilla": k["semilla_base"] + c["caso_id"]} for c, v in listos]
+            return fallo("NO_EJECUTADO", "Kronos no instalado")
         try:
-            respuesta = self.motor.simular(peticion, timeout)
+            velas = self.velas_kronos(c["symbol"], c["as_of_ms"], k["lookback"])
         except Exception as exc:                           # noqa: BLE001
-            for c, _ in listos:
-                fallo(c["caso_id"], "FALLO", f"{type(exc).__name__}: {str(exc)[:200]}")
-            return salida
+            return fallo("FALLO", f"velas de Binance: {type(exc).__name__}")
+        problema = kronos_adapter.serie_util(velas, k["lookback"])
+        if problema:
+            return fallo("FALLO", problema)
+        # El plazo es el de ESTE aviso, descontado lo que Luna y Sol necesitan.
+        plazo = c["as_of_ms"] + registro.PLAZO_DECISION_MS
+        timeout = min(self.cfg.kronos_timeout_s, (plazo - self.reloj()) / 1000 - MARGEN_LLM_S)
+        if timeout < 5:
+            return fallo("FALLO", "sin tiempo para simular")
+        semilla = k["semilla_base"] + c["caso_id"]
+        try:
+            respuesta = self.motor.simular(
+                [{"caso_id": c["caso_id"], "velas": velas, "semilla": semilla}], timeout)
+        except Exception as exc:                           # noqa: BLE001
+            return fallo("FALLO", f"{type(exc).__name__}: {str(exc)[:200]}")
 
-        for c, velas in listos:
-            crudas = respuesta["trayectorias"].get(c["caso_id"]) or []
-            primera = velas[-1]["t"] + kronos_adapter.PASO_MS
-            tray = [kronos_adapter.futuras(t, primera, c["as_of_ms"], PASOS_FUTUROS)
-                    for t in crudas]
-            r = barreras.resumir(tray, c["entrada"], c["meta_precio"], c["stop"],
-                                 k["max_invalidas_frac"])
-            ruta, sha = kronos_adapter.guardar_artefacto(
-                self.cfg.artefactos, c["caso_id"],
-                {"caso_id": c["caso_id"], "modelo": k["modelo"], "semilla": k["semilla_base"]
-                 + c["caso_id"], "primera_apertura_ms": primera, "entrada": velas,
-                 "trayectorias": crudas})
-            self.a.guardar_kronos({
-                "caso_id": c["caso_id"], "estado": "OK" if not r["abstiene"] else "FALLO",
-                "motivo": None if not r["abstiene"] else "demasiadas trayectorias invalidas",
-                "modelo": k["modelo"], "n_trayectorias": r["n_trayectorias"],
-                "n_validas": r["n_validas"], "n_meta": r["cuenta"]["META"],
-                "n_stop": r["cuenta"]["STOP"], "n_ninguna": r["cuenta"]["NINGUNA"],
-                "n_ambigua": r["cuenta"]["AMBIGUA"], "p_meta": r["p_meta_antes_que_stop"],
-                "resumen_json": r, "artefacto": ruta, "artefacto_sha256": sha,
-                "latencia_ms": respuesta.get("latencia_ms"), "creado_ms": self.reloj()})
-            if r["abstiene"]:
-                salida[c["caso_id"]] = (None, "demasiadas trayectorias invalidas")
-            else:
-                visible = {k2: r[k2] for k2 in (
-                    "n_trayectorias", "n_validas", "p_meta_antes_que_stop",
-                    "p_stop_antes_que_meta", "p_ninguna", "p_ambigua", "retorno_final_pct",
-                    "max_subida_pct_p50", "max_bajada_pct_p50", "nota")}
-                visible["horizonte"] = f"{PASOS_FUTUROS} velas de {k['tf']}"
-                salida[c["caso_id"]] = (visible, "")
-        return salida
+        crudas = respuesta["trayectorias"].get(c["caso_id"]) or []
+        primera = velas[-1]["t"] + kronos_adapter.PASO_MS
+        tray = [kronos_adapter.futuras(t, primera, c["as_of_ms"], PASOS_FUTUROS) for t in crudas]
+        r = barreras.resumir(tray, c["entrada"], c["meta_precio"], c["stop"],
+                             k["max_invalidas_frac"])
+        ruta, sha = kronos_adapter.guardar_artefacto(
+            self.cfg.artefactos, c["caso_id"],
+            {"caso_id": c["caso_id"], "modelo": k["modelo"], "semilla": semilla,
+             "primera_apertura_ms": primera, "entrada": velas, "trayectorias": crudas})
+        self.a.guardar_kronos({
+            "caso_id": c["caso_id"], "estado": "OK" if not r["abstiene"] else "FALLO",
+            "motivo": None if not r["abstiene"] else "demasiadas trayectorias invalidas",
+            "modelo": k["modelo"], "n_trayectorias": r["n_trayectorias"],
+            "n_validas": r["n_validas"], "n_meta": r["cuenta"]["META"],
+            "n_stop": r["cuenta"]["STOP"], "n_ninguna": r["cuenta"]["NINGUNA"],
+            "n_ambigua": r["cuenta"]["AMBIGUA"], "p_meta": r["p_meta_antes_que_stop"],
+            "resumen_json": r, "artefacto": ruta, "artefacto_sha256": sha,
+            "latencia_ms": respuesta.get("latencia_ms"), "creado_ms": self.reloj()})
+        if r["abstiene"]:
+            return None, "demasiadas trayectorias invalidas"
+        visible = {k2: r[k2] for k2 in (
+            "n_trayectorias", "n_validas", "p_meta_antes_que_stop", "p_stop_antes_que_meta",
+            "p_ninguna", "p_ambigua", "retorno_final_pct", "max_subida_pct_p50",
+            "max_bajada_pct_p50", "nota")}
+        visible["horizonte"] = f"{PASOS_FUTUROS} velas de {k['tf']}"
+        return visible, ""
 
     # --- Mantenimiento -------------------------------------------------------------------
 

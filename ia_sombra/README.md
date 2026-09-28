@@ -7,8 +7,8 @@ A los 14 días de medición, `python -m sac_ia informe` da el veredicto: **AYUDA
 ## Qué hace con cada aviso
 
 1. Ve que la alerta pasó a `enviado` en `alertas_emitidas`, lee su plan en `notificacion_planes` y congela el contexto con los datos disponibles hasta ese instante.
-2. Pide a Binance las últimas 128 velas cerradas de 1 h y genera 32 trayectorias de 12 h con Kronos-mini, en un proceso hijo con plazo. Se eligió mini con velas de 1 h tras medirlo: Kronos-small con velas de 15 m pasaba de 10 minutos por aviso.
-3. Pasa el contexto y el resumen de Kronos a Luna y a Sol en paralelo. Cada uno devuelve `ENTRAR`/`ESPERAR`/`RECHAZAR` y la probabilidad de tocar la meta del operador (+3,2 % neto) antes que el stop.
+2. Pide a Binance las últimas 128 velas cerradas de 1 h y genera 16 trayectorias de 12 h con Kronos-mini, en un proceso hijo con plazo (~17 s por aviso en el servidor, con un hilo). Se eligió así tras medirlo: Kronos-small con velas de 15 m pasaba de 10 minutos por aviso, y con 32 trayectorias tres avisos juntos no cabían en el plazo.
+3. En cuanto Kronos termina con un aviso, pasa el contexto y su resumen a Luna y a Sol en paralelo, sin esperar a los demás avisos del mismo lote. Cada uno devuelve `ENTRAR`/`ESPERAR`/`RECHAZAR` y la probabilidad de tocar la meta del operador (+3,2 % neto) antes que el stop.
 4. Doce horas después etiqueta lo que pasó con el mismo evaluador de recorridos que usa SAC (`backend/src/evaluacion/recorrido.py`).
 
 Todo tiene que ocurrir en menos de 120 s desde el aviso. Lo que llega tarde se guarda, pero no cuenta.
