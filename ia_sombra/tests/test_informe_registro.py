@@ -77,6 +77,32 @@ class VeredictoTests(unittest.TestCase):
         self.assertIn("Sin veredicto", texto)
 
 
+class InterferenciaTests(unittest.TestCase):
+    def test_las_muestras_del_reloj_en_julio_no_cuentan(self):
+        a = Almacen(":memory:")
+        inicio = 1_790_000_000_000
+        a.fijar_meta("inicio_rodaje_ms", inicio)
+        for i in range(40):
+            a.guardar_salud({"ts_ms": inicio + i * 30_000, "modo": "RODAJE",
+                             "edad_vela_ms": 30_000 + (i % 10) * 3_000})
+        # el arranque con el reloj en julio: fecha anterior al rodaje y edad negativa
+        a.guardar_salud({"ts_ms": inicio - 5_500_000_000, "modo": "RODAJE",
+                         "edad_vela_ms": -5_509_371_260})
+        # y una edad negativa dentro del rodaje, que tampoco puede existir
+        a.guardar_salud({"ts_ms": inicio + 50 * 30_000, "modo": "RODAJE",
+                         "edad_vela_ms": -1_000})
+        r = informe.interferencia(a)["RODAJE"]
+        self.assertEqual((r["muestras"], r["descartadas_imposibles"]), (40, 2))
+        self.assertGreater(r["edad_vela_p95_ms"], 50_000)
+
+    def test_una_muestra_real_muy_alta_si_cuenta(self):
+        # SAC recien arrancado, todavia cargando velas: es real, no se descarta.
+        a = Almacen(":memory:")
+        a.fijar_meta("inicio_rodaje_ms", 1000)
+        a.guardar_salud({"ts_ms": 2000, "modo": "RODAJE", "edad_vela_ms": 9_961_069})
+        self.assertEqual(informe.interferencia(a)["RODAJE"]["descartadas_imposibles"], 0)
+
+
 class RegistroTests(unittest.TestCase):
     def test_esquema_estricto_valido_para_structured_outputs(self):
         e = registro.ESQUEMA_DECISION

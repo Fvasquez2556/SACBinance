@@ -213,15 +213,31 @@ def advertencias(a: Almacen, ahora_ms: int) -> list[str]:
     return salida
 
 
+def muestra_posible(fila: dict, inicio_rodaje_ms: int) -> bool:
+    """
+    Una muestra de salud solo cuenta si pudo existir.
+
+    El servidor arranca con el reloj en julio unos segundos, hasta que NTP lo
+    corrige (pasó el 12-sep y el 29-sep tras un apagón). Lo que se anota en ese
+    rato lleva una fecha anterior al estudio y una edad de vela negativa: no es
+    una medida de SAC, es un error del reloj. Se descarta y se cuenta aparte.
+    """
+    edad = fila["edad_vela_ms"]
+    return fila["ts_ms"] >= inicio_rodaje_ms and (edad is None or edad >= 0)
+
+
 def interferencia(a: Almacen) -> dict:
+    inicio = int(a.meta("inicio_rodaje_ms") or 0)
     salida = {}
     for modo in ("RODAJE", "MEDICION"):
-        filas = a.filas("SELECT edad_vela_ms, carga_1m, rss_ia_mb, sac_pid FROM salud "
+        todas = a.filas("SELECT ts_ms, edad_vela_ms, carga_1m, rss_ia_mb, sac_pid FROM salud "
                         "WHERE modo = ? ORDER BY ts_ms", (modo,))
+        filas = [f for f in todas if muestra_posible(f, inicio)]
         edades = [f["edad_vela_ms"] for f in filas if f["edad_vela_ms"] is not None]
         pids = [f["sac_pid"] for f in filas if f["sac_pid"]]
         cambios = sum(1 for x, y in zip(pids, pids[1:]) if x != y)
         salida[modo] = {"muestras": len(filas),
+                        "descartadas_imposibles": len(todas) - len(filas),
                         "edad_vela_p95_ms": cuantil(edades, 0.95),
                         "carga_p95": cuantil([f["carga_1m"] for f in filas
                                               if f["carga_1m"] is not None], 0.95),
