@@ -33,13 +33,21 @@ def score_and_tier(
     stabilize_count: int = 0,
     flow=None,
     ind=None,
+    btc_regime: str = "NEUTRAL",
 ) -> Tuple[int, str]:
     """
     Score 0-100 + tier, con gate macro integrado.
 
     1. Calcula score base segun estado FSM (hereda logica de v2)
-    2. Aplica multiplicador del gate macro
-    3. Clasifica en tier (VIGILANCIA/MODERADA/FUERTE/EXTRA-FUERTE)
+    2. Aplica los multiplicadores: gate macro del par y regimen de BTC
+    3. Aplica el techo sin flujo confirmado y el piso por macro
+    4. Clasifica en tier (VIGILANCIA/MODERADA/FUERTE/EXTRA-FUERTE)
+
+    El regimen de BTC se aplicaba en engine.py DESPUES de esta funcion, y el
+    tier se recalculaba desde cero: el techo de 79 sin flujo y el piso de 75
+    con macro NEUTRAL quedaban anulados. Medido el 3-oct-2026: el 97% de los
+    FUERTE no tenia flujo confirmado, y el 66% tenia exactamente 86 puntos
+    (79 x 1.10). Ver audit/2026-10-03/revision-completa/INFORME.md (E1).
     """
     s = get_settings()
 
@@ -102,6 +110,15 @@ def score_and_tier(
 
     # Gate macro: multiplica el score segun tendencia global
     val, _mult = aplicar_gate(val, fsm_state, macro_global)
+
+    # Regimen de BTC, solo sobre subidas: el mercado por encima del gate del
+    # par. Va aqui, con los demas multiplicadores, para que el techo y el piso
+    # de abajo se apliquen sobre el score final.
+    if fsm_state == "RISING":
+        if btc_regime == "BAJISTA":
+            val = max(0, int(val * s.btc_bajista_mult))
+        elif btc_regime == "ALCISTA":
+            val = min(100, int(val * s.btc_alcista_mult))
 
     # Techo por falta de confirmacion de flujo — DESPUES del gate.
     # Antes se aplicaba antes, y gate_alcista_rising_mult=1.30 lo anulaba:

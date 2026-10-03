@@ -685,7 +685,14 @@ class StateEngine:
                 self._sr_cache[symbol] = sr
         consolidating = cons.consolidating
 
-        # Score base con gate macro
+        # Gate BTC: el regimen del mercado por encima del gate por-par. Se
+        # aplica DENTRO de score_and_tier: aplicarlo aqui despues, y recalcular
+        # el tier con _tier_from_score, anulaba el techo sin flujo y el piso
+        # por macro (INFORME del 3-oct-2026, E1).
+        btc_reg = self._btc_regime()
+        st.btc_regime = btc_reg
+
+        # Score base con gate macro y regimen BTC
         val, tier = score_and_tier(
             fsm_state=st.fsm_state,
             metrics=st.metrics,
@@ -693,18 +700,9 @@ class StateEngine:
             stabilize_count=st.stabilize_count,
             flow=st.flow_snap,
             ind=st.ind,
+            btc_regime=btc_reg,
         )
         _, mult = aplicar_gate(val, st.fsm_state, st.macro_global)
-
-        # Gate BTC: el regimen del mercado por encima del gate por-par
-        btc_reg = self._btc_regime()
-        st.btc_regime = btc_reg
-        if st.fsm_state == FSM_RISING:
-            if btc_reg == "BAJISTA":
-                val = max(0, int(val * s.btc_bajista_mult))
-            elif btc_reg == "ALCISTA":
-                val = min(100, int(val * s.btc_alcista_mult))
-            tier = _tier_from_score(val)
 
         # Consolidacion lateral fria (FSM NEUTRAL): score de contexto
         if consolidating and st.fsm_state == FSM_NEUTRAL:
@@ -1163,6 +1161,7 @@ class StateEngine:
             stabilize_count=st.stabilize_count,
             flow=st.flow_snap,
             ind=st.ind,
+            btc_regime=st.btc_regime,
         )
         kind = "early" if ps == FSM_RISING else "watch"
         logger.info(
