@@ -1,0 +1,908 @@
+{
+ "criterio": "top 150 por mediana de volumen diario (USDT) en d\u00edas con >=1300 minutos, 8-sep a 2-oct; sin estables/oro/envoltorios",
+ "monedas": [
+  "BTCUSDT",
+  "ETHUSDT",
+  "ZECUSDT",
+  "SOLUSDT",
+  "XRPUSDT",
+  "NEARUSDT",
+  "BNBUSDT",
+  "SUIUSDT",
+  "DOGEUSDT",
+  "UNIUSDT",
+  "ENAUSDT",
+  "AVAXUSDT",
+  "LINKUSDT",
+  "WLDUSDT",
+  "ADAUSDT",
+  "TAOUSDT",
+  "PEPEUSDT",
+  "ARBUSDT",
+  "PUMPUSDT",
+  "TRXUSDT",
+  "ONDOUSDT",
+  "LTCUSDT",
+  "XLMUSDT",
+  "QNTUSDT",
+  "MARSCOINUSDT",
+  "DASHUSDT",
+  "CRCLBUSDT",
+  "FETUSDT",
+  "TRUMPUSDT",
+  "AAVEUSDT",
+  "BCHUSDT",
+  "SNDKBUSDT",
+  "FILUSDT",
+  "\u725b\u6765USDT",
+  "ONEUSDT",
+  "HBARUSDT",
+  "SPCXBUSDT",
+  "DOTUSDT",
+  "ASTERUSDT",
+  "INJUSDT",
+  "XPLUSDT",
+  "LSKUSDT",
+  "SAGAUSDT",
+  "APTUSDT",
+  "PENGUUSDT",
+  "GRAMUSDT",
+  "VTHOUSDT",
+  "POLUSDT",
+  "MSTRBUSDT",
+  "ZROUSDT",
+  "RAYUSDT",
+  "ICPUSDT",
+  "OPUSDT",
+  "SEIUSDT",
+  "CAKEUSDT",
+  "ZAMAUSDT",
+  "ETHFIUSDT",
+  "WLFIUSDT",
+  "VIRTUALUSDT",
+  "NVDABUSDT",
+  "ZENUSDT",
+  "NILUSDT",
+  "NOMUSDT",
+  "RENDERUSDT",
+  "JUPUSDT",
+  "TIAUSDT",
+  "MORPHOUSDT",
+  "AEROUSDT",
+  "PENDLEUSDT",
+  "MUBUSDT",
+  "SHIBUSDT",
+  "ETCUSDT",
+  "EIGENUSDT",
+  "LDOUSDT",
+  "COTIUSDT",
+  "ACEUSDT",
+  "PHAUSDT",
+  "CRVUSDT",
+  "SOXLBUSDT",
+  "ARUSDT",
+  "MUBARAKUSDT",
+  "STRKUSDT",
+  "TUTUSDT",
+  "SYNUSDT",
+  "RUNEUSDT",
+  "ALGOUSDT",
+  "QQQBUSDT",
+  "BONKUSDT",
+  "ATOMUSDT",
+  "SNXXBUSDT",
+  "BNCBUSDT",
+  "JSTUSDT",
+  "REZUSDT",
+  "CHIPUSDT",
+  "SKYUSDT",
+  "PYTHUSDT",
+  "PROMUSDT",
+  "PLUMEUSDT",
+  "FFUSDT",
+  "BABYUSDT",
+  "MINAUSDT",
+  "HEMIUSDT",
+  "ARKUSDT",
+  "JTOUSDT",
+  "TSLABUSDT",
+  "GIGGLEUSDT",
+  "CFGUSDT",
+  "GALAUSDT",
+  "WIFUSDT",
+  "GUSDT",
+  "METUSDT",
+  "SKHYBUSDT",
+  "STXUSDT",
+  "ORDIUSDT",
+  "HEIUSDT",
+  "0GUSDT",
+  "KORUBUSDT",
+  "FLOKIUSDT",
+  "IOSTUSDT",
+  "GRTUSDT",
+  "KMNOUSDT",
+  "KITEUSDT",
+  "ZKUSDT",
+  "KAITOUSDT",
+  "DODOUSDT",
+  "TRBUSDT",
+  "INTCBUSDT",
+  "VETUSDT",
+  "DEXEUSDT",
+  "CHZUSDT",
+  "BROCCOLI714USDT",
+  "MEGAUSDT",
+  "HUMAUSDT",
+  "EPICUSDT",
+  "AXSUSDT",
+  "CFXUSDT",
+  "BIOUSDT",
+  "GOOGLBUSDT",
+  "BOMEUSDT",
+  "SUSDT",
+  "SOPHUSDT",
+  "IOUSDT",
+  "ENSUSDT",
+  "DYDXUSDT",
+  "BBUSDT",
+  "NIGHTUSDT",
+  "SYRUPUSDT",
+  "SOLVUSDT",
+  "SANDUSDT",
+  "BANKUSDT"
+ ],
+ "detalle": [
+  {
+   "symbol": "BTCUSDT",
+   "vol_mediano_usdt": 1307024223,
+   "dias": 24
+  },
+  {
+   "symbol": "ETHUSDT",
+   "vol_mediano_usdt": 752465081,
+   "dias": 24
+  },
+  {
+   "symbol": "ZECUSDT",
+   "vol_mediano_usdt": 316718939,
+   "dias": 24
+  },
+  {
+   "symbol": "SOLUSDT",
+   "vol_mediano_usdt": 284738149,
+   "dias": 24
+  },
+  {
+   "symbol": "XRPUSDT",
+   "vol_mediano_usdt": 255490711,
+   "dias": 24
+  },
+  {
+   "symbol": "NEARUSDT",
+   "vol_mediano_usdt": 207586899,
+   "dias": 24
+  },
+  {
+   "symbol": "BNBUSDT",
+   "vol_mediano_usdt": 98687392,
+   "dias": 24
+  },
+  {
+   "symbol": "SUIUSDT",
+   "vol_mediano_usdt": 92782694,
+   "dias": 24
+  },
+  {
+   "symbol": "DOGEUSDT",
+   "vol_mediano_usdt": 68364703,
+   "dias": 24
+  },
+  {
+   "symbol": "UNIUSDT",
+   "vol_mediano_usdt": 67563651,
+   "dias": 24
+  },
+  {
+   "symbol": "ENAUSDT",
+   "vol_mediano_usdt": 53367227,
+   "dias": 24
+  },
+  {
+   "symbol": "AVAXUSDT",
+   "vol_mediano_usdt": 48914391,
+   "dias": 24
+  },
+  {
+   "symbol": "LINKUSDT",
+   "vol_mediano_usdt": 41808778,
+   "dias": 24
+  },
+  {
+   "symbol": "WLDUSDT",
+   "vol_mediano_usdt": 40360773,
+   "dias": 24
+  },
+  {
+   "symbol": "ADAUSDT",
+   "vol_mediano_usdt": 39954406,
+   "dias": 24
+  },
+  {
+   "symbol": "TAOUSDT",
+   "vol_mediano_usdt": 39832516,
+   "dias": 24
+  },
+  {
+   "symbol": "PEPEUSDT",
+   "vol_mediano_usdt": 32155286,
+   "dias": 24
+  },
+  {
+   "symbol": "ARBUSDT",
+   "vol_mediano_usdt": 31495063,
+   "dias": 24
+  },
+  {
+   "symbol": "PUMPUSDT",
+   "vol_mediano_usdt": 30808009,
+   "dias": 24
+  },
+  {
+   "symbol": "TRXUSDT",
+   "vol_mediano_usdt": 29343264,
+   "dias": 24
+  },
+  {
+   "symbol": "ONDOUSDT",
+   "vol_mediano_usdt": 27282806,
+   "dias": 24
+  },
+  {
+   "symbol": "LTCUSDT",
+   "vol_mediano_usdt": 26115951,
+   "dias": 24
+  },
+  {
+   "symbol": "XLMUSDT",
+   "vol_mediano_usdt": 22951521,
+   "dias": 24
+  },
+  {
+   "symbol": "QNTUSDT",
+   "vol_mediano_usdt": 21933188,
+   "dias": 14
+  },
+  {
+   "symbol": "MARSCOINUSDT",
+   "vol_mediano_usdt": 20677785,
+   "dias": 24
+  },
+  {
+   "symbol": "DASHUSDT",
+   "vol_mediano_usdt": 19849393,
+   "dias": 24
+  },
+  {
+   "symbol": "CRCLBUSDT",
+   "vol_mediano_usdt": 19796023,
+   "dias": 24
+  },
+  {
+   "symbol": "FETUSDT",
+   "vol_mediano_usdt": 19635358,
+   "dias": 24
+  },
+  {
+   "symbol": "TRUMPUSDT",
+   "vol_mediano_usdt": 18898115,
+   "dias": 24
+  },
+  {
+   "symbol": "AAVEUSDT",
+   "vol_mediano_usdt": 18633716,
+   "dias": 24
+  },
+  {
+   "symbol": "BCHUSDT",
+   "vol_mediano_usdt": 17467538,
+   "dias": 24
+  },
+  {
+   "symbol": "SNDKBUSDT",
+   "vol_mediano_usdt": 17153077,
+   "dias": 24
+  },
+  {
+   "symbol": "FILUSDT",
+   "vol_mediano_usdt": 16977238,
+   "dias": 24
+  },
+  {
+   "symbol": "\u725b\u6765USDT",
+   "vol_mediano_usdt": 15738476,
+   "dias": 23
+  },
+  {
+   "symbol": "ONEUSDT",
+   "vol_mediano_usdt": 14971064,
+   "dias": 16
+  },
+  {
+   "symbol": "HBARUSDT",
+   "vol_mediano_usdt": 14247157,
+   "dias": 24
+  },
+  {
+   "symbol": "SPCXBUSDT",
+   "vol_mediano_usdt": 13866757,
+   "dias": 24
+  },
+  {
+   "symbol": "DOTUSDT",
+   "vol_mediano_usdt": 13040029,
+   "dias": 24
+  },
+  {
+   "symbol": "ASTERUSDT",
+   "vol_mediano_usdt": 12821734,
+   "dias": 24
+  },
+  {
+   "symbol": "INJUSDT",
+   "vol_mediano_usdt": 12396618,
+   "dias": 24
+  },
+  {
+   "symbol": "XPLUSDT",
+   "vol_mediano_usdt": 11901250,
+   "dias": 24
+  },
+  {
+   "symbol": "LSKUSDT",
+   "vol_mediano_usdt": 11342625,
+   "dias": 22
+  },
+  {
+   "symbol": "SAGAUSDT",
+   "vol_mediano_usdt": 10918466,
+   "dias": 23
+  },
+  {
+   "symbol": "APTUSDT",
+   "vol_mediano_usdt": 10894068,
+   "dias": 24
+  },
+  {
+   "symbol": "PENGUUSDT",
+   "vol_mediano_usdt": 10647577,
+   "dias": 24
+  },
+  {
+   "symbol": "GRAMUSDT",
+   "vol_mediano_usdt": 10641198,
+   "dias": 24
+  },
+  {
+   "symbol": "VTHOUSDT",
+   "vol_mediano_usdt": 10561752,
+   "dias": 23
+  },
+  {
+   "symbol": "POLUSDT",
+   "vol_mediano_usdt": 10117621,
+   "dias": 24
+  },
+  {
+   "symbol": "MSTRBUSDT",
+   "vol_mediano_usdt": 9901463,
+   "dias": 24
+  },
+  {
+   "symbol": "ZROUSDT",
+   "vol_mediano_usdt": 9323420,
+   "dias": 24
+  },
+  {
+   "symbol": "RAYUSDT",
+   "vol_mediano_usdt": 9114044,
+   "dias": 24
+  },
+  {
+   "symbol": "ICPUSDT",
+   "vol_mediano_usdt": 8680961,
+   "dias": 24
+  },
+  {
+   "symbol": "OPUSDT",
+   "vol_mediano_usdt": 7893512,
+   "dias": 24
+  },
+  {
+   "symbol": "SEIUSDT",
+   "vol_mediano_usdt": 7164393,
+   "dias": 24
+  },
+  {
+   "symbol": "CAKEUSDT",
+   "vol_mediano_usdt": 6969890,
+   "dias": 24
+  },
+  {
+   "symbol": "ZAMAUSDT",
+   "vol_mediano_usdt": 6744531,
+   "dias": 24
+  },
+  {
+   "symbol": "ETHFIUSDT",
+   "vol_mediano_usdt": 6721682,
+   "dias": 24
+  },
+  {
+   "symbol": "WLFIUSDT",
+   "vol_mediano_usdt": 6679349,
+   "dias": 24
+  },
+  {
+   "symbol": "VIRTUALUSDT",
+   "vol_mediano_usdt": 6619025,
+   "dias": 24
+  },
+  {
+   "symbol": "NVDABUSDT",
+   "vol_mediano_usdt": 6605877,
+   "dias": 23
+  },
+  {
+   "symbol": "ZENUSDT",
+   "vol_mediano_usdt": 6309622,
+   "dias": 24
+  },
+  {
+   "symbol": "NILUSDT",
+   "vol_mediano_usdt": 6048476,
+   "dias": 15
+  },
+  {
+   "symbol": "NOMUSDT",
+   "vol_mediano_usdt": 5879754,
+   "dias": 11
+  },
+  {
+   "symbol": "RENDERUSDT",
+   "vol_mediano_usdt": 5872960,
+   "dias": 24
+  },
+  {
+   "symbol": "JUPUSDT",
+   "vol_mediano_usdt": 5587059,
+   "dias": 22
+  },
+  {
+   "symbol": "TIAUSDT",
+   "vol_mediano_usdt": 5277571,
+   "dias": 24
+  },
+  {
+   "symbol": "MORPHOUSDT",
+   "vol_mediano_usdt": 5061633,
+   "dias": 24
+  },
+  {
+   "symbol": "AEROUSDT",
+   "vol_mediano_usdt": 4967389,
+   "dias": 24
+  },
+  {
+   "symbol": "PENDLEUSDT",
+   "vol_mediano_usdt": 4902940,
+   "dias": 24
+  },
+  {
+   "symbol": "MUBUSDT",
+   "vol_mediano_usdt": 4814253,
+   "dias": 24
+  },
+  {
+   "symbol": "SHIBUSDT",
+   "vol_mediano_usdt": 4729792,
+   "dias": 24
+  },
+  {
+   "symbol": "ETCUSDT",
+   "vol_mediano_usdt": 4597057,
+   "dias": 24
+  },
+  {
+   "symbol": "EIGENUSDT",
+   "vol_mediano_usdt": 4556777,
+   "dias": 24
+  },
+  {
+   "symbol": "LDOUSDT",
+   "vol_mediano_usdt": 4555689,
+   "dias": 24
+  },
+  {
+   "symbol": "COTIUSDT",
+   "vol_mediano_usdt": 4495098,
+   "dias": 24
+  },
+  {
+   "symbol": "ACEUSDT",
+   "vol_mediano_usdt": 4449436,
+   "dias": 24
+  },
+  {
+   "symbol": "PHAUSDT",
+   "vol_mediano_usdt": 4382007,
+   "dias": 20
+  },
+  {
+   "symbol": "CRVUSDT",
+   "vol_mediano_usdt": 4251585,
+   "dias": 24
+  },
+  {
+   "symbol": "SOXLBUSDT",
+   "vol_mediano_usdt": 4204004,
+   "dias": 24
+  },
+  {
+   "symbol": "ARUSDT",
+   "vol_mediano_usdt": 4203809,
+   "dias": 24
+  },
+  {
+   "symbol": "MUBARAKUSDT",
+   "vol_mediano_usdt": 4130500,
+   "dias": 24
+  },
+  {
+   "symbol": "STRKUSDT",
+   "vol_mediano_usdt": 4100787,
+   "dias": 24
+  },
+  {
+   "symbol": "TUTUSDT",
+   "vol_mediano_usdt": 4059442,
+   "dias": 24
+  },
+  {
+   "symbol": "SYNUSDT",
+   "vol_mediano_usdt": 4027806,
+   "dias": 18
+  },
+  {
+   "symbol": "RUNEUSDT",
+   "vol_mediano_usdt": 3940561,
+   "dias": 20
+  },
+  {
+   "symbol": "ALGOUSDT",
+   "vol_mediano_usdt": 3933911,
+   "dias": 24
+  },
+  {
+   "symbol": "QQQBUSDT",
+   "vol_mediano_usdt": 3853546,
+   "dias": 24
+  },
+  {
+   "symbol": "BONKUSDT",
+   "vol_mediano_usdt": 3807687,
+   "dias": 24
+  },
+  {
+   "symbol": "ATOMUSDT",
+   "vol_mediano_usdt": 3696102,
+   "dias": 24
+  },
+  {
+   "symbol": "SNXXBUSDT",
+   "vol_mediano_usdt": 3419118,
+   "dias": 23
+  },
+  {
+   "symbol": "BNCBUSDT",
+   "vol_mediano_usdt": 3389282,
+   "dias": 18
+  },
+  {
+   "symbol": "JSTUSDT",
+   "vol_mediano_usdt": 3296737,
+   "dias": 24
+  },
+  {
+   "symbol": "REZUSDT",
+   "vol_mediano_usdt": 3292797,
+   "dias": 23
+  },
+  {
+   "symbol": "CHIPUSDT",
+   "vol_mediano_usdt": 3261928,
+   "dias": 24
+  },
+  {
+   "symbol": "SKYUSDT",
+   "vol_mediano_usdt": 3254812,
+   "dias": 23
+  },
+  {
+   "symbol": "PYTHUSDT",
+   "vol_mediano_usdt": 3249160,
+   "dias": 24
+  },
+  {
+   "symbol": "PROMUSDT",
+   "vol_mediano_usdt": 3154735,
+   "dias": 24
+  },
+  {
+   "symbol": "PLUMEUSDT",
+   "vol_mediano_usdt": 3151458,
+   "dias": 24
+  },
+  {
+   "symbol": "FFUSDT",
+   "vol_mediano_usdt": 3008828,
+   "dias": 23
+  },
+  {
+   "symbol": "BABYUSDT",
+   "vol_mediano_usdt": 2973279,
+   "dias": 19
+  },
+  {
+   "symbol": "MINAUSDT",
+   "vol_mediano_usdt": 2970323,
+   "dias": 24
+  },
+  {
+   "symbol": "HEMIUSDT",
+   "vol_mediano_usdt": 2904453,
+   "dias": 24
+  },
+  {
+   "symbol": "ARKUSDT",
+   "vol_mediano_usdt": 2863531,
+   "dias": 18
+  },
+  {
+   "symbol": "JTOUSDT",
+   "vol_mediano_usdt": 2842395,
+   "dias": 24
+  },
+  {
+   "symbol": "TSLABUSDT",
+   "vol_mediano_usdt": 2790339,
+   "dias": 23
+  },
+  {
+   "symbol": "GIGGLEUSDT",
+   "vol_mediano_usdt": 2690867,
+   "dias": 24
+  },
+  {
+   "symbol": "CFGUSDT",
+   "vol_mediano_usdt": 2633045,
+   "dias": 24
+  },
+  {
+   "symbol": "GALAUSDT",
+   "vol_mediano_usdt": 2572768,
+   "dias": 24
+  },
+  {
+   "symbol": "WIFUSDT",
+   "vol_mediano_usdt": 2545493,
+   "dias": 24
+  },
+  {
+   "symbol": "GUSDT",
+   "vol_mediano_usdt": 2535530,
+   "dias": 15
+  },
+  {
+   "symbol": "METUSDT",
+   "vol_mediano_usdt": 2467679,
+   "dias": 23
+  },
+  {
+   "symbol": "SKHYBUSDT",
+   "vol_mediano_usdt": 2461933,
+   "dias": 24
+  },
+  {
+   "symbol": "STXUSDT",
+   "vol_mediano_usdt": 2371214,
+   "dias": 24
+  },
+  {
+   "symbol": "ORDIUSDT",
+   "vol_mediano_usdt": 2330379,
+   "dias": 24
+  },
+  {
+   "symbol": "HEIUSDT",
+   "vol_mediano_usdt": 2321627,
+   "dias": 14
+  },
+  {
+   "symbol": "0GUSDT",
+   "vol_mediano_usdt": 2253598,
+   "dias": 22
+  },
+  {
+   "symbol": "KORUBUSDT",
+   "vol_mediano_usdt": 2210535,
+   "dias": 24
+  },
+  {
+   "symbol": "FLOKIUSDT",
+   "vol_mediano_usdt": 2206994,
+   "dias": 24
+  },
+  {
+   "symbol": "IOSTUSDT",
+   "vol_mediano_usdt": 2179884,
+   "dias": 18
+  },
+  {
+   "symbol": "GRTUSDT",
+   "vol_mediano_usdt": 2170095,
+   "dias": 14
+  },
+  {
+   "symbol": "KMNOUSDT",
+   "vol_mediano_usdt": 2152593,
+   "dias": 15
+  },
+  {
+   "symbol": "KITEUSDT",
+   "vol_mediano_usdt": 2126077,
+   "dias": 21
+  },
+  {
+   "symbol": "ZKUSDT",
+   "vol_mediano_usdt": 2115467,
+   "dias": 19
+  },
+  {
+   "symbol": "KAITOUSDT",
+   "vol_mediano_usdt": 2104436,
+   "dias": 22
+  },
+  {
+   "symbol": "DODOUSDT",
+   "vol_mediano_usdt": 2057993,
+   "dias": 21
+  },
+  {
+   "symbol": "TRBUSDT",
+   "vol_mediano_usdt": 2046900,
+   "dias": 17
+  },
+  {
+   "symbol": "INTCBUSDT",
+   "vol_mediano_usdt": 2022117,
+   "dias": 24
+  },
+  {
+   "symbol": "VETUSDT",
+   "vol_mediano_usdt": 2004031,
+   "dias": 24
+  },
+  {
+   "symbol": "DEXEUSDT",
+   "vol_mediano_usdt": 1978496,
+   "dias": 24
+  },
+  {
+   "symbol": "CHZUSDT",
+   "vol_mediano_usdt": 1962803,
+   "dias": 23
+  },
+  {
+   "symbol": "BROCCOLI714USDT",
+   "vol_mediano_usdt": 1949358,
+   "dias": 19
+  },
+  {
+   "symbol": "MEGAUSDT",
+   "vol_mediano_usdt": 1939867,
+   "dias": 22
+  },
+  {
+   "symbol": "HUMAUSDT",
+   "vol_mediano_usdt": 1932218,
+   "dias": 11
+  },
+  {
+   "symbol": "EPICUSDT",
+   "vol_mediano_usdt": 1902525,
+   "dias": 13
+  },
+  {
+   "symbol": "AXSUSDT",
+   "vol_mediano_usdt": 1862509,
+   "dias": 21
+  },
+  {
+   "symbol": "CFXUSDT",
+   "vol_mediano_usdt": 1853526,
+   "dias": 14
+  },
+  {
+   "symbol": "BIOUSDT",
+   "vol_mediano_usdt": 1847592,
+   "dias": 17
+  },
+  {
+   "symbol": "GOOGLBUSDT",
+   "vol_mediano_usdt": 1845088,
+   "dias": 23
+  },
+  {
+   "symbol": "BOMEUSDT",
+   "vol_mediano_usdt": 1821392,
+   "dias": 22
+  },
+  {
+   "symbol": "SUSDT",
+   "vol_mediano_usdt": 1809329,
+   "dias": 19
+  },
+  {
+   "symbol": "SOPHUSDT",
+   "vol_mediano_usdt": 1807583,
+   "dias": 19
+  },
+  {
+   "symbol": "IOUSDT",
+   "vol_mediano_usdt": 1779025,
+   "dias": 20
+  },
+  {
+   "symbol": "ENSUSDT",
+   "vol_mediano_usdt": 1768447,
+   "dias": 19
+  },
+  {
+   "symbol": "DYDXUSDT",
+   "vol_mediano_usdt": 1767743,
+   "dias": 13
+  },
+  {
+   "symbol": "BBUSDT",
+   "vol_mediano_usdt": 1745348,
+   "dias": 18
+  },
+  {
+   "symbol": "NIGHTUSDT",
+   "vol_mediano_usdt": 1718971,
+   "dias": 20
+  },
+  {
+   "symbol": "SYRUPUSDT",
+   "vol_mediano_usdt": 1716624,
+   "dias": 19
+  },
+  {
+   "symbol": "SOLVUSDT",
+   "vol_mediano_usdt": 1706513,
+   "dias": 15
+  },
+  {
+   "symbol": "SANDUSDT",
+   "vol_mediano_usdt": 1689796,
+   "dias": 18
+  },
+  {
+   "symbol": "BANKUSDT",
+   "vol_mediano_usdt": 1681621,
+   "dias": 21
+  }
+ ],
+ "candidatas": 239
+}
