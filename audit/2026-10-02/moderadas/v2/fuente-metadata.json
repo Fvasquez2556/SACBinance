@@ -1,0 +1,22 @@
+{
+  "sha256": "2bac3af18ffda2ae062d31334b19e76374d29681ba68e148458c38e2a25d0761",
+  "bytes": 12413986,
+  "core_sha256": "8caa7d8b9f92fea5ff55b28be24e6e24a9d17fceff23f5cfae98a114a9e117d6",
+  "historico_sha256": "018d95e2c031c9b99cbcfc99edcd8c888a934f28475133e18e302110ab95c1ab",
+  "reglas_sha256": "2cfe38610f2c7cc4ab4de0db844f875cca4701a5d2486ba534cef0c59e28939a",
+  "version": "moderadas-sombra-v2",
+  "config_hash": "02dcf29afa37912f8dbbde836e7c8e10617a7d4a32c97a9df884ef57243399f8",
+  "started_ms": 1791002206494,
+  "cutoff_ms": 1791002040000,
+  "inicio_ms": 1789084800000,
+  "alertas": 21950,
+  "cuenta": {
+    "evaluadas": 19700,
+    "huecos": 2250,
+    "sin_entrada_valida": 0,
+    "control_con_huecos": 1634
+  },
+  "finished_ms": 1791002494590,
+  "lineas": 21952,
+  "segundos": 289.1
+}

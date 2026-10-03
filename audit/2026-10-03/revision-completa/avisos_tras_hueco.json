@@ -1,0 +1,28 @@
+{
+ "VIGILANCIA": {
+  "avisos": 7787,
+  "con_15+_minutos_sin_vela_en_la_hora_previa": 0,
+  "pct": 0.0
+ },
+ "MODERADA": {
+  "avisos": 10752,
+  "con_15+_minutos_sin_vela_en_la_hora_previa": 0,
+  "pct": 0.0
+ },
+ "EXTRA-FUERTE": {
+  "avisos": 656,
+  "con_15+_minutos_sin_vela_en_la_hora_previa": 0,
+  "pct": 0.0
+ },
+ "FUERTE": {
+  "avisos": 11930,
+  "con_15+_minutos_sin_vela_en_la_hora_previa": 0,
+  "pct": 0.0
+ },
+ "NINGUNO": {
+  "avisos": 72,
+  "con_15+_minutos_sin_vela_en_la_hora_previa": 0,
+  "pct": 0.0
+ },
+ "ejemplos": []
+}

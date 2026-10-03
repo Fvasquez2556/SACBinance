@@ -44,3 +44,7 @@ ia_sombra/secretos/
 ia_sombra/vendor/
 ia_sombra/venv/
 ia_sombra/.env
+
+# Datos congelados grandes de investigación (se quedan solo en disco local)
+audit/2026-10-03/revision-completa/fuente.pkl.gz
+audit/2026-10-03/revision-completa/escaneo.npz

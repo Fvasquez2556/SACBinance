@@ -1,0 +1,24 @@
+{
+  "sha256": "f81b5ac6b0517f3238868a81288f3176e225f41d8a71cdd537acb88d96b4bb26",
+  "bytes": 11272425,
+  "core_sha256": "38c5d6637ee0d8458b3e0aba6dab2a0f476ba3ec37764f42957bb2b99abd44d7",
+  "historico_sha256": "accdb0f13588816c4dfe4b714cdf85c538917a3cc39c2460055c8330576abfa7",
+  "reglas_sha256": "4ec9601107b1b17a43a54429ec778598a86a45e299925e1d3318f3ad5810b995",
+  "version": "moderadas-sombra-v1",
+  "config_hash": "5b56daa442695b9bb98f0dcd6c3eaae84b3b9e3e0cfaa07500d6983351f71e5e",
+  "started_ms": 1791000547865,
+  "cutoff_ms": 1791000420000,
+  "inicio_ms": 1789084800000,
+  "alertas": 21935,
+  "cuenta": {
+    "evaluadas": 19685,
+    "huecos": 2250,
+    "sin_entrada_valida": 0,
+    "control_con_huecos": 1684
+  },
+  "finished_ms": 1791000873528,
+  "lineas": 21937,
+  "segundos": 326.6,
+  "core_sha256_finales_lf": "7d08358a074028be70a4011e8faa43187d87a53d75b9de842fd40994fab45e03",
+  "nota_core": "core_sha256 es el del fichero enviado al servidor, con finales CRLF; core_sha256_finales_lf es el mismo contenido con finales LF, como queda en el repositorio"
+}

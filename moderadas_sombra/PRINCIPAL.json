@@ -1,0 +1,20 @@
+{
+  "ventana_min": 60,
+  "variante": [
+    1.0,
+    2.67,
+    "SISTEMA"
+  ],
+  "nombre": "entrada-1%|meta+2.67%|SISTEMA",
+  "neto_por_senal": -0.1352,
+  "mitades": [
+    -0.1223,
+    -0.1482
+  ],
+  "positiva_en_ambas": false,
+  "cumple_reglas": false,
+  "ic95_por_moneda": [
+    -0.1557,
+    -0.1152
+  ]
+}

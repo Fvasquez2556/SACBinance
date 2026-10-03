@@ -1,0 +1,1 @@
+{'creado_utc': '2026-10-03 05:16:41', 'simbolos': 419, 'velas': 9968294, 'avisos': 31198, 'outcomes': 20473, 'segundos': 145.8}

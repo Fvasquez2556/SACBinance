@@ -1,0 +1,110 @@
+{
+ "VIGILANCIA": {
+  "con_rasgos": 2690,
+  "flujo_confirmable(>=8 trades)": 24,
+  "btc": {
+   "NEUTRAL": 830,
+   "ALCISTA": 1860
+  },
+  "macro": {
+   "NEUTRAL": 2235,
+   "ALCISTA": 455
+  },
+  "score": {
+   "60": 242,
+   "61": 249,
+   "62": 245,
+   "63": 292,
+   "64": 323,
+   "65": 91,
+   "66": 378,
+   "67": 348,
+   "68": 282,
+   "69": 240
+  },
+  "macro_neutral_score<75": 2235,
+  "sin_flujo_y_score>=80": 0
+ },
+ "MODERADA": {
+  "con_rasgos": 3813,
+  "flujo_confirmable(>=8 trades)": 83,
+  "btc": {
+   "BAJISTA": 268,
+   "NEUTRAL": 1195,
+   "ALCISTA": 2350
+  },
+  "macro": {
+   "ALCISTA": 2370,
+   "NEUTRAL": 1443
+  },
+  "score": {
+   "70": 280,
+   "71": 357,
+   "72": 425,
+   "73": 371,
+   "74": 334,
+   "75": 164,
+   "76": 101,
+   "77": 249,
+   "78": 298,
+   "79": 1234
+  },
+  "macro_neutral_score<75": 972,
+  "sin_flujo_y_score>=80": 0
+ },
+ "FUERTE": {
+  "con_rasgos": 3885,
+  "flujo_confirmable(>=8 trades)": 116,
+  "btc": {
+   "NEUTRAL": 23,
+   "ALCISTA": 3862
+  },
+  "macro": {
+   "NEUTRAL": 270,
+   "ALCISTA": 3615
+  },
+  "score": {
+   "80": 47,
+   "81": 220,
+   "82": 288,
+   "83": 378,
+   "84": 29,
+   "85": 360,
+   "86": 2548,
+   "87": 3,
+   "88": 5,
+   "89": 7
+  },
+  "macro_neutral_score<75": 0,
+  "sin_flujo_y_score>=80": 3769
+ },
+ "EXTRA-FUERTE": {
+  "con_rasgos": 244,
+  "flujo_confirmable(>=8 trades)": 244,
+  "btc": {
+   "NEUTRAL": 46,
+   "ALCISTA": 198
+  },
+  "macro": {
+   "ALCISTA": 207,
+   "NEUTRAL": 37
+  },
+  "score": {
+   "90": 4,
+   "91": 9,
+   "92": 14,
+   "93": 7,
+   "94": 4,
+   "95": 10,
+   "96": 4,
+   "97": 10,
+   "98": 4,
+   "99": 2,
+   "100": 176
+  },
+  "macro_neutral_score<75": 0,
+  "sin_flujo_y_score>=80": 0
+ },
+ "FUERTE_score_80_86": 11484,
+ "FUERTE_total": 11930
+}
