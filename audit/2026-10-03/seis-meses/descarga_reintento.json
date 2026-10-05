@@ -1,0 +1,293 @@
+{
+ "creado_utc": "2026-10-05 18:06:49",
+ "fuente": "https://data.binance.vision/data/spot",
+ "meses": [
+  "2026-03",
+  "2026-04",
+  "2026-05",
+  "2026-06",
+  "2026-07",
+  "2026-08"
+ ],
+ "dias": [
+  "2026-09-01",
+  "2026-10-01"
+ ],
+ "monedas": 1,
+ "resumen": {
+  "no_existe": 14,
+  "ok": 23
+ },
+ "segundos": 5,
+ "megabytes": 1.3,
+ "archivos": [
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-03.zip",
+   "tipo": "monthly",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-04.zip",
+   "tipo": "monthly",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-05.zip",
+   "tipo": "monthly",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-06.zip",
+   "tipo": "monthly",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-07.zip",
+   "tipo": "monthly",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-08.zip",
+   "tipo": "monthly",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-01.zip",
+   "tipo": "daily",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-02.zip",
+   "tipo": "daily",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-03.zip",
+   "tipo": "daily",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-04.zip",
+   "tipo": "daily",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-05.zip",
+   "tipo": "daily",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-06.zip",
+   "tipo": "daily",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-07.zip",
+   "tipo": "daily",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-08.zip",
+   "tipo": "daily",
+   "estado": "no_existe"
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-09.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "3ecb5634acd96613944096895b6d8eeb87c8e0fb548e4d2449827713f0110bab",
+   "bytes": 24147
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-10.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "a828a0b22b1cc9a43c639b36594c018fa77166e1685d19d11ce6e589c6f646c2",
+   "bytes": 59920
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-11.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "e23ae428555739e48264e9f521fd011196588ab15d85596fd02ef999bffbfbb6",
+   "bytes": 62095
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-12.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "b22bd0def5d84cb7ec786d9942dc75a389af46dd6c0f2425f380068c07fd546a",
+   "bytes": 59608
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-13.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "ebd93adc9c096b299af3141c47b2ba80f4d762a062b5f376c3259bd3d91a80a9",
+   "bytes": 58590
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-14.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "1acd504ad14900f3070ba356e9e4dbac33f5316e9cfd9ae7b303ab1899a3f126",
+   "bytes": 58103
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-15.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "e1286344aafc6f486dbffd75ac3c3250c82e0d0316d7514e76bcec8c94f1297c",
+   "bytes": 57498
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-16.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "5a0744fa804ffb7d1fee1238bc2619debc46fbcec6dc2d740e6bdc2a39c960ba",
+   "bytes": 56287
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-17.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "f26a8d5f148861501ae9e27d62731942fb72983cd38059ff3d70960cba3a5b16",
+   "bytes": 56040
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-18.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "41e361a8e771e82a71f12c456260493ae2fbbbf678838a21214fa0cd96083243",
+   "bytes": 56801
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-19.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "41434badf228d43c1d5db3db200e255dd107b62f44b6a0b08671a6666b73862d",
+   "bytes": 54933
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-20.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "3e20cbc936e0fb39f3298ed48d3d0f4c30e23ec683c65ead3c783096aa625ab7",
+   "bytes": 55369
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-21.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "873804e4cd3e27cf7728d307b86d6aaa7e79c1f29a2d56feb645d65f02dde594",
+   "bytes": 57147
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-22.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "b6e9c2cc94d2c32ae5581e57d2140af3ce9d840e6f989ed14ed5158b7b09a70e",
+   "bytes": 56732
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-23.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "b7ae6d6090a235ce17ba3c1dd38d1fa12f9cd43a1ea3fd4adaeca40397965740",
+   "bytes": 56280
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-24.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "5f0d66f1eae9b7bc45aaaacf83840e9abc571ccda0221f17581a10b31f1fc682",
+   "bytes": 54649
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-25.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "cc78d32d66d61b7331f13d9a5f2aef90f477d362a7fc2f0bb0b18dd02b33c3e4",
+   "bytes": 52365
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-26.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "542eb3b7ef0e638de1523c4693b0c333bbcff6bd11b91a8f1732cd8382479e8c",
+   "bytes": 53638
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-27.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "10b2061eee35a915208b512c3beead771d7eec77d2ab5e2627f7b481e338a5c0",
+   "bytes": 52746
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-28.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "8c8274c6c8e43ee767321c67f13c28872346ec6736b804e85c4cbbabdf0a9242",
+   "bytes": 56983
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-29.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "4d147b762cf9a204523ee1827b0ef7d46839aa6420baae61384752c7cbfe7ede",
+   "bytes": 54836
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-09-30.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "b6d10cdd2484ff91cd8f9044d2a023fcac81d18b5291f7b919d76810a43ebd17",
+   "bytes": 52912
+  },
+  {
+   "symbol": "牛来USDT",
+   "archivo": "牛来USDT-1m-2026-10-01.zip",
+   "tipo": "daily",
+   "estado": "ok",
+   "sha256": "e0583039aee0adff161a4e88cf209e2c814de96feac50e99a06dcb384fe9a274",
+   "bytes": 53518
+  }
+ ]
+}

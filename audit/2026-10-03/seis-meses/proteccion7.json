@@ -1,0 +1,38 @@
+{
+ "todas | mar-jun": {
+  "n": 31534,
+  "precio_3h_mediana": 0.0,
+  "largo_neto_0.4": -0.413,
+  "aciertos": 38.4
+ },
+ "todas | jul-sep": {
+  "n": 27134,
+  "precio_3h_mediana": 0.0,
+  "largo_neto_0.4": -0.331,
+  "aciertos": 40.5
+ },
+ "tras +3 % en 15 min | mar-jun": {
+  "n": 1638,
+  "precio_3h_mediana": -0.53,
+  "largo_neto_0.4": -0.569,
+  "aciertos": 36.5
+ },
+ "tras +3 % en 15 min | jul-sep": {
+  "n": 1868,
+  "precio_3h_mediana": -0.49,
+  "largo_neto_0.4": -0.246,
+  "aciertos": 43.7
+ },
+ "tras +5 % en 1 h | mar-jun": {
+  "n": 1442,
+  "precio_3h_mediana": -0.89,
+  "largo_neto_0.4": -0.565,
+  "aciertos": 36.5
+ },
+ "tras +5 % en 1 h | jul-sep": {
+  "n": 1736,
+  "precio_3h_mediana": -0.71,
+  "largo_neto_0.4": -0.317,
+  "aciertos": 42.1
+ }
+}

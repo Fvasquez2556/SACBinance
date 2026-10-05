@@ -7,6 +7,8 @@
 - **Todo lo investigado antes:** las carpetas `audit/` e `informes/`.
 - **Las pruebas automáticas:** las 367 del backend pasan.
 
+**Actualización del 5-oct:** el estudio de 7 meses con velas oficiales de Binance (150 monedas, marzo a septiembre) confirma lo de este informe. Ninguna de 216 combinaciones cumple el criterio registrado de antemano, y el disparo que imita a SAC rinde igual que comprar al azar. Ver [seis-meses/RESULTADOS.md](../seis-meses/RESULTADOS.md).
+
 **Cómo se midió:** la operación de referencia es la tuya. Compra al precio del aviso, meta **+2,67 %** bruta, stop **−1,8 %** y cierre forzoso a las 12 h. El coste es de 0,5 puntos por operación. Con esa geometría, **para no perder hay que acertar el 51,5 % de las operaciones**; un precio al azar acierta un 40 %.
 
 ---
@@ -123,6 +125,12 @@ EXTRA exige ese flujo en todos los casos (los 244 EXTRA con datos guardados lo t
 | 2 de octubre / hoy | 5,8 % / 0,05 % |
 
 - **Hay 99 monedas con más del 20 % de huecos.** En buena parte son monedas que **entran y salen del universo** por volumen: mientras están fuera, no se guardan velas.
+- **Comprobado el 5-oct contra las velas oficiales de Binance,** en las 150 monedas más líquidas y del 8-sep al 1-oct (`seis-meses/comparar_sac.json`):
+  - a la base de SAC le falta el **3,4 %** de los minutos;
+  - los peores días fueron del 9 al 17-sep, con 6–9 %; del 19 al 25-sep, cerca del 1 %; desde el 26-sep, menos del 1 %;
+  - **cuando la vela está, es idéntica** a la oficial: 5 cierres distintos en 4,7 millones.
+
+  El 12–31 % de la tabla mezcla esas faltas con las monedas chicas que entran y salen del universo.
 - **La reparación automática funciona desde el 26-sep.**
 - **Consecuencia:** el 14 % de las señales MODERADA del histórico no se puede medir, y los resultados de septiembre tienen ese hueco.
 - **Detalle menor:** una moneda que sale del universo nunca se borra de la memoria. La reparación la rehidrata cada 5 minutos para siempre (se ve en el registro: "Reparando velas: 1 pares…").

@@ -16,6 +16,7 @@ import json
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -31,7 +32,9 @@ HILOS = 8
 def bajar(url: str, intentos: int = 4) -> bytes | None:
     for k in range(intentos):
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "sacbinance-investigacion"}),
+            # Hay monedas con nombre no ASCII (p. ej. 牛来USDT): la ruta va codificada
+            seguro = urllib.parse.quote(url, safe=":/")
+            with urllib.request.urlopen(urllib.request.Request(seguro, headers={"User-Agent": "sacbinance-investigacion"}),
                                         timeout=60) as r:
                 return r.read()
         except urllib.error.HTTPError as e:
@@ -79,6 +82,9 @@ def main():
     monedas = json.loads((AQUI / "monedas.json").read_text(encoding="utf-8"))["monedas"]
     if "--prueba" in sys.argv:
         monedas = monedas[:2]
+    solo = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if solo:                                     # reintentar solo esas monedas
+        monedas = [m for m in monedas if m in solo]
     trabajos = [(s, "monthly", m) for s in monedas for m in MESES] + [(s, "daily", d_) for s in monedas for d_ in DIAS]
     print(f"{len(monedas)} monedas, {len(trabajos)} archivos -> {DESTINO}", flush=True)
     t0 = time.time()
@@ -98,7 +104,8 @@ def main():
                   "resumen": resumen, "segundos": round(time.time() - t0),
                   "megabytes": round(sum(r.get("bytes", 0) for r in resultados) / 1e6, 1),
                   "archivos": sorted(resultados, key=lambda r: (r["symbol"], r["archivo"]))}
-    (AQUI / ("descarga_prueba.json" if "--prueba" in sys.argv else "descarga.json")).write_bytes(
+    nombre = "descarga_prueba.json" if "--prueba" in sys.argv else ("descarga_reintento.json" if solo else "descarga.json")
+    (AQUI / nombre).write_bytes(
         json.dumps(manifiesto, indent=1, ensure_ascii=False).encode())
     print(json.dumps({k: v for k, v in manifiesto.items() if k != "archivos"}, ensure_ascii=False))
 
